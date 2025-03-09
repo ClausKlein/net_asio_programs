@@ -11,13 +11,24 @@ find_package(Boost 1.87 COMPONENTS asio REQUIRED HINTS ../../../../stagedir)
 add_library(rrcp_helper STATIC rrcp_helper.cpp rrcp_helper.hpp)
 
 add_executable(blocking_tcp_echo_client blocking_tcp_echo_client.cpp)
-target_link_libraries(blocking_tcp_echo_client PRIVATE rrcp_helper PUBLIC Boost::asio)
+target_link_libraries(
+    blocking_tcp_echo_client
+    PRIVATE rrcp_helper
+    PUBLIC Boost::asio
+)
 
 add_executable(blocking_tcp_echo_server blocking_tcp_echo_server.cpp)
-target_link_libraries(blocking_tcp_echo_server PRIVATE rrcp_helper PUBLIC Boost::asio)
+target_link_libraries(
+    blocking_tcp_echo_server
+    PRIVATE rrcp_helper
+    PUBLIC Boost::asio
+)
 
 add_executable(rrcp_client rrcp_client.cpp rrcp_message.hpp)
 target_link_libraries(rrcp_client PUBLIC Boost::asio)
+
+add_executable(timer timer.cpp)
+target_link_libraries(timer PUBLIC Boost::asio)
 
 add_executable(async_client async_client.cpp)
 target_link_libraries(async_client PUBLIC Boost::asio)
