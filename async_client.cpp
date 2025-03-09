@@ -21,7 +21,7 @@ void handle_read(boost::system::error_code, std::size_t xfer)
 {
   assert(streambuf.size() >= xfer);
 
-  std::string command{buffers_begin(streambuf.data()),
+  std::string const command{buffers_begin(streambuf.data()),
       buffers_begin(streambuf.data()) + xfer - delimiter.length()};
 
   streambuf.consume(xfer);

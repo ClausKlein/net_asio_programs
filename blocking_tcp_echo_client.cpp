@@ -45,10 +45,10 @@ int main(int argc, char* argv[])
       std::cout << "Enter message: ";
       char request[max_length];
       std::cin.getline(request, max_length);
-      size_t request_length = std::strlen(request);
+      size_t const request_length = std::strlen(request);
       if (request_length == 0) break;
 
-      std::string data = char2esc(std::string(request, request_length));
+      std::string const data = char2esc(std::string(request, request_length));
 
       boost::asio::write(s, boost::asio::buffer(data.c_str(), data.length()));
 
@@ -56,8 +56,8 @@ int main(int argc, char* argv[])
       std::string reply;
       boost::asio::dynamic_string_buffer< char, std::string::traits_type,
           std::string::allocator_type >
-          sb2 = boost::asio::dynamic_buffer(reply, max_length);
-      boost::system::error_code ec;
+          const sb2 = boost::asio::dynamic_buffer(reply, max_length);
+      boost::system::error_code const ec;
 
       size_t reply_length{};
       do

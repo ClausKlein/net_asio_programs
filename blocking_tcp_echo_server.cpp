@@ -29,7 +29,7 @@ void session(tcp::socket sock)
       char data[max_length];
 
       boost::system::error_code error;
-      size_t length = sock.read_some(boost::asio::buffer(data), error);
+      size_t const length = sock.read_some(boost::asio::buffer(data), error);
       if (error == boost::asio::stream_errc::eof)
         break;  // Connection closed cleanly by peer.
       else if (error)

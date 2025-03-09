@@ -8,12 +8,23 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
+#include "rrcp_message.hpp"
+
+#include <boost/asio/buffer.hpp>
+#include <boost/asio/connect.hpp>
+#include <boost/asio/io_context.hpp>
+#include <boost/asio/ip/tcp.hpp>
+#include <boost/asio/post.hpp>
+#include <boost/asio/read.hpp>
+#include <boost/asio/steady_timer.hpp>
+#include <boost/asio/write.hpp>
+#include <boost/system/error_code.hpp>
+
 #include <cstdlib>
+#include <exception>
 #include <deque>
 #include <iostream>
 #include <thread>
-#include <boost/asio.hpp>
-#include "rrcp_message.hpp"
 
 using boost::asio::ip::tcp;
 
@@ -34,7 +45,7 @@ class rrcp_client
     boost::asio::post(io_context_,
         [this, msg]()
         {
-          bool write_in_progress = !write_msgs_.empty();
+          bool const write_in_progress = !write_msgs_.empty();
           write_msgs_.push_back(msg);
           if (!write_in_progress)
           {
@@ -119,7 +130,6 @@ class rrcp_client
         });
   }
 
- private:
   boost::asio::io_context& io_context_;
   tcp::socket socket_;
   rrcp_message read_msg_;

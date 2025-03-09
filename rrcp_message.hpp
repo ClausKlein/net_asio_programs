@@ -21,19 +21,19 @@ class rrcp_message
   static constexpr std::size_t header_length = 4;
   static constexpr std::size_t max_msg_length = 65432;
 
-  rrcp_message() : msg_length_(0) {}
+  rrcp_message()  {}
 
-  const char* data() const { return data_; }
+  [[nodiscard]] const char* data() const { return data_; }
 
   char* data() { return data_; }
 
-  std::size_t length() const { return header_length + msg_length_; }
+  [[nodiscard]] std::size_t length() const { return header_length + msg_length_; }
 
-  const char* body() const { return data_ + header_length; }
+  [[nodiscard]] const char* body() const { return data_ + header_length; }
 
   char* body() { return data_ + header_length; }
 
-  std::size_t body_length() const { return msg_length_; }
+  [[nodiscard]] std::size_t body_length() const { return msg_length_; }
 
   void body_length(std::size_t new_length)
   {
@@ -64,7 +64,7 @@ class rrcp_message
 
  private:
   char data_[header_length + max_msg_length];
-  std::size_t msg_length_;
+  std::size_t msg_length_{0};
 };
 
 #endif  // RRCP_MESSAGE_HPP

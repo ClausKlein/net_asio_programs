@@ -205,7 +205,7 @@ class client
     if (!error)
     {
       // Extract the newline-delimited message from the buffer.
-      std::string line(input_buffer_.substr(0, n - 1));
+      std::string const line(input_buffer_.substr(0, n - 1));
       input_buffer_.erase(0, n);
 
       // Empty messages are heartbeats and so ignored.
