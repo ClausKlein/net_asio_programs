@@ -1,4 +1,4 @@
-BasedOnStyle: WebKit
+BasedOnStyle: Google
 Standard: Cpp03
 AlignAfterOpenBracket: false
 AlignEscapedNewlinesLeft: true

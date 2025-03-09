@@ -17,86 +17,108 @@ constexpr const char CR = 0x0D;
 // constexpr const char BACKSLASH = '\\';
 // constexpr const char COLON = 0x3A;
 
-std::string esc2char(const std::string &data)
+std::string esc2char(const std::string& data)
 {
-    std::string message;
-    size_t const len = data.size();
-    char c;
-    unsigned int i = 0;
-    while (i < len) {
-        // get next char
-        c = data[i];
+  std::string message;
+  size_t const len = data.size();
+  char c;
+  unsigned int i = 0;
+  while (i < len)
+  {
+    // get next char
+    c = data[i];
 
-        // end mark found, the message is complete, the
-        // CR is not needed anymore
-        if (c == CR) {
-            return message;
-        }
-
-        // An escape is found thus we want to
-        // replace the escape sequence
-        if (c == ESC) {
-            // On the ESC should follow an replacement character
-            // REPLACE_LF... REPLACE_ESC
-            if (i != (len - 1)) {
-                // get next character
-                i++;
-
-                c = data[i];
-                if (REPLACE_LF == c) {
-                    c = static_cast<char>(LF);
-                } else if (REPLACE_CR == c) {
-                    c = static_cast<char>(CR);
-                } else if (REPLACE_ESC == c) {
-                    c = static_cast<char>(ESC);
-                } else {
-                    //"Parser Error contains unexpected ESC character"
-                    return "";
-                }
-
-            } else {
-                //"Parser Error message ends with escape character"
-                return "";
-            }
-        }
-
-        // enter next character
-        message += c;
-        // next character
-        i++;
+    // end mark found, the message is complete, the
+    // CR is not needed anymore
+    if (c == CR)
+    {
+      return message;
     }
-    return message;
+
+    // An escape is found thus we want to
+    // replace the escape sequence
+    if (c == ESC)
+    {
+      // On the ESC should follow an replacement character
+      // REPLACE_LF... REPLACE_ESC
+      if (i != (len - 1))
+      {
+        // get next character
+        i++;
+
+        c = data[i];
+        if (REPLACE_LF == c)
+        {
+          c = static_cast< char >(LF);
+        }
+        else if (REPLACE_CR == c)
+        {
+          c = static_cast< char >(CR);
+        }
+        else if (REPLACE_ESC == c)
+        {
+          c = static_cast< char >(ESC);
+        }
+        else
+        {
+          //"Parser Error contains unexpected ESC character"
+          return "";
+        }
+      }
+      else
+      {
+        //"Parser Error message ends with escape character"
+        return "";
+      }
+    }
+
+    // enter next character
+    message += c;
+    // next character
+    i++;
+  }
+  return message;
 }
 
-std::string char2esc(const std::string &data)
+std::string char2esc(const std::string& data)
 {
-    std::string message;
-    size_t const len = data.size();
-    char c;
-    unsigned int i = 0;
+  std::string message;
+  size_t const len = data.size();
+  char c;
+  unsigned int i = 0;
 
-    while (i < len) {
-        // get next char
-        c = data[i++];
-        // and replace CR and LF and the ESC itself
-        switch (c) {
-        case LF: {
-            message += static_cast<char>(ESC);
-            message += static_cast<char>(REPLACE_LF);
-        }; break;
-        case CR: {
-            message += static_cast<char>(ESC);
-            message += static_cast<char>(REPLACE_CR);
-        }; break;
+  while (i < len)
+  {
+    // get next char
+    c = data[i++];
+    // and replace CR and LF and the ESC itself
+    switch (c)
+    {
+    case LF:
+    {
+      message += static_cast< char >(ESC);
+      message += static_cast< char >(REPLACE_LF);
+    };
+    break;
+    case CR:
+    {
+      message += static_cast< char >(ESC);
+      message += static_cast< char >(REPLACE_CR);
+    };
+    break;
 
-        case ESC: {
-            message += static_cast<char>(ESC);
-            message += static_cast<char>(REPLACE_ESC);
-        }; break;
-        default: {
-            message += c;
-        } break;
-        }
+    case ESC:
+    {
+      message += static_cast< char >(ESC);
+      message += static_cast< char >(REPLACE_ESC);
+    };
+    break;
+    default:
+    {
+      message += c;
     }
-    return message;
+    break;
+    }
+  }
+  return message;
 }

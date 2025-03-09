@@ -14,6 +14,11 @@
 #include <boost/asio/read_until.hpp>
 #include <boost/asio/steady_timer.hpp>
 #include <boost/asio/write.hpp>
+#include <boost/system/error_code.hpp>
+
+#include <chrono>
+#include <cstddef>
+#include <exception>
 #include <functional>
 #include <iostream>
 #include <string>
@@ -22,6 +27,8 @@ using boost::asio::steady_timer;
 using boost::asio::ip::tcp;
 using std::placeholders::_1;
 using std::placeholders::_2;
+
+using namespace std::chrono_literals;
 
 //
 // This class manages socket timeouts by applying the concept of a deadline.
@@ -85,16 +92,14 @@ using std::placeholders::_2;
 //
 class client
 {
-public:
+ public:
   client(boost::asio::io_context& io_context)
-    : socket_(io_context),
-      deadline_(io_context),
-      heartbeat_timer_(io_context)
+  : socket_(io_context), deadline_(io_context), heartbeat_timer_(io_context)
   {
   }
 
-  // Called by the user of the client class to initiate the connection process.
-  // The endpoints will have been obtained using a tcp::resolver.
+  // Called by the user of the client class to initiate the connection
+  // process. The endpoints will have been obtained using a tcp::resolver.
   void start(tcp::resolver::results_type endpoints)
   {
     // Start the connect actor.
@@ -119,7 +124,7 @@ public:
     heartbeat_timer_.cancel();
   }
 
-private:
+ private:
   void start_connect(tcp::resolver::results_type::iterator endpoint_iter)
   {
     if (endpoint_iter != endpoints_.end())
@@ -127,12 +132,11 @@ private:
       std::cout << "Trying " << endpoint_iter->endpoint() << "...\n";
 
       // Set a deadline for the connect operation.
-      deadline_.expires_after(std::chrono::seconds(60));
+      deadline_.expires_after(60s);
 
       // Start the asynchronous connect operation.
       socket_.async_connect(endpoint_iter->endpoint(),
-          std::bind(&client::handle_connect,
-            this, _1, endpoint_iter));
+          std::bind(&client::handle_connect, this, _1, endpoint_iter));
     }
     else
     {
@@ -144,12 +148,11 @@ private:
   void handle_connect(const boost::system::error_code& error,
       tcp::resolver::results_type::iterator endpoint_iter)
   {
-    if (stopped_)
-      return;
+    if (stopped_) return;
 
-    // The async_connect() function automatically opens the socket at the start
-    // of the asynchronous operation. If the socket is closed at this time then
-    // the timeout handler must have run first.
+    // The async_connect() function automatically opens the socket at the
+    // start of the asynchronous operation. If the socket is closed at this
+    // time then the timeout handler must have run first.
     if (!socket_.is_open())
     {
       std::cout << "Connect timed out\n";
@@ -163,8 +166,8 @@ private:
     {
       std::cout << "Connect error: " << error.message() << "\n";
 
-      // We need to close the socket used in the previous connection attempt
-      // before starting a new one.
+      // We need to close the socket used in the previous connection
+      // attempt before starting a new one.
       socket_.close();
 
       // Try the next available endpoint.
@@ -187,7 +190,7 @@ private:
   void start_read()
   {
     // Set a deadline for the read operation.
-    deadline_.expires_after(std::chrono::seconds(30));
+    deadline_.expires_after(30s);
 
     // Start an asynchronous operation to read a newline-delimited message.
     boost::asio::async_read_until(socket_,
@@ -197,8 +200,7 @@ private:
 
   void handle_read(const boost::system::error_code& error, std::size_t n)
   {
-    if (stopped_)
-      return;
+    if (stopped_) return;
 
     if (!error)
     {
@@ -224,8 +226,7 @@ private:
 
   void start_write()
   {
-    if (stopped_)
-      return;
+    if (stopped_) return;
 
     // Start an asynchronous operation to send a heartbeat message.
     boost::asio::async_write(socket_, boost::asio::buffer("\n", 1),
@@ -234,13 +235,12 @@ private:
 
   void handle_write(const boost::system::error_code& error)
   {
-    if (stopped_)
-      return;
+    if (stopped_) return;
 
     if (!error)
     {
       // Wait 10 seconds before sending the next heartbeat.
-      heartbeat_timer_.expires_after(std::chrono::seconds(10));
+      heartbeat_timer_.expires_after(10s);
       heartbeat_timer_.async_wait(std::bind(&client::start_write, this));
     }
     else
@@ -253,16 +253,15 @@ private:
 
   void check_deadline()
   {
-    if (stopped_)
-      return;
+    if (stopped_) return;
 
-    // Check whether the deadline has passed. We compare the deadline against
-    // the current time since a new asynchronous operation may have moved the
-    // deadline before this actor had a chance to run.
+    // Check whether the deadline has passed. We compare the deadline
+    // against the current time since a new asynchronous operation may have
+    // moved the deadline before this actor had a chance to run.
     if (deadline_.expiry() <= steady_timer::clock_type::now())
     {
-      // The deadline has passed. The socket is closed so that any outstanding
-      // asynchronous operations are cancelled.
+      // The deadline has passed. The socket is closed so that any
+      // outstanding asynchronous operations are cancelled.
       socket_.close();
 
       // There is no longer an active deadline. The expiry is set to the
@@ -275,7 +274,6 @@ private:
     deadline_.async_wait(std::bind(&client::check_deadline, this));
   }
 
-private:
   bool stopped_ = false;
   tcp::resolver::results_type endpoints_;
   tcp::socket socket_;
