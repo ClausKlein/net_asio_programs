@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.28...4.0)
 
 project(RRCP-client VERSION 0.1.0 LANGUAGES CXX)
 
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 find_package(Boost 1.87 COMPONENTS asio REQUIRED HINTS ../../../../stagedir)
 
 add_library(rrcp_helper STATIC rrcp_helper.cpp rrcp_helper.hpp)

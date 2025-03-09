@@ -21,13 +21,16 @@ class rrcp_message
   static constexpr std::size_t header_length = 4;
   static constexpr std::size_t max_msg_length = 65432;
 
-  rrcp_message()  {}
+  rrcp_message() {}
 
   [[nodiscard]] const char* data() const { return data_; }
 
   char* data() { return data_; }
 
-  [[nodiscard]] std::size_t length() const { return header_length + msg_length_; }
+  [[nodiscard]] std::size_t length() const
+  {
+    return header_length + msg_length_;
+  }
 
   [[nodiscard]] const char* body() const { return data_ + header_length; }
 

@@ -8,14 +8,13 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
-#include "rrcp_helper.hpp"
-
 #include <boost/asio.hpp>
 #include <boost/asio/read_until.hpp>
-
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+
+#include "rrcp_helper.hpp"
 
 using boost::asio::ip::tcp;
 
@@ -55,8 +54,8 @@ int main(int argc, char* argv[])
       // TODO: wait for endchar with timeout!
       std::string reply;
       boost::asio::dynamic_string_buffer< char, std::string::traits_type,
-          std::string::allocator_type >
-          const sb2 = boost::asio::dynamic_buffer(reply, max_length);
+          std::string::allocator_type > const sb2 =
+          boost::asio::dynamic_buffer(reply, max_length);
       boost::system::error_code const ec;
 
       size_t reply_length{};

@@ -8,8 +8,6 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
-#include "rrcp_message.hpp"
-
 #include <boost/asio/buffer.hpp>
 #include <boost/asio/connect.hpp>
 #include <boost/asio/io_context.hpp>
@@ -19,12 +17,13 @@
 #include <boost/asio/steady_timer.hpp>
 #include <boost/asio/write.hpp>
 #include <boost/system/error_code.hpp>
-
 #include <cstdlib>
-#include <exception>
 #include <deque>
+#include <exception>
 #include <iostream>
 #include <thread>
+
+#include "rrcp_message.hpp"
 
 using boost::asio::ip::tcp;
 

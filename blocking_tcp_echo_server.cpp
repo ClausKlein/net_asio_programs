@@ -10,7 +10,6 @@
 
 #include <boost/asio/ts/buffer.hpp>
 #include <boost/asio/ts/internet.hpp>
-
 #include <cstdlib>
 #include <iostream>
 #include <thread>

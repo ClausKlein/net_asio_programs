@@ -9,13 +9,12 @@
 //
 
 #include <boost/asio/buffer.hpp>
+#include <boost/asio/error.hpp>
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/read_until.hpp>
 #include <boost/asio/steady_timer.hpp>
 #include <boost/asio/write.hpp>
-#include <boost/system/error_code.hpp>
-
 #include <chrono>
 #include <cstddef>
 #include <exception>
@@ -110,6 +109,7 @@ class client
     // particular deadline here. Instead, the connect and input actors will
     // update the deadline prior to each asynchronous operation.
     deadline_.async_wait(std::bind(&client::check_deadline, this));
+    // FIXME: deadline_.async_wait([this] { check_deadline(); });
   }
 
   // This function terminates all the actors to shut down the connection. It
@@ -242,6 +242,7 @@ class client
       // Wait 10 seconds before sending the next heartbeat.
       heartbeat_timer_.expires_after(10s);
       heartbeat_timer_.async_wait(std::bind(&client::start_write, this));
+      // FIXME: heartbeat_timer_.async_wait([this] { start_write(); });
     }
     else
     {
@@ -272,6 +273,7 @@ class client
 
     // Put the actor back to sleep.
     deadline_.async_wait(std::bind(&client::check_deadline, this));
+    // FIXME: deadline_.async_wait([this] { check_deadline(); });
   }
 
   bool stopped_ = false;

@@ -9,7 +9,7 @@ ColumnLimit: 80
 ConstructorInitializerAllOnOneLineOrOnePerLine: true
 ConstructorInitializerIndentWidth: 0
 IndentCaseLabels: false
-SortIncludes: false
+SortIncludes: true
 AlignTrailingComments: false
 
 SpacesInAngles: true
