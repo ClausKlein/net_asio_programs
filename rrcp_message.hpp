@@ -11,9 +11,11 @@
 #ifndef RRCP_MESSAGE_HPP
 #define RRCP_MESSAGE_HPP
 
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <string>
 
 class rrcp_message
 {
@@ -23,32 +25,34 @@ class rrcp_message
 
   rrcp_message() {}
 
-  [[nodiscard]] const char* data() const { return data_; }
+  [[nodiscard]] const char* data() const { return data_.data(); }
 
-  char* data() { return data_; }
+  char* data() { return data_.data(); }
 
   [[nodiscard]] std::size_t length() const
   {
     return header_length + msg_length_;
   }
 
-  [[nodiscard]] const char* body() const { return data_ + header_length; }
+  [[nodiscard]] const char* body() const
+  {
+    return data_.data() + header_length;
+  }
 
-  char* body() { return data_ + header_length; }
+  char* body() { return data_.data() + header_length; }
 
   [[nodiscard]] std::size_t body_length() const { return msg_length_; }
 
   void body_length(std::size_t new_length)
   {
     msg_length_ = new_length;
-    if (msg_length_ > max_msg_length) msg_length_ = max_msg_length;
+    msg_length_ = std::min(msg_length_, max_msg_length);
   }
 
   bool decode_header()
   {
-    char header[header_length + 1] = "";
-    std::strncat(header, data_, header_length);
-    msg_length_ = std::atoi(header);
+    std::string header(data_.data(), header_length);
+    msg_length_ = std::stoi(header);
     if (msg_length_ > max_msg_length)
     {
       msg_length_ = 0;
@@ -59,14 +63,14 @@ class rrcp_message
 
   void encode_header()
   {
-    char header[header_length + 1] = "";
-    std::snprintf(
-        header, header_length + 1, "%4d", static_cast< int >(msg_length_));
-    std::memcpy(data_, header, header_length);
+    std::array< char, header_length + 1 > header;
+    std::snprintf(header.data(), header_length + 1, "%4d",
+        static_cast< int >(msg_length_));
+    std::memcpy(data_.data(), header.data(), header_length);
   }
 
  private:
-  char data_[header_length + max_msg_length];
+  std::array< char, header_length + max_msg_length > data_;
   std::size_t msg_length_{0};
 };
 

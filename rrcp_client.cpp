@@ -14,10 +14,11 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/post.hpp>
 #include <boost/asio/read.hpp>
-#include <boost/asio/steady_timer.hpp>
 #include <boost/asio/write.hpp>
-#include <boost/system/error_code.hpp>
+#include <boost/system/detail/error_code.hpp>
+#include <chrono>
 #include <cstdlib>
+#include <cstring>
 #include <deque>
 #include <exception>
 #include <iostream>
@@ -153,15 +154,20 @@ int main(int argc, char* argv[])
 
     std::thread t([&io_context]() { io_context.run(); });
 
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    int i{};
     char line[rrcp_message::max_msg_length + 1];
     while (std::cin.getline(line, rrcp_message::max_msg_length + 1))
     {
+      std::cout << ++i << line << '\n';
+
       rrcp_message msg;
       msg.body_length(std::strlen(line));
       std::memcpy(msg.body(), line, msg.body_length());
       msg.encode_header();
       c.write(msg);
     }
+    std::this_thread::sleep_for(std::chrono::seconds(1));
 
     c.close();
     t.join();

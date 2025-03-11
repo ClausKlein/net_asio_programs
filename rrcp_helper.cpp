@@ -1,5 +1,8 @@
 #include "rrcp_helper.hpp"
 
+#include <cstddef>
+#include <string>
+
 constexpr const char ESC = 0x1B;
 constexpr const char REPLACE_LF = 0x01;
 constexpr const char REPLACE_CR = 0x02;
