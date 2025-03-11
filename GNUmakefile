@@ -5,16 +5,21 @@
 MAKEFLAGS+= --no-builtin-rules
 MAKEFLAGS+= --warn-undefined-variables
 
-.PHONY: all format test lint
+.PHONY: all format test check distclean
 
 all: build
 	ninja -C build
 
+distclean:
+	rm -rf build
+
 build: CMakeLists.txt
 	cmake -S . -B $@
 
-lint: build
-	run-clang-tidy -p build -check='-*,readability-use-std-min-max,misc-include-cleaner' -fix rrcp_*.cpp
+check: build
+	run-clang-tidy -p build -fix \
+	 -check='-*,readability-use-std-min-max,misc-include-cleaner,cppcoreguidelines-init-variables' \
+	 rrcp_*.cpp
 
 test: all
 	-killall blocking_tcp_echo_server

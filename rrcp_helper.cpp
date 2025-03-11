@@ -24,7 +24,7 @@ std::string esc2char(const std::string& data)
 {
   std::string message;
   size_t const len = data.size();
-  char c;
+  char c = 0;
   unsigned int i = 0;
   while (i < len)
   {
@@ -87,7 +87,7 @@ std::string char2esc(const std::string& data)
 {
   std::string message;
   size_t const len = data.size();
-  char c;
+  char c = 0;
   unsigned int i = 0;
 
   while (i < len)

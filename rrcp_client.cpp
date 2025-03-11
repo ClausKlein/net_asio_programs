@@ -8,12 +8,14 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
+#include <boost/algorithm/string.hpp>
 #include <boost/asio/buffer.hpp>
 #include <boost/asio/connect.hpp>
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/post.hpp>
 #include <boost/asio/read.hpp>
+#include <boost/asio/read_until.hpp>
 #include <boost/asio/write.hpp>
 #include <boost/system/detail/error_code.hpp>
 #include <chrono>
@@ -56,6 +58,7 @@ class rrcp_client
 
   void close()
   {
+    boost::asio::post(io_context_, [this]() { write_msgs_.clear(); });
     boost::asio::post(io_context_, [this]() { socket_.close(); });
   }
 
@@ -91,6 +94,12 @@ class rrcp_client
 
   void do_read_body()
   {
+    // std::string reply;
+    // boost::asio::dynamic_string_buffer< char, std::string::traits_type,
+    //       std::string::allocator_type > const dsb =
+    //       boost::asio::dynamic_buffer(reply, read_msg_.body_length());
+    // boost::asio::async_read_until(socket_, dsb, '\n',
+
     boost::asio::async_read(socket_,
         boost::asio::buffer(read_msg_.body(), read_msg_.body_length()),
         [this](boost::system::error_code ec, std::size_t /*length*/)
@@ -154,20 +163,31 @@ int main(int argc, char* argv[])
 
     std::thread t([&io_context]() { io_context.run(); });
 
-    std::this_thread::sleep_for(std::chrono::seconds(1));
     int i{};
-    char line[rrcp_message::max_msg_length + 1];
-    while (std::cin.getline(line, rrcp_message::max_msg_length + 1))
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    for (std::string line; std::getline(std::cin, line);)
     {
-      std::cout << ++i << line << '\n';
+      std::cerr << ++i << '\t' << line << '\n';
+
+      std::string::size_type sz = line.find_first_of("//");
+      if ((sz != std::string::npos))
+      {
+        line.resize(sz);
+      }
+
+      boost::trim_right(line);
+      if (line.empty())
+      {
+        continue;
+      }
 
       rrcp_message msg;
-      msg.body_length(std::strlen(line));
-      std::memcpy(msg.body(), line, msg.body_length());
+      msg.body_length(line.length());
+      std::memcpy(msg.body(), line.c_str(), msg.body_length());
       msg.encode_header();
       c.write(msg);
     }
-    std::this_thread::sleep_for(std::chrono::seconds(1));
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
     c.close();
     t.join();
