@@ -147,6 +147,8 @@ class rrcp_client
 
 int main(int argc, char* argv[])
 {
+  using namespace std::chrono_literals;
+
   try
   {
     if (argc != 3)
@@ -164,12 +166,12 @@ int main(int argc, char* argv[])
     std::thread t([&io_context]() { io_context.run(); });
 
     int i{};
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    std::this_thread::sleep_for(10ms);
     for (std::string line; std::getline(std::cin, line);)
     {
       std::cerr << ++i << '\t' << line << '\n';
 
-      std::string::size_type sz = line.find_first_of("//");
+      std::string::size_type sz = line.find("//");
       if ((sz != std::string::npos))
       {
         line.resize(sz);
@@ -187,7 +189,7 @@ int main(int argc, char* argv[])
       msg.encode_header();
       c.write(msg);
     }
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    std::this_thread::sleep_for(10ms);
 
     c.close();
     t.join();

@@ -1,6 +1,6 @@
 //
-// rrcp_message.hpp
-// ~~~~~~~~~~~~~~~~
+// rrcp_message_buffer.hpp
+// ~~~~~~~~~~~~~~~~~~~~~~~
 //
 // Copyright (c) 2003-2024 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
@@ -16,7 +16,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <string>
-// XXX #include <string_view>
+#include <string_view>
 
 class rrcp_message
 {
@@ -27,9 +27,9 @@ class rrcp_message
   rrcp_message() {}
 
   // TODO: or better const &std::string_view?
-  [[nodiscard]] const char* data() const { return data_.data(); }
+  [[nodiscard]] const std::string_view data() const { return data_; }
 
-  char* data() { return data_.data(); }
+  std::string data() { return data_; }
 
   [[nodiscard]] std::size_t length() const
   {
@@ -37,12 +37,12 @@ class rrcp_message
   }
 
   // TODO: or better const &std::string_view?
-  [[nodiscard]] const char* body() const
+  [[nodiscard]] const std::string body() const
   {
-    return data_.data() + header_length;
+    return data_.substr(header_length);
   }
 
-  char* body() { return data_.data() + header_length; }
+  std::string body() { return data_.substr(header_length); }
 
   [[nodiscard]] std::size_t body_length() const { return msg_length_; }
 
@@ -54,7 +54,7 @@ class rrcp_message
 
   bool decode_header()
   {
-    std::string header(data_.data(), header_length);
+    std::string header(data_, header_length);
     msg_length_ = std::stoul(header, nullptr, 16);
     if (msg_length_ > max_msg_length)
     {
@@ -69,11 +69,12 @@ class rrcp_message
     std::array< char, header_length + 1 > header;
     std::snprintf(header.data(), header_length + 1, "%4x",
         static_cast< uint16_t >(msg_length_));
-    std::memcpy(data_.data(), header.data(), header_length);
+    data_.substr(0, header_length) = std::string(header.data(), header_length);
   }
 
  private:
   std::array< char, header_length + max_msg_length > data_;
+  // TODO: used std::string data_;
   std::size_t msg_length_{0};
 };
 
