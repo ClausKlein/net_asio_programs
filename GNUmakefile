@@ -17,8 +17,11 @@ build: CMakeLists.txt
 	cmake -S . -B $@
 
 check: build
+	run-clang-tidy -p build -check='-*,bugprone-*,hicpp-*,modernize-*,misc-*' rrcp_*.cpp
+
+fix: build
 	run-clang-tidy -p build -fix \
-	 -check='-*,readability-use-std-min-max,misc-include-cleaner,cppcoreguidelines-init-variables' \
+	 -check='-*,readability-use-std-min-max,-misc-include-cleaner,cppcoreguidelines-init-variables,hicpp-member-init,modernize-*' \
 	 rrcp_*.cpp
 
 test: all

@@ -8,29 +8,31 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
-#include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/trim.hpp>
 #include <boost/asio/buffer.hpp>
 #include <boost/asio/connect.hpp>
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/post.hpp>
 #include <boost/asio/read.hpp>
-#include <boost/asio/read_until.hpp>
 #include <boost/asio/write.hpp>
 #include <boost/system/detail/error_code.hpp>
+#include <cassert>
 #include <chrono>
 #include <cstdlib>
 #include <cstring>
 #include <deque>
 #include <exception>
+#include <iomanip>
 #include <iostream>
+#include <string>
 #include <thread>
 
 #include "rrcp_message.hpp"
 
 using boost::asio::ip::tcp;
 
-typedef std::deque< rrcp_message > rrcp_message_queue;
+using rrcp_message_queue = std::deque< rrcp_message >;
 
 class rrcp_client
 {
@@ -104,7 +106,7 @@ class rrcp_client
         boost::asio::buffer(read_msg_.body(), read_msg_.body_length()),
         [this](boost::system::error_code ec, std::size_t /*length*/)
         {
-          if (!ec)
+          if (!ec && read_msg_.decode_body())
           {
             std::cout.write(read_msg_.body(), read_msg_.body_length());
             std::cout << "\n";
@@ -145,9 +147,10 @@ class rrcp_client
   rrcp_message_queue write_msgs_;
 };
 
-int main(int argc, char* argv[])
+auto main(int argc, char* argv[]) -> int
 {
   using namespace std::chrono_literals;
+  using namespace std::string_literals;
 
   try
   {
@@ -165,8 +168,21 @@ int main(int argc, char* argv[])
 
     std::thread t([&io_context]() { io_context.run(); });
 
+    //================================================================
+    std::string binary =
+        "AB_(\0\001\002\003\004\005\006\a\b\n\r\t\v\x1b\20\'\"\?)-CD"s;
+    std::cerr << binary.length() << ' ' << std::quoted(binary) << '\n';
+    auto quoted = char2esc(binary);
+    std::cerr << quoted.length() << ' ' << std::quoted(quoted) << '\n';
+
+    assert(binary == esc2char(quoted));
+    assert(binary.length() < quoted.length());
+    assert(binary.length() == 26);
+    assert(quoted.length() == 29);
+    //================================================================
+
     int i{};
-    std::this_thread::sleep_for(10ms);
+    std::this_thread::sleep_for(100ms);
     for (std::string line; std::getline(std::cin, line);)
     {
       std::cerr << ++i << '\t' << line << '\n';
@@ -186,10 +202,11 @@ int main(int argc, char* argv[])
       rrcp_message msg;
       msg.body_length(line.length());
       std::memcpy(msg.body(), line.c_str(), msg.body_length());
+      msg.encode_body();
       msg.encode_header();
       c.write(msg);
     }
-    std::this_thread::sleep_for(10ms);
+    std::this_thread::sleep_for(100ms);
 
     c.close();
     t.join();

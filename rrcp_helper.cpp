@@ -1,6 +1,7 @@
 #include "rrcp_helper.hpp"
 
 #include <cstddef>
+#include <iostream>
 #include <string>
 
 constexpr const char ESC = 0x1B;
@@ -8,10 +9,10 @@ constexpr const char REPLACE_LF = 0x01;
 constexpr const char REPLACE_CR = 0x02;
 constexpr const char REPLACE_ESC = 0x03;
 
-constexpr const char SP = 0x20;
 constexpr const char LF = 0x0A;
 constexpr const char CR = 0x0D;
 
+// constexpr const char SP = 0x20;
 // constexpr const char DOT = 0x2E;
 // constexpr const char SEMICOLON = 0x3B;
 // constexpr const char COMMA = 0x2C;
@@ -20,7 +21,7 @@ constexpr const char CR = 0x0D;
 // constexpr const char BACKSLASH = '\\';
 // constexpr const char COLON = 0x3A;
 
-std::string esc2char(const std::string& data)
+auto esc2char(const std::string& data) -> std::string
 {
   std::string message;
   size_t const len = data.size();
@@ -64,26 +65,26 @@ std::string esc2char(const std::string& data)
         }
         else
         {
-          //"Parser Error contains unexpected ESC character"
+          std::cout << "esc2char: Error contains unexpected ESC character!\n";
           return "";
         }
       }
       else
       {
-        //"Parser Error message ends with escape character"
+        std::cout << "esc2char: Error message ends with escape character!\n";
         return "";
       }
     }
 
-    // enter next character
+    // append current character
     message += c;
-    // next character
+    // continue with next character
     i++;
   }
   return message;
 }
 
-std::string char2esc(const std::string& data)
+auto char2esc(const std::string& data) -> std::string
 {
   std::string message;
   size_t const len = data.size();

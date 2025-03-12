@@ -11,7 +11,7 @@
  *
  * @return message string like 'M:IBIT SStart'
  */
-extern std::string esc2char(const std::string& data);
+extern auto esc2char(const std::string& data) -> std::string;
 
 /**
  * @brief Replaces LF, CR with Escape sequence
@@ -20,4 +20,4 @@ extern std::string esc2char(const std::string& data);
  *
  * @return translated data
  */
-extern std::string char2esc(const std::string& data);
+extern auto char2esc(const std::string& data) -> std::string;

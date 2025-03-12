@@ -15,8 +15,11 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <iostream>
 #include <string>
-// XXX #include <string_view>
+// #include <string_view>
+
+#include "rrcp_helper.hpp"
 
 class rrcp_message
 {
@@ -24,56 +27,85 @@ class rrcp_message
   static constexpr std::size_t header_length = 4;
   static constexpr std::size_t max_msg_length = 65432;
 
-  rrcp_message() {}
+  rrcp_message() = default;
 
   // TODO: or better const &std::string_view?
-  [[nodiscard]] const char* data() const { return data_.data(); }
+  [[nodiscard]] auto data() const -> const char* { return data_.data(); }
 
-  char* data() { return data_.data(); }
+  auto data() -> char* { return data_.data(); }
 
-  [[nodiscard]] std::size_t length() const
+  [[nodiscard]] auto length() const -> std::size_t
   {
     return header_length + msg_length_;
   }
 
   // TODO: or better const &std::string_view?
-  [[nodiscard]] const char* body() const
+  [[nodiscard]] auto body() const -> const char*
   {
     return data_.data() + header_length;
   }
 
-  char* body() { return data_.data() + header_length; }
+  auto body() -> char* { return data_.data() + header_length; }
 
-  [[nodiscard]] std::size_t body_length() const { return msg_length_; }
+  [[nodiscard]] auto body_length() const -> std::size_t { return msg_length_; }
 
   void body_length(std::size_t new_length)
   {
     msg_length_ = new_length;
     msg_length_ = std::min(msg_length_, max_msg_length);
+    std::cerr << "body_length(" << msg_length_ << ")\n";
   }
 
-  bool decode_header()
+  auto decode_body() -> bool
+  {
+    // TODO: or better const &std::string_view?
+    auto result = esc2char(std::string(body(), msg_length_));
+    if (result.length() != msg_length_)
+    {
+      std::cerr << result << '\n';
+
+      body_length(result.length());
+      std::memcpy(body(), result.c_str(), msg_length_);
+    }
+
+    return result.empty();
+  }
+
+  auto decode_header() -> bool
   {
     std::string header(data_.data(), header_length);
     msg_length_ = std::stoul(header, nullptr, 16);
     if (msg_length_ > max_msg_length)
     {
+      std::cerr << "Invalid msg_length!\n";
+
       msg_length_ = 0;
       return false;
     }
     return true;
   }
 
+  void encode_body()
+  {
+    // TODO: or better const &std::string_view?
+    auto msg = char2esc(std::string(body(), msg_length_));
+    if (msg.length() != msg_length_)
+    {
+      body_length(msg.length());
+      std::memcpy(body(), msg.c_str(), msg_length_);
+    }
+  }
+
   void encode_header()
   {
-    std::array< char, header_length + 1 > header;
+    std::array< char, header_length + 1 > header{};
     std::snprintf(header.data(), header_length + 1, "%4x",
         static_cast< uint16_t >(msg_length_));
     std::memcpy(data_.data(), header.data(), header_length);
   }
 
  private:
-  std::array< char, header_length + max_msg_length > data_;
+  std::array< char, header_length + max_msg_length > data_{};
   std::size_t msg_length_{0};
 };
 

@@ -25,7 +25,7 @@ target_link_libraries(
 )
 
 add_executable(rrcp_client rrcp_client.cpp rrcp_message.hpp)
-target_link_libraries(rrcp_client PUBLIC Boost::asio)
+target_link_libraries(rrcp_client PRIVATE rrcp_helper PUBLIC Boost::asio)
 
 add_executable(timer timer.cpp)
 target_link_libraries(timer PUBLIC Boost::asio)
