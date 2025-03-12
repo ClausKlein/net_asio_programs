@@ -21,7 +21,7 @@ check: all
 
 fix: all
 	run-clang-tidy -p build -fix \
-	 -check='-*,readability-use-std-min-max,misc-include-cleaner,cppcoreguidelines-init-variables,hicpp-member-init,-modernize-*,-modernize-avoid-bind,readability-braces-around-statements,hicpp-named-parameter' \
+	 -check='-*,readability-use-std-min-max,-misc-include-cleaner,cppcoreguidelines-init-variables,hicpp-member-init,-modernize-*,-modernize-avoid-bind,readability-braces-around-statements,hicpp-named-parameter' \
 	 *.cpp
 
 test: all

@@ -16,7 +16,7 @@
 #include <boost/asio/post.hpp>
 #include <boost/asio/read.hpp>
 #include <boost/asio/write.hpp>
-#include <boost/system/detail/error_code.hpp>
+#include <boost/system/error_code.hpp>
 #include <cassert>
 #include <chrono>  // NOLINT(misc-include-cleaner)
 #include <cstdlib>

@@ -1,5 +1,13 @@
-#include <boost/asio.hpp>
+#include <boost/asio/buffer.hpp>
+#include <boost/asio/buffers_iterator.hpp>
+#include <boost/asio/io_context.hpp>
+#include <boost/asio/ip/tcp.hpp>
+#include <boost/asio/read_until.hpp>
+#include <boost/asio/streambuf.hpp>
+#include <boost/asio/write.hpp>
+#include <boost/system/detail/error_code.hpp>
 #include <cassert>
+#include <cstddef>
 #include <functional>
 #include <iostream>
 #include <string>
@@ -16,7 +24,7 @@ boost::asio::streambuf streambuf;
 
 // void do_read();
 
-void handle_read(boost::system::error_code, std::size_t xfer)
+void handle_read(boost::system::error_code /*unused*/, std::size_t xfer)
 {
   assert(streambuf.size() >= xfer);
 

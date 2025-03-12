@@ -8,11 +8,18 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
-#include <boost/asio.hpp>
+#include <boost/asio/buffer.hpp>
+#include <boost/asio/connect.hpp>
+#include <boost/asio/io_context.hpp>
+#include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/read_until.hpp>
+#include <boost/asio/write.hpp>
+#include <boost/system/error_code.hpp>
 #include <cstdlib>
 #include <cstring>
+#include <exception>
 #include <iostream>
+#include <string>
 
 #include "rrcp_helper.hpp"
 

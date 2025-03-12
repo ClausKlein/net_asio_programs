@@ -8,11 +8,9 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
-#include <boost/asio/error.hpp>
 #include <boost/asio/io_context.hpp>
-#include <boost/asio/placeholders.hpp>
 #include <boost/asio/steady_timer.hpp>
-#include <functional>
+#include <boost/system/error_code.hpp>
 #include <iostream>
 
 void print(boost::asio::steady_timer* t, int* count)
