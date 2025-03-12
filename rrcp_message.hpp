@@ -68,12 +68,12 @@ class rrcp_message
       std::memcpy(body(), result.c_str(), msg_length_);
     }
 
-    return result.empty();
+    return !result.empty();
   }
 
   auto decode_header() -> bool
   {
-    std::string header(data_.data(), header_length);
+    const std::string header(data_.data(), header_length);
     msg_length_ = std::stoul(header, nullptr, 16);
     if (msg_length_ > max_msg_length)
     {
@@ -98,9 +98,8 @@ class rrcp_message
 
   void encode_header()
   {
-    std::array< char, header_length + 1 > header{};
-    std::snprintf(header.data(), header_length + 1, "%4x",
-        static_cast< uint16_t >(msg_length_));
+    std::string header =
+        std::format("{:04x}", static_cast< uint16_t >(msg_length_));
     std::memcpy(data_.data(), header.data(), header_length);
   }
 

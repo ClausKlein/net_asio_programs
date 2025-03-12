@@ -16,10 +16,10 @@ distclean:
 build: CMakeLists.txt
 	cmake -S . -B $@
 
-check: build
-	run-clang-tidy -p build -check='-*,bugprone-*,hicpp-*,modernize-*,misc-*' rrcp_*.cpp
+check: all
+	run-clang-tidy -p build -check='-*,bugprone-*,hicpp-*,modernize-*,misc-*,-misc-no-recursion' rrcp_*.cpp
 
-fix: build
+fix: all
 	run-clang-tidy -p build -fix \
 	 -check='-*,readability-use-std-min-max,-misc-include-cleaner,cppcoreguidelines-init-variables,hicpp-member-init,modernize-*' \
 	 rrcp_*.cpp

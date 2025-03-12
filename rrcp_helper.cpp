@@ -9,8 +9,8 @@ constexpr const char REPLACE_LF = 0x01;
 constexpr const char REPLACE_CR = 0x02;
 constexpr const char REPLACE_ESC = 0x03;
 
-constexpr const char LF = 0x0A;
-constexpr const char CR = 0x0D;
+constexpr const char LF = 0x0A;  // \n
+constexpr const char CR = 0x0D;  // \r
 
 // constexpr const char SP = 0x20;
 // constexpr const char DOT = 0x2E;
@@ -26,16 +26,17 @@ auto esc2char(const std::string& data) -> std::string
   std::string message;
   size_t const len = data.size();
   char c = 0;
-  unsigned int i = 0;
+  size_t i = 0;
   while (i < len)
   {
     // get next char
     c = data[i];
 
-    // end mark found, the message is complete, the
-    // CR is not needed anymore
+    // end mark found, the message is complete.
+    // TODO: Why is the CR not needed anymore? CK
     if (c == CR)
     {
+      // XXX message += c;
       return message;
     }
 
@@ -65,13 +66,13 @@ auto esc2char(const std::string& data) -> std::string
         }
         else
         {
-          std::cout << "esc2char: Error contains unexpected ESC character!\n";
+          std::cerr << "esc2char: Error contains unexpected ESC character!\n";
           return "";
         }
       }
       else
       {
-        std::cout << "esc2char: Error message ends with escape character!\n";
+        std::cerr << "esc2char: Error message ends with escape character!\n";
         return "";
       }
     }
@@ -89,7 +90,7 @@ auto char2esc(const std::string& data) -> std::string
   std::string message;
   size_t const len = data.size();
   char c = 0;
-  unsigned int i = 0;
+  size_t i = 0;
 
   while (i < len)
   {

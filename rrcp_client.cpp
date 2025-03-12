@@ -18,7 +18,7 @@
 #include <boost/asio/write.hpp>
 #include <boost/system/detail/error_code.hpp>
 #include <cassert>
-#include <chrono>
+#include <chrono>  // NOLINT(misc-include-cleaner)
 #include <cstdlib>
 #include <cstring>
 #include <deque>
@@ -28,6 +28,7 @@
 #include <string>
 #include <thread>
 
+#include "rrcp_helper.hpp"
 #include "rrcp_message.hpp"
 
 using boost::asio::ip::tcp;
@@ -96,18 +97,13 @@ class rrcp_client
 
   void do_read_body()
   {
-    // std::string reply;
-    // boost::asio::dynamic_string_buffer< char, std::string::traits_type,
-    //       std::string::allocator_type > const dsb =
-    //       boost::asio::dynamic_buffer(reply, read_msg_.body_length());
-    // boost::asio::async_read_until(socket_, dsb, '\n',
-
     boost::asio::async_read(socket_,
         boost::asio::buffer(read_msg_.body(), read_msg_.body_length()),
         [this](boost::system::error_code ec, std::size_t /*length*/)
         {
           if (!ec && read_msg_.decode_body())
           {
+            // NOLINTNEXTLINE(bugprone-narrowing-conversions)
             std::cout.write(read_msg_.body(), read_msg_.body_length());
             std::cout << "\n";
             do_read_header();
@@ -170,24 +166,22 @@ auto main(int argc, char* argv[]) -> int
 
     //================================================================
     std::string binary =
-        "AB_(\0\001\002\003\004\005\006\a\b\n\r\t\v\x1b\20\'\"\?)-CD"s;
+        "\nAB_(\0\001\002\003\004\005\006\a\b\n\r\t\v\x1b\20\'\"\?)-CD\r"s;
     std::cerr << binary.length() << ' ' << std::quoted(binary) << '\n';
     auto quoted = char2esc(binary);
     std::cerr << quoted.length() << ' ' << std::quoted(quoted) << '\n';
 
     assert(binary == esc2char(quoted));
     assert(binary.length() < quoted.length());
-    assert(binary.length() == 26);
-    assert(quoted.length() == 29);
+    assert(binary.length() == 28);
+    assert(quoted.length() == 33);
     //================================================================
 
     int i{};
-    std::this_thread::sleep_for(100ms);
+    std::this_thread::sleep_for(100ms);  // NOLINT(misc-include-cleaner)
     for (std::string line; std::getline(std::cin, line);)
     {
-      std::cerr << ++i << '\t' << line << '\n';
-
-      std::string::size_type sz = line.find("//");
+      const std::string::size_type sz = line.find("//");
       if ((sz != std::string::npos))
       {
         line.resize(sz);
@@ -199,6 +193,7 @@ auto main(int argc, char* argv[]) -> int
         continue;
       }
 
+      std::cerr << ++i << '\t' << line << '\n';
       rrcp_message msg;
       msg.body_length(line.length());
       std::memcpy(msg.body(), line.c_str(), msg.body_length());
@@ -206,7 +201,7 @@ auto main(int argc, char* argv[]) -> int
       msg.encode_header();
       c.write(msg);
     }
-    std::this_thread::sleep_for(100ms);
+    std::this_thread::sleep_for(100ms);  // NOLINT(misc-include-cleaner)
 
     c.close();
     t.join();

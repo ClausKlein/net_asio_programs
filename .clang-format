@@ -1,5 +1,5 @@
 BasedOnStyle: Google
-Standard: Cpp03
+Standard: Auto
 AlignAfterOpenBracket: false
 AlignEscapedNewlinesLeft: true
 AlwaysBreakAfterDefinitionReturnType: None
