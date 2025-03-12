@@ -108,8 +108,8 @@ class client
     // Start the deadline actor. You will note that we're not setting any
     // particular deadline here. Instead, the connect and input actors will
     // update the deadline prior to each asynchronous operation.
-    deadline_.async_wait(std::bind(&client::check_deadline, this));
-    // FIXME: deadline_.async_wait([this] { check_deadline(); });
+    deadline_.async_wait(
+        [this](const boost::system::error_code& /*e*/) { check_deadline(); });
   }
 
   // This function terminates all the actors to shut down the connection. It
@@ -137,6 +137,8 @@ class client
       // Start the asynchronous connect operation.
       socket_.async_connect(endpoint_iter->endpoint(),
           std::bind(&client::handle_connect, this, _1, endpoint_iter));
+      // XXX [this, endpoint_iter](auto && PH1) {
+      // handle_connect(std::forward<decltype(PH1)>(PH1), endpoint_iter); });
     }
     else
     {
@@ -148,7 +150,10 @@ class client
   void handle_connect(const boost::system::error_code& error,
       tcp::resolver::results_type::iterator endpoint_iter)
   {
-    if (stopped_) return;
+    if (stopped_)
+    {
+      return;
+    }
 
     // The async_connect() function automatically opens the socket at the
     // start of the asynchronous operation. If the socket is closed at this
@@ -196,11 +201,17 @@ class client
     boost::asio::async_read_until(socket_,
         boost::asio::dynamic_buffer(input_buffer_), '\n',
         std::bind(&client::handle_read, this, _1, _2));
+    // XXX [this](auto && PH1, auto && PH2) {
+    // handle_read(std::forward<decltype(PH1)>(PH1),
+    // std::forward<decltype(PH2)>(PH2)); });
   }
 
   void handle_read(const boost::system::error_code& error, std::size_t n)
   {
-    if (stopped_) return;
+    if (stopped_)
+    {
+      return;
+    }
 
     if (!error)
     {
@@ -226,23 +237,32 @@ class client
 
   void start_write()
   {
-    if (stopped_) return;
+    if (stopped_)
+    {
+      return;
+    }
 
     // Start an asynchronous operation to send a heartbeat message.
     boost::asio::async_write(socket_, boost::asio::buffer("\n", 1),
         std::bind(&client::handle_write, this, _1));
+    // XXX [this](const boost::system::error_code& /*e*/, PH1) {
+    // handle_write(std::forward<decltype(PH1)>(PH1)); });
   }
 
   void handle_write(const boost::system::error_code& error)
   {
-    if (stopped_) return;
+    if (stopped_)
+    {
+      return;
+    }
 
     if (!error)
     {
       // Wait 10 seconds before sending the next heartbeat.
       heartbeat_timer_.expires_after(10s);
-      heartbeat_timer_.async_wait(std::bind(&client::start_write, this));
-      // FIXME: heartbeat_timer_.async_wait([this] { start_write(); });
+      // heartbeat_timer_.async_wait(std::bind(&client::start_write, this));
+      heartbeat_timer_.async_wait(
+          [this](const boost::system::error_code& /*e*/) { start_write(); });
     }
     else
     {
@@ -254,7 +274,10 @@ class client
 
   void check_deadline()
   {
-    if (stopped_) return;
+    if (stopped_)
+    {
+      return;
+    }
 
     // Check whether the deadline has passed. We compare the deadline
     // against the current time since a new asynchronous operation may have
@@ -272,8 +295,9 @@ class client
     }
 
     // Put the actor back to sleep.
-    deadline_.async_wait(std::bind(&client::check_deadline, this));
-    // FIXME: deadline_.async_wait([this] { check_deadline(); });
+    // deadline_.async_wait(std::bind(&client::check_deadline, this));
+    deadline_.async_wait(
+        [this](const boost::system::error_code& /*e*/) { check_deadline(); });
   }
 
   bool stopped_ = false;
@@ -284,7 +308,7 @@ class client
   steady_timer heartbeat_timer_;
 };
 
-int main(int argc, char* argv[])
+auto main(int argc, char* argv[]) -> int
 {
   try
   {

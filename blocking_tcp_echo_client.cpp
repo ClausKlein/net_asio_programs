@@ -23,7 +23,7 @@ enum
   max_length = 1024
 };
 
-int main(int argc, char* argv[])
+auto main(int argc, char* argv[]) -> int
 {
   try
   {
@@ -45,7 +45,10 @@ int main(int argc, char* argv[])
       char request[max_length];
       std::cin.getline(request, max_length);
       size_t const request_length = std::strlen(request);
-      if (request_length == 0) break;
+      if (request_length == 0)
+      {
+        break;
+      }
 
       std::string const data = char2esc(std::string(request, request_length));
 

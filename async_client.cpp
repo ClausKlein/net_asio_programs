@@ -32,7 +32,7 @@ void handle_read(boost::system::error_code, std::size_t xfer)
   boost::asio::async_read_until(socket2, streambuf, delimiter, handle_read);
 }
 
-int main()
+auto main() -> int
 {
   acceptor.async_accept(socket1, noop);
   socket2.async_connect(acceptor.local_endpoint(), noop);

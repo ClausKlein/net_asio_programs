@@ -15,8 +15,7 @@
 #include <functional>
 #include <iostream>
 
-void print(const boost::system::error_code& /*e*/, boost::asio::steady_timer* t,
-    int* count)
+void print(boost::asio::steady_timer* t, int* count)
 {
   if (*count < 5)
   {
@@ -24,17 +23,20 @@ void print(const boost::system::error_code& /*e*/, boost::asio::steady_timer* t,
     ++(*count);
 
     t->expires_at(t->expiry() + boost::asio::chrono::seconds(1));
-    t->async_wait(std::bind(print, boost::asio::placeholders::error, t, count));
+    t->async_wait([t, count](const boost::system::error_code& /*e*/)
+        { print(t, count); });
   }
 }
 
-int main()
+auto main() -> int
 {
   boost::asio::io_context io;
 
   int count = 0;
   boost::asio::steady_timer t(io, boost::asio::chrono::seconds(1));
-  t.async_wait(std::bind(print, boost::asio::placeholders::error, &t, &count));
+  t.async_wait(
+      [capture0 = &t, capture1 = &count](const boost::system::error_code& /*e*/)
+      { print(capture0, capture1); });
 
   io.run();
 

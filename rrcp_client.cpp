@@ -140,7 +140,7 @@ class rrcp_client
   boost::asio::io_context& io_context_;
   tcp::socket socket_;
   rrcp_message read_msg_;
-  rrcp_message_queue write_msgs_;
+  rrcp_message_queue write_msgs_{};
 };
 
 auto main(int argc, char* argv[]) -> int

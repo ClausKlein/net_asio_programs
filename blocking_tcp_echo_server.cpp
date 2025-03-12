@@ -30,9 +30,13 @@ void session(tcp::socket sock)
       boost::system::error_code error;
       size_t const length = sock.read_some(boost::asio::buffer(data), error);
       if (error == boost::asio::stream_errc::eof)
+      {
         break;  // Connection closed cleanly by peer.
+      }
       else if (error)
+      {
         throw boost::system::system_error(error);  // Some other error.
+      }
 
       boost::asio::write(sock, boost::asio::buffer(data, length));
     }
@@ -54,7 +58,7 @@ void server(boost::asio::io_context& io_context, unsigned short port)
   }
 }
 
-int main(int argc, char* argv[])
+auto main(int argc, char* argv[]) -> int
 {
   try
   {

@@ -17,12 +17,12 @@ build: CMakeLists.txt
 	cmake -S . -B $@
 
 check: all
-	run-clang-tidy -p build -check='-*,bugprone-*,hicpp-*,modernize-*,misc-*,-misc-no-recursion' rrcp_*.cpp
+	run-clang-tidy -p build -check='-*,bugprone-*,hicpp-*,modernize-*,misc-*,-misc-no-recursion' *.cpp
 
 fix: all
 	run-clang-tidy -p build -fix \
-	 -check='-*,readability-use-std-min-max,-misc-include-cleaner,cppcoreguidelines-init-variables,hicpp-member-init,modernize-*' \
-	 rrcp_*.cpp
+	 -check='-*,readability-use-std-min-max,misc-include-cleaner,cppcoreguidelines-init-variables,hicpp-member-init,-modernize-*,-modernize-avoid-bind,readability-braces-around-statements,hicpp-named-parameter' \
+	 *.cpp
 
 test: all
 	-killall blocking_tcp_echo_server
