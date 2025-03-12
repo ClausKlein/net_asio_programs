@@ -1,6 +1,6 @@
 //
-// timer.cpp
-// ~~~~~~~~~
+// timer3/timer.cpp
+// ~~~~~~~~~~~~~~~~
 //
 // Copyright (c) 2003-2024 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
@@ -12,6 +12,9 @@
 #include <boost/asio/steady_timer.hpp>
 #include <boost/system/error_code.hpp>
 #include <iostream>
+
+namespace
+{
 
 void print(boost::asio::steady_timer* t, int* count)
 {
@@ -25,6 +28,8 @@ void print(boost::asio::steady_timer* t, int* count)
         { print(t, count); });
   }
 }
+
+}  // namespace
 
 auto main() -> int
 {

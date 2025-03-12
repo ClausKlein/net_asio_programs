@@ -9,9 +9,6 @@ constexpr const char REPLACE_LF = 0x01;
 constexpr const char REPLACE_CR = 0x02;
 constexpr const char REPLACE_ESC = 0x03;
 
-constexpr const char LF = 0x0A;  // \n
-constexpr const char CR = 0x0D;  // \r
-
 // constexpr const char SP = 0x20;
 // constexpr const char DOT = 0x2E;
 // constexpr const char SEMICOLON = 0x3B;

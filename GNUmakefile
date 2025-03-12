@@ -17,7 +17,7 @@ build: CMakeLists.txt
 	cmake -S . -B $@
 
 check: all
-	run-clang-tidy -p build -check='-*,bugprone-*,hicpp-*,modernize-*,misc-*,-misc-no-recursion' *.cpp
+	run-clang-tidy -p build -check='-*,bugprone-*,hicpp-*,modernize-*,-modernize-avoid-bind,misc-*,-misc-include-cleaner,-misc-no-recursion' *.cpp
 
 fix: all
 	run-clang-tidy -p build -fix \

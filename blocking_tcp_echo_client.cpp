@@ -8,6 +8,7 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
+#include <boost/algorithm/string/trim.hpp>
 #include <boost/asio/buffer.hpp>
 #include <boost/asio/connect.hpp>
 #include <boost/asio/io_context.hpp>
@@ -37,7 +38,7 @@ auto main(int argc, char* argv[]) -> int
     if (argc != 3)
     {
       std::cerr << "Usage: blocking_tcp_echo_client <host> <port>\n";
-      return 1;
+      return EXIT_FAILURE;
     }
 
     boost::asio::io_context io_context;
@@ -46,42 +47,53 @@ auto main(int argc, char* argv[]) -> int
     tcp::resolver resolver(io_context);
     boost::asio::connect(s, resolver.resolve(argv[1], argv[2]));
 
-    do
+    for (std::string line; std::getline(std::cin, line);
+        std::cerr << "Enter command: ")
     {
-      std::cout << "Enter message: ";
-      char request[max_length];
-      std::cin.getline(request, max_length);
-      size_t const request_length = std::strlen(request);
-      if (request_length == 0)
+      const std::string::size_type sz = line.find("//");
+      if ((sz != std::string::npos))
       {
-        break;
+        line.resize(sz);
       }
 
-      std::string const data = char2esc(std::string(request, request_length));
+      boost::trim_right(line);
+      if (line.empty())
+      {
+        continue;
+      }
 
-      boost::asio::write(s, boost::asio::buffer(data.c_str(), data.length()));
+      // TODO: check boost::system::error_code ec;
+      std::string command = char2esc(line);
+      command.insert(0, 1, LF);
+      command += CR;
+      boost::asio::write(
+          s, boost::asio::buffer(command.c_str(), command.length()));
 
       // TODO: wait for endchar with timeout!
-      std::string reply;
+      std::string data;
       boost::asio::dynamic_string_buffer< char, std::string::traits_type,
           std::string::allocator_type > const sb2 =
-          boost::asio::dynamic_buffer(reply, max_length);
-      boost::system::error_code const ec;
+          boost::asio::dynamic_buffer(data, max_length);
 
-      size_t reply_length{};
       do
       {
-        reply_length = boost::asio::read_until(s, sb2, ';');
-        std::cout << "Reply is: ";
-        std::cout.write(reply.c_str(), reply_length);
-        std::cout << "\n";
-      } while (reply_length > 0);
-    } while (true);
+        size_t reply_length = boost::asio::read_until(s, sb2, CR);
+        std::string const response = esc2char(data);
+        if (response.empty())
+        {
+          break;
+        }
+
+        std::cerr << "Response is: ";
+        std::cout << response << "\n";
+      } while (false);
+    };
   }
   catch (std::exception& e)
   {
     std::cerr << "Exception: " << e.what() << "\n";
+    return EXIT_FAILURE;
   }
 
-  return 0;
+  return EXIT_SUCCESS;
 }
