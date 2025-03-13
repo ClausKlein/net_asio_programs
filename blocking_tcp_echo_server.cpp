@@ -38,7 +38,7 @@ void session(tcp::socket sock)
       {
         break;  // Connection closed cleanly by peer.
       }
-      else if (error)
+      if (error)
       {
         throw boost::system::system_error(error);  // Some other error.
       }

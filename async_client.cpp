@@ -16,8 +16,7 @@ const auto noop = std::bind([] {});
 const std::string delimiter{"\r\n\r\n"};
 
 boost::asio::io_context io_context;
-boost::asio::ip::tcp::acceptor acceptor(
-    io_context, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), 0));
+boost::asio::ip::tcp::acceptor acceptor(io_context, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), 0));
 boost::asio::ip::tcp::socket socket1(io_context);
 boost::asio::ip::tcp::socket socket2(io_context);
 boost::asio::streambuf streambuf;
@@ -28,8 +27,7 @@ void handle_read(boost::system::error_code /*unused*/, std::size_t xfer)
 {
   assert(streambuf.size() >= xfer);
 
-  std::string const command{buffers_begin(streambuf.data()),
-      buffers_begin(streambuf.data()) + xfer - delimiter.length()};
+  std::string const command{buffers_begin(streambuf.data()), buffers_begin(streambuf.data()) + xfer - delimiter.length()};
 
   streambuf.consume(xfer);
 

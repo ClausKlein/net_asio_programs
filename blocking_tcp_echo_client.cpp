@@ -47,8 +47,7 @@ auto main(int argc, char* argv[]) -> int
     tcp::resolver resolver(io_context);
     boost::asio::connect(s, resolver.resolve(argv[1], argv[2]));
 
-    for (std::string line; std::getline(std::cin, line);
-        std::cerr << "Enter command: ")
+    for (std::string line; std::getline(std::cin, line); std::cerr << "Enter command: ")
     {
       const std::string::size_type sz = line.find("//");
       if ((sz != std::string::npos))
@@ -66,13 +65,11 @@ auto main(int argc, char* argv[]) -> int
       std::string command = char2esc(line);
       command.insert(0, 1, LF);
       command += CR;
-      boost::asio::write(
-          s, boost::asio::buffer(command.c_str(), command.length()));
+      boost::asio::write(s, boost::asio::buffer(command.c_str(), command.length()));
 
       // TODO: wait for endchar with timeout!
       std::string data;
-      boost::asio::dynamic_string_buffer< char, std::string::traits_type,
-          std::string::allocator_type > const sb2 =
+      boost::asio::dynamic_string_buffer< char, std::string::traits_type, std::string::allocator_type > const sb2 =
           boost::asio::dynamic_buffer(data, max_length);
 
       do

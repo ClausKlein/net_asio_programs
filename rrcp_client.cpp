@@ -38,8 +38,7 @@ using rrcp_message_queue = std::deque< rrcp_message >;
 class rrcp_client
 {
  public:
-  rrcp_client(boost::asio::io_context& io_context,
-      const tcp::resolver::results_type& endpoints)
+  rrcp_client(boost::asio::io_context& io_context, const tcp::resolver::results_type& endpoints)
   : io_context_(io_context), socket_(io_context)
   {
     do_connect(endpoints);
@@ -80,8 +79,7 @@ class rrcp_client
 
   void do_read_header()
   {
-    boost::asio::async_read(socket_,
-        boost::asio::buffer(read_msg_.data(), rrcp_message::header_length),
+    boost::asio::async_read(socket_, boost::asio::buffer(read_msg_.data(), rrcp_message::header_length),
         [this](boost::system::error_code ec, std::size_t /*length*/)
         {
           if (!ec && read_msg_.decode_header())
@@ -97,8 +95,7 @@ class rrcp_client
 
   void do_read_body()
   {
-    boost::asio::async_read(socket_,
-        boost::asio::buffer(read_msg_.body(), read_msg_.body_length()),
+    boost::asio::async_read(socket_, boost::asio::buffer(read_msg_.body(), read_msg_.body_length()),
         [this](boost::system::error_code ec, std::size_t /*length*/)
         {
           if (!ec && read_msg_.decode_body())
@@ -117,9 +114,7 @@ class rrcp_client
 
   void do_write()
   {
-    boost::asio::async_write(socket_,
-        boost::asio::buffer(
-            write_msgs_.front().data(), write_msgs_.front().length()),
+    boost::asio::async_write(socket_, boost::asio::buffer(write_msgs_.front().data(), write_msgs_.front().length()),
         [this](boost::system::error_code ec, std::size_t /*length*/)
         {
           if (!ec)
@@ -165,8 +160,7 @@ auto main(int argc, char* argv[]) -> int
     std::thread t([&io_context]() { io_context.run(); });
 
     //================================================================
-    std::string binary =
-        "\nAB_(\0\001\002\003\004\005\006\a\b\n\r\t\v\x1b\20\'\"\?)-CD\r"s;
+    std::string binary = "\nAB_(\0\001\002\003\004\005\006\a\b\n\r\t\v\x1b\20\'\"\?)-CD\r"s;
     std::cerr << binary.length() << ' ' << std::quoted(binary) << '\n';
     auto quoted = char2esc(binary);
     std::cerr << quoted.length() << ' ' << std::quoted(quoted) << '\n';
