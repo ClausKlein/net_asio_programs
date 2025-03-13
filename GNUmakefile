@@ -28,6 +28,7 @@ test: all
 	-killall blocking_tcp_echo_server
 	build/blocking_tcp_echo_server 8000 &
 	cat rrcp.txt | build/rrcp_client localhost 8000
+	cat rrcp.txt | build/async_tcp_echo_client localhost 8000
 
 format: .clang-format
 	git ls-files ::*.cpp ::*.hpp | xargs clang-format -i

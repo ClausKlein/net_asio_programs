@@ -17,14 +17,14 @@
 using boost::asio::ip::tcp;
 using namespace std::chrono_literals;
 
-constexpr size_t max_length = 65432;
-constexpr auto timeout_duration = 1s;
+constexpr size_t max_length = 1024;
+constexpr auto timeout_duration = 10s;
 
 class AsynchronousTCPClient : public std::enable_shared_from_this< AsynchronousTCPClient >
 {
  public:
   AsynchronousTCPClient(boost::asio::io_context& io_context, const std::string& host, const std::string& port)
-  : resolver_(io_context), socket_(io_context), timer_(io_context)
+  : resolver_(io_context), socket_(io_context), connected_(false), timer_(io_context)
   {
     resolver_.async_resolve(host, port,
         [this](boost::system::error_code ec, tcp::resolver::results_type results)
@@ -38,7 +38,6 @@ class AsynchronousTCPClient : public std::enable_shared_from_this< AsynchronousT
                   {
                     std::print(stderr, "Connected to server.\n");
                     connected_ = true;
-                    do_read();
                   }
                 });
           }
@@ -47,14 +46,10 @@ class AsynchronousTCPClient : public std::enable_shared_from_this< AsynchronousT
 
   void write(const std::string& message)
   {
-    while (!connected_)
+    if (!connected_)
     {
-      if (stopped_)
-      {
-        return;
-      }
-      std::print(stderr, "Client is not connected yet.\n");
-      std::this_thread::sleep_for(timeout_duration);  // NOLINT(misc-include-cleaner)
+      std::print(stderr, "Error: Client is not connected yet.\n");
+      return;
     }
 
     auto self(shared_from_this());
@@ -64,45 +59,25 @@ class AsynchronousTCPClient : public std::enable_shared_from_this< AsynchronousT
           if (!ec)
           {
             std::print(stderr, "Message sent.\n");
+            do_read();
           }
         });
-  }
-
-  // This function terminates all the actors to shut down the connection. It
-  // may be called by the user of the client class, or by the class itself in
-  // response to graceful termination or an unrecoverable error.
-  void stop()
-  {
-    boost::system::error_code ignored_error;
-    socket_.close(ignored_error);
-    timer_.cancel();
-    connected_ = true;
-    stopped_ = true;
   }
 
  private:
   void do_read()
   {
-    if (stopped_)
-    {
-      return;
-    }
-
     auto self(shared_from_this());
-
-    if (!connected_)
-    {
-      timer_.expires_after(timeout_duration);
-      timer_.async_wait(
-          [this, self](const boost::system::error_code& ec)
+    timer_.expires_after(timeout_duration);
+    timer_.async_wait(
+        [this, self](const boost::system::error_code& ec)
+        {
+          if (!ec)
           {
-            if (!ec)
-            {
-              std::print(stderr, "Error: Read operation timed out.\n");
-              socket_.close();
-            }
-          });
-    }
+            std::print(stderr, "Error: Read operation timed out.\n");
+            socket_.close();
+          }
+        });
 
     boost::asio::async_read_until(socket_, boost::asio::dynamic_buffer(data_), CR,
         [this, self](boost::system::error_code ec, std::size_t length)
@@ -110,8 +85,7 @@ class AsynchronousTCPClient : public std::enable_shared_from_this< AsynchronousT
           timer_.cancel();
           if (!ec)
           {
-            std::string response = esc2char(data_.substr(1, length));  // NOTE: w/o LF!
-
+            std::string response = esc2char(data_.substr(0, length));
             // NOTE: data_.erase(0, length); is used instead of data_.clear() because:
 
             // - Partial Data Handling: The async_read_until() function reads
@@ -119,13 +93,12 @@ class AsynchronousTCPClient : public std::enable_shared_from_this< AsynchronousT
             //   all the data in the socket.
             //   There might be extra data left in the buffer after the delimiter!
 
-            // - Efficient Buffer Management: By erasing only the portion of the
-            //   string that has been processed (length), we keep any remaining
-            //   data intact for future reads instead of discarding it.
+            //- Efficient Buffer Management: By erasing only the portion of the
+            //  string that has been processed (length), we keep any remaining
+            //  data intact for future reads instead of discarding it.
             data_.erase(0, length);
 
             std::print("Response is: {}\n", response);
-            do_read();
           }
         });
   }
@@ -134,8 +107,7 @@ class AsynchronousTCPClient : public std::enable_shared_from_this< AsynchronousT
   tcp::socket socket_;
   boost::asio::steady_timer timer_;
   std::string data_;
-  bool connected_{false};
-  bool stopped_{false};
+  bool connected_;
 };
 
 auto main(int argc, char* argv[]) -> int
@@ -159,7 +131,7 @@ auto main(int argc, char* argv[]) -> int
       const std::string::size_type sz = line.find("//");
       if ((sz != std::string::npos))
       {
-        line.resize(sz);  // NOTE: w/o c++ comments
+        line.resize(sz);
       }
 
       boost::trim_right(line);
@@ -174,9 +146,7 @@ auto main(int argc, char* argv[]) -> int
 
       client->write(command);
     }
-    std::this_thread::sleep_for(timeout_duration);  // NOLINT(misc-include-cleaner)
 
-    client->stop();
     io_thread.join();
   }
   catch (std::exception& e)
