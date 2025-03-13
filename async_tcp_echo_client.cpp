@@ -88,7 +88,7 @@ class AsynchronousTCPClient : public std::enable_shared_from_this< AsynchronousT
   std::string data_;
 };
 
-int main(int argc, char* argv[])
+auto main(int argc, char* argv[]) -> int
 {
   try
   {

@@ -74,7 +74,7 @@ auto main(int argc, char* argv[]) -> int
 
       do
       {
-        size_t reply_length = boost::asio::read_until(s, sb2, CR);
+        size_t const reply_length = boost::asio::read_until(s, sb2, CR);  // NOLINT(clang-analyzer-deadcode.DeadStores)
         std::string const response = esc2char(data);
         if (response.empty())
         {

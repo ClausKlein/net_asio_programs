@@ -3,10 +3,11 @@ Checks: "-*,\
 bugprone-*,\
 -bugprone-reserved-identifier,\
 boost-*,\
--cert-*,\
+cert-*,\
 clang-analyzer-*,\
 -clang-analyzer-unix.BlockInCriticalSection,\
 cppcoreguidelines-*,\
+-cppcoreguidelines-avoid-do-while,\
 -cppcoreguidelines-macro-to-enum,\
 -cppcoreguidelines-macro-usage,\
 -cppcoreguidelines-owning-memory,\
