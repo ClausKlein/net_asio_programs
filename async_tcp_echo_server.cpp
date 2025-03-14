@@ -8,6 +8,7 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
+#include <array>
 #include <boost/asio/ts/buffer.hpp>
 #include <boost/asio/ts/internet.hpp>
 #include <cstdlib>
@@ -19,6 +20,8 @@ using boost::asio::ip::tcp;
 
 class session : public std::enable_shared_from_this< session >
 {
+  static constexpr int max_length{1014};
+
  public:
   session(tcp::socket socket) : socket_(std::move(socket)) {}
 
@@ -28,7 +31,7 @@ class session : public std::enable_shared_from_this< session >
   void do_read()
   {
     auto self(shared_from_this());
-    socket_.async_read_some(boost::asio::buffer(data_, max_length),
+    socket_.async_read_some(boost::asio::buffer(data_.data(), max_length),
         [this, self](boost::system::error_code ec, std::size_t length)
         {
           if (!ec)
@@ -41,7 +44,7 @@ class session : public std::enable_shared_from_this< session >
   void do_write(std::size_t length)
   {
     auto self(shared_from_this());
-    boost::asio::async_write(socket_, boost::asio::buffer(data_, length),
+    boost::asio::async_write(socket_, boost::asio::buffer(data_.data(), length),
         [this, self](boost::system::error_code ec, std::size_t /*length*/)
         {
           if (!ec)
@@ -52,11 +55,7 @@ class session : public std::enable_shared_from_this< session >
   }
 
   tcp::socket socket_;
-  enum
-  {
-    max_length = 1024
-  };
-  char data_[max_length];
+  std::array< char, max_length > data_{};
 };
 
 class server
@@ -87,7 +86,7 @@ class server
   tcp::socket socket_;
 };
 
-int main(int argc, char* argv[])
+auto main(int argc, char* argv[]) -> int
 {
   try
   {
@@ -99,7 +98,7 @@ int main(int argc, char* argv[])
 
     boost::asio::io_context io_context;
 
-    server s(io_context, std::atoi(argv[1]));
+    server const s(io_context, std::atoi(argv[1]));
 
     io_context.run();
   }
