@@ -28,7 +28,7 @@ class AsynchronousTCPClient : public std::enable_shared_from_this< AsynchronousT
   : resolver_(io_context), socket_(io_context), timer_(io_context)
   {
     resolver_.async_resolve(host, port,
-        [this](boost::system::error_code ec, tcp::resolver::results_type results)
+        [this](boost::system::error_code ec, const tcp::resolver::results_type& results)
         {
           if (!ec)
           {

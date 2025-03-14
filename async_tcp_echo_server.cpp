@@ -23,7 +23,7 @@ class session : public std::enable_shared_from_this< session >
   static constexpr int max_length{1014};
 
  public:
-  session(tcp::socket socket) : socket_(std::move(socket)) {}
+  explicit session(tcp::socket socket) : socket_(std::move(socket)) {}
 
   void start() { do_read(); }
 
@@ -98,7 +98,7 @@ auto main(int argc, char* argv[]) -> int
 
     boost::asio::io_context io_context;
 
-    server const s(io_context, std::atoi(argv[1]));
+    server const s(io_context, std::strtol(argv[1], nullptr, 10));
 
     io_context.run();
   }

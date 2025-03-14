@@ -68,7 +68,7 @@ class rrcp_client
   void do_connect(const tcp::resolver::results_type& endpoints)
   {
     boost::asio::async_connect(socket_, endpoints,
-        [this](boost::system::error_code ec, tcp::endpoint)
+        [this](boost::system::error_code ec, const tcp::endpoint&)
         {
           if (!ec)
           {

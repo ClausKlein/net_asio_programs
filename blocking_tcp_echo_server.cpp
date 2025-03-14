@@ -22,6 +22,9 @@
 
 using boost::asio::ip::tcp;
 
+namespace
+{
+
 const int max_length = 1024;
 
 void session(tcp::socket sock)
@@ -63,6 +66,8 @@ void server(boost::asio::io_context& io_context, unsigned short port)
   }
 }
 
+}  // namespace
+
 auto main(int argc, char* argv[]) -> int
 {
   try
@@ -75,7 +80,7 @@ auto main(int argc, char* argv[]) -> int
 
     boost::asio::io_context io_context;
 
-    server(io_context, std::atoi(argv[1]));
+    server(io_context, std::strtol(argv[1], nullptr, 10));
   }
   catch (std::exception& e)
   {

@@ -21,11 +21,12 @@
 #include <functional>
 #include <iostream>
 #include <string>
+#include <utility>
 
 using boost::asio::steady_timer;
 using boost::asio::ip::tcp;
-using std::placeholders::_1;
-using std::placeholders::_2;
+using std::placeholders::_1;  // NOLINT
+using std::placeholders::_2;  // NOLINT
 
 using namespace std::chrono_literals;
 
@@ -92,14 +93,14 @@ using namespace std::chrono_literals;
 class client
 {
  public:
-  client(boost::asio::io_context& io_context) : socket_(io_context), deadline_(io_context), heartbeat_timer_(io_context) {}
+  explicit client(boost::asio::io_context& io_context) : socket_(io_context), deadline_(io_context), heartbeat_timer_(io_context) {}
 
   // Called by the user of the client class to initiate the connection
   // process. The endpoints will have been obtained using a tcp::resolver.
   void start(tcp::resolver::results_type endpoints)
   {
     // Start the connect actor.
-    endpoints_ = endpoints;
+    endpoints_ = std::move(endpoints);
     start_connect(endpoints_.begin());
 
     // Start the deadline actor. You will note that we're not setting any
@@ -121,7 +122,7 @@ class client
   }
 
  private:
-  void start_connect(tcp::resolver::results_type::iterator endpoint_iter)
+  void start_connect(const tcp::resolver::results_type::iterator& endpoint_iter)
   {
     if (endpoint_iter != endpoints_.end())
     {
