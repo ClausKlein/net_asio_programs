@@ -1,5 +1,5 @@
 //
-// timer3/timer.cpp
+// timer4/timer.cpp
 // ~~~~~~~~~~~~~~~~
 //
 // Copyright (c) 2003-2024 Christopher M. Kohlhoff (chris at kohlhoff dot com)
@@ -10,37 +10,53 @@
 
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/steady_timer.hpp>
-#include <boost/system/error_code.hpp>
+#include <functional>
 #include <iostream>
 
-namespace
+class printer
 {
+  static constexpr int kMaxCount{5};
 
-void print(boost::asio::steady_timer* t, int* count)
-{
-  if (*count < 5)
+ public:
+  explicit printer(boost::asio::io_context& io) : timer_(io, boost::asio::chrono::seconds(1))
   {
-    std::cout << *count << '\n';
-    ++(*count);
-
-    t->expires_at(t->expiry() + boost::asio::chrono::seconds(1));
-    t->async_wait([t, count](const boost::system::error_code& /*e*/) { print(t, count); });
+    // cpp11: timer_.async_wait(std::bind(&printer::print, this));
+    timer_.async_wait([this](const boost::system::error_code& /*ec*/) { print(); });
   }
-}
 
-}  // namespace
+  ~printer() { std::cout << "Final count is " << count_ << std::endl; }
+
+  void print()
+  {
+    if (count_ < kMaxCount)
+    {
+      std::cout << count_ << std::endl;
+      ++count_;
+
+      timer_.expires_at(timer_.expiry() + boost::asio::chrono::seconds(1));
+      // cpp11: timer_.async_wait(std::bind(&printer::print, this));
+      timer_.async_wait([this](const boost::system::error_code& /*ec*/) { print(); });
+    }
+  }
+
+ private:
+  boost::asio::steady_timer timer_;
+  int count_{};
+};
 
 auto main() -> int
 {
-  boost::asio::io_context io;
-
-  int count = 0;
-  boost::asio::steady_timer t(io, boost::asio::chrono::seconds(1));
-  t.async_wait([capture0 = &t, capture1 = &count](const boost::system::error_code& /*e*/) { print(capture0, capture1); });
-
-  io.run();
-
-  std::cout << "Final count is " << count << '\n';
+  try
+  {
+    boost::asio::io_context io;
+    auto p = std::make_unique< printer >(io);
+    io.run();
+  }
+  catch (const std::exception& e)
+  {
+    std::print("Error: {}\n", e.what());
+    return 1;
+  }
 
   return 0;
 }

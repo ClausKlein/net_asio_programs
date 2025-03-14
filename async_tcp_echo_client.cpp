@@ -1,3 +1,5 @@
+#include <fmt/format.h>
+
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/asio.hpp>
 #include <boost/asio/steady_timer.hpp>
@@ -8,7 +10,6 @@
 #include <exception>
 #include <iostream>
 #include <memory>
-#include <print>
 #include <string>
 #include <thread>
 
@@ -36,9 +37,14 @@ class AsynchronousTCPClient : public std::enable_shared_from_this< AsynchronousT
                 {
                   if (!ec)
                   {
-                    std::print(stderr, "Connected to server.\n");
+                    fmt::print(stderr, "Connected to server.\n");
                     connected_ = true;
                     do_read();
+                  }
+                  else
+                  {
+                    // There are no more endpoints to try. Shut down the client.
+                    stop();
                   }
                 });
           }
@@ -53,7 +59,7 @@ class AsynchronousTCPClient : public std::enable_shared_from_this< AsynchronousT
       {
         return;
       }
-      std::print(stderr, "Client is not connected yet.\n");
+      fmt::print(stderr, "Client is not connected yet.\n");
       std::this_thread::sleep_for(timeout_duration);  // NOLINT(misc-include-cleaner)
     }
 
@@ -63,7 +69,12 @@ class AsynchronousTCPClient : public std::enable_shared_from_this< AsynchronousT
         {
           if (!ec)
           {
-            std::print(stderr, "Message sent.\n");
+            fmt::print(stderr, "Message sent.\n");
+          }
+          else
+          {
+            // There are no more endpoints to try. Shut down the client.
+            stop();
           }
         });
   }
@@ -98,8 +109,8 @@ class AsynchronousTCPClient : public std::enable_shared_from_this< AsynchronousT
           {
             if (!ec)
             {
-              std::print(stderr, "Error: Read operation timed out.\n");
-              socket_.close();
+              fmt::print(stderr, "Error: Read operation timed out.\n");
+              stop();
             }
           });
     }
@@ -124,8 +135,13 @@ class AsynchronousTCPClient : public std::enable_shared_from_this< AsynchronousT
             //   data intact for future reads instead of discarding it.
             data_.erase(0, length);
 
-            std::print("Response is: {}\n", response);
+            fmt::print("Response is: {}\n", response);
             do_read();
+          }
+          else
+          {
+            // There are no more endpoints to try. Shut down the client.
+            stop();
           }
         });
   }
@@ -144,7 +160,7 @@ auto main(int argc, char* argv[]) -> int
   {
     if (argc != 3)
     {
-      std::print(stderr, "Usage: async_tcp_echo_client <host> <port>\n");
+      fmt::print(stderr, "Usage: async_tcp_echo_client <host> <port>\n");
       return EXIT_FAILURE;
     }
 
@@ -154,7 +170,7 @@ auto main(int argc, char* argv[]) -> int
 
     std::thread io_thread([&io_context]() { io_context.run(); });
 
-    for (std::string line; std::getline(std::cin, line); std::print(stderr, "Enter command: "))
+    for (std::string line; std::getline(std::cin, line); fmt::print(stderr, "Enter command: "))
     {
       const std::string::size_type sz = line.find("//");
       if ((sz != std::string::npos))
@@ -181,7 +197,7 @@ auto main(int argc, char* argv[]) -> int
   }
   catch (std::exception& e)
   {
-    std::print(stderr, "Exception: {}\n", e.what());
+    fmt::print(stderr, "Exception: {}\n", e.what());
     return EXIT_FAILURE;
   }
 
