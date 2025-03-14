@@ -7,6 +7,7 @@
 #include <chrono>
 #include <cstdlib>
 #include <cstring>
+#include <deque>
 #include <exception>
 #include <iostream>
 #include <memory>
@@ -17,6 +18,7 @@
 
 using boost::asio::ip::tcp;
 using namespace std::chrono_literals;
+using message_queue = std::deque< std::string >;
 
 constexpr size_t max_length = 65432;
 constexpr auto timeout_duration = 1s;
@@ -25,7 +27,7 @@ class AsynchronousTCPClient : public std::enable_shared_from_this< AsynchronousT
 {
  public:
   AsynchronousTCPClient(boost::asio::io_context& io_context, const std::string& host, const std::string& port)
-  : resolver_(io_context), socket_(io_context), timer_(io_context)
+  : io_context_(io_context), resolver_(io_context), socket_(io_context), timer_(io_context)
   {
     resolver_.async_resolve(host, port,
         [this](boost::system::error_code ec, const tcp::resolver::results_type& results)
@@ -51,6 +53,7 @@ class AsynchronousTCPClient : public std::enable_shared_from_this< AsynchronousT
         });
   }
 
+  // This function write the message into the msg queue and starts the write actor
   void write(const std::string& message)
   {
     while (!connected_)
@@ -63,18 +66,14 @@ class AsynchronousTCPClient : public std::enable_shared_from_this< AsynchronousT
       std::this_thread::sleep_for(timeout_duration);  // NOLINT(misc-include-cleaner)
     }
 
-    auto self(shared_from_this());
-    boost::asio::async_write(socket_, boost::asio::buffer(message),
-        [this, self](boost::system::error_code ec, std::size_t /*length*/)
+    boost::asio::post(io_context_,
+        [this, message]()
         {
-          if (!ec)
+          bool const write_in_progress = !write_msgs_.empty();
+          write_msgs_.push_back(message);
+          if (!write_in_progress)
           {
-            fmt::print(stderr, "Message sent.\n");
-          }
-          else
-          {
-            // There are no more endpoints to try. Shut down the client.
-            stop();
+            do_write();
           }
         });
   }
@@ -92,6 +91,29 @@ class AsynchronousTCPClient : public std::enable_shared_from_this< AsynchronousT
   }
 
  private:
+  void do_write()
+  {
+    auto self(shared_from_this());
+    boost::asio::async_write(socket_, boost::asio::buffer(write_msgs_.front()),
+        [this, self](boost::system::error_code ec, std::size_t /*length*/)
+        {
+          if (!ec)
+          {
+            fmt::print(stderr, "Message sent.\n");
+            write_msgs_.pop_front();
+            if (!write_msgs_.empty())
+            {
+              do_write();
+            }
+          }
+          else
+          {
+            // There are no more endpoints to try. Shut down the client.
+            stop();
+          }
+        });
+  }
+
   void do_read()
   {
     if (stopped_)
@@ -146,10 +168,12 @@ class AsynchronousTCPClient : public std::enable_shared_from_this< AsynchronousT
         });
   }
 
+  boost::asio::io_context& io_context_;
   tcp::resolver resolver_;
   tcp::socket socket_;
   boost::asio::steady_timer timer_;
   std::string data_;
+  message_queue write_msgs_;
   bool connected_{false};
   bool stopped_{false};
 };

@@ -93,7 +93,10 @@ using namespace std::chrono_literals;
 class client
 {
  public:
-  explicit client(boost::asio::io_context& io_context) : socket_(io_context), deadline_(io_context), heartbeat_timer_(io_context) {}
+  explicit client(boost::asio::io_context& io_context)
+  : socket_(io_context), deadline_(io_context), heartbeat_timer_(io_context)
+  {
+  }
 
   // Called by the user of the client class to initiate the connection
   // process. The endpoints will have been obtained using a tcp::resolver.

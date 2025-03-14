@@ -12,7 +12,10 @@
 #include <iostream>
 #include <string>
 
-const auto noop = std::bind([] {});
+namespace
+{
+
+const auto noop = std::bind([] {});  // FIXME: deprecated! convert to std::forward<>; CK
 const std::string delimiter{"\r\n\r\n"};
 
 boost::asio::io_context io_context;
@@ -37,6 +40,8 @@ void handle_read(boost::system::error_code /*unused*/, std::size_t xfer)
 
   boost::asio::async_read_until(socket2, streambuf, delimiter, handle_read);
 }
+
+}  // namespace
 
 auto main() -> int
 {
