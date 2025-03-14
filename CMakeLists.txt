@@ -5,7 +5,7 @@ project(RRCP-client VERSION 0.1.0 LANGUAGES CXX)
 # ---- add dependencies ----
 
 find_package(Boost 1.87 COMPONENTS asio REQUIRED HINTS $ENV{HOME}/.local)
-find_package(fmt 11.1.4 REQUIRED HINTS $ENV{HOME}/.local)
+find_package(fmt 11 REQUIRED HINTS $ENV{HOME}/.local)
 
 # ---- default settings ----
 
@@ -31,9 +31,9 @@ endif()
 
 # ---- code coverage ----
 
-option(ENABLE_TEST_COVERAGE ON)
+option(ENABLE_TEST_COVERAGE "Compile with test-coverage flags" ON)
 if(ENABLE_TEST_COVERAGE)
-    message(STATUS "ENABLE_TEST_COVERAGE is set!")
+    message(WARNING "ENABLE_TEST_COVERAGE is set!")
     add_compile_options(-O0 -g -fprofile-arcs -ftest-coverage)
     add_link_options(-fprofile-arcs -ftest-coverage)
 endif()
@@ -67,11 +67,13 @@ target_link_libraries(
 add_executable(rrcp_client rrcp_client.cpp rrcp_message.hpp)
 target_link_libraries(rrcp_client PRIVATE rrcp_helper PUBLIC Boost::asio)
 
-add_executable(timer timer.cpp)
-target_link_libraries(timer PUBLIC Boost::asio)
+if(APPLE)
+    add_executable(timer timer.cpp)
+    target_link_libraries(timer PUBLIC Boost::asio)
 
-add_executable(async_client async_client.cpp)
-target_link_libraries(async_client PUBLIC Boost::asio)
+    add_executable(async_client async_client.cpp)
+    target_link_libraries(async_client PUBLIC Boost::asio)
+endif()
 
 add_executable(async_tcp_client async_tcp_client.cpp)
 target_link_libraries(async_tcp_client PRIVATE rrcp_helper PUBLIC Boost::asio)
