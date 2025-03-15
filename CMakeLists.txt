@@ -75,5 +75,5 @@ if(APPLE)
     target_link_libraries(async_client PUBLIC Boost::asio)
 endif()
 
-add_executable(async_tcp_client async_tcp_client.cpp)
+add_executable(async_tcp_client async_tcp_client_v20.cpp)
 target_link_libraries(async_tcp_client PRIVATE rrcp_helper PUBLIC Boost::asio)
