@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 
 constexpr const char LF{0x0A};  // \n
 constexpr const char CR{0x0D};  // \r
@@ -14,13 +15,13 @@ constexpr const char CR{0x0D};  // \r
  *
  * @return message string like 'M:IBIT SStart'
  */
-extern auto esc2char(const std::string& data) -> std::string;
+extern auto esc2char(const std::string_view data) -> std::string;
 
 /**
  * @brief Replaces LF, CR with Escape sequence
  *
- * @param data:  data to send
+ * @param data: data to send
  *
  * @return translated data
  */
-extern auto char2esc(const std::string& data) -> std::string;
+extern auto char2esc(const std::string_view data) -> std::string;
