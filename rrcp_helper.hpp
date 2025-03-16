@@ -15,7 +15,7 @@ constexpr const char CR{0x0D};  // \r
  *
  * @return message string like 'M:IBIT SStart'
  */
-extern auto esc2char(const std::string_view data) -> std::string;
+extern auto esc2char(std::string_view data) -> std::string;
 
 /**
  * @brief Replaces LF, CR with Escape sequence
@@ -24,4 +24,4 @@ extern auto esc2char(const std::string_view data) -> std::string;
  *
  * @return translated data
  */
-extern auto char2esc(const std::string_view data) -> std::string;
+extern auto char2esc(std::string_view data) -> std::string;

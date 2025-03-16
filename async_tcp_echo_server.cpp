@@ -8,12 +8,11 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
-#include <signal.h>
-
 #include <array>
 #include <boost/asio/signal_set.hpp>
 #include <boost/asio/ts/buffer.hpp>
 #include <boost/asio/ts/internet.hpp>
+#include <csignal>
 #include <cstdlib>
 #include <iostream>
 #include <memory>

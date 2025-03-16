@@ -28,8 +28,10 @@ hicpp-member-init,\
 hicpp-named-parameter,\
 misc-const-correctness,\
 modernize-use-trailing-return-type,\
+modernize-deprecated-headers,\
 performance-avoid-endl,\
 performance-unnecessary-value-param,\
+readability-avoid-const-params-in-decls,\
 readability-braces-around-statements,\
 readability-else-after-return,\
 readability-redundant-member-init,\

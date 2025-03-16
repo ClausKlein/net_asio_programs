@@ -30,7 +30,7 @@ auto esc2char(std::string_view data) -> std::string
         throw std::runtime_error("esc2char: Error - message ends with escape character!");
       }
 
-      char next = data[++i];
+      char const next = data[++i];
       switch (next)
       {
       case REPLACE_LF:
@@ -55,7 +55,7 @@ auto esc2char(std::string_view data) -> std::string
 auto char2esc(std::string_view data) -> std::string
 {
   std::string message;
-  for (char c : data)
+  for (char const c : data)
   {
     switch (c)
     {
