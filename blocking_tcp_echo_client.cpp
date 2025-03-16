@@ -26,10 +26,7 @@
 
 using boost::asio::ip::tcp;
 
-enum
-{
-  max_length = 1024
-};
+static constexpr int max_length{1024};
 
 auto main(int argc, char* argv[]) -> int
 {

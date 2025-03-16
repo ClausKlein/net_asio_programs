@@ -308,8 +308,8 @@ auto main(int argc, char* argv[]) -> int
   {
     if (argc != 3)
     {
-      std::cerr << "Usage: client <host> <port>\n";
-      return 1;
+      std::cerr << "Usage: async_tcp_client <host> <port>\n";
+      return EXIT_FAILURE;
     }
 
     boost::asio::io_context io_context;
@@ -323,7 +323,8 @@ auto main(int argc, char* argv[]) -> int
   catch (std::exception& e)
   {
     std::cerr << "Exception: " << e.what() << "\n";
+    return EXIT_FAILURE;
   }
 
-  return 0;
+  return EXIT_SUCCESS;
 }

@@ -76,7 +76,7 @@ auto main(int argc, char* argv[]) -> int
     if (argc != 2)
     {
       std::cerr << "Usage: blocking_tcp_echo_server <port>\n";
-      return 1;
+      return EXIT_FAILURE;
     }
 
     boost::asio::io_context io_context;
@@ -88,5 +88,5 @@ auto main(int argc, char* argv[]) -> int
     std::cerr << "Exception: " << e.what() << "\n";
   }
 
-  return 0;
+  return EXIT_SUCCESS;
 }

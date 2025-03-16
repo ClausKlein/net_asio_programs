@@ -148,7 +148,7 @@ auto main(int argc, char* argv[]) -> int
     if (argc != 3)
     {
       std::cerr << "Usage: rrcp_client <host> <port>\n";
-      return 1;
+      return EXIT_FAILURE;
     }
 
     boost::asio::io_context io_context;
@@ -203,8 +203,8 @@ auto main(int argc, char* argv[]) -> int
   catch (std::exception& e)
   {
     std::cerr << "Exception: " << e.what() << "\n";
-    return 1;
+    return EXIT_FAILURE;
   }
 
-  return 0;
+  return EXIT_SUCCESS;
 }

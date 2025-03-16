@@ -290,8 +290,8 @@ auto main(int argc, char* argv[]) -> int
   {
     if (argc != 3)
     {
-      std::print("Usage: client <host> <port>\n");
-      return 1;
+      std::print("Usage: {} <host> <port>\n", *argv);
+      return EXIT_FAILURE;
     }
 
     boost::asio::io_context io_context;
@@ -311,8 +311,8 @@ auto main(int argc, char* argv[]) -> int
   catch (std::exception& e)
   {
     std::print("Exception: {}\n", e.what());
-    return 1;
+    return EXIT_FAILURE;
   }
 
-  return 0;
+  return EXIT_SUCCESS;
 }

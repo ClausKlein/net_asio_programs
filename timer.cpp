@@ -55,8 +55,8 @@ auto main() -> int
   catch (const std::exception& e)
   {
     std::print("Error: {}\n", e.what());
-    return 1;
+    return EXIT_FAILURE;
   }
 
-  return 0;
+  return EXIT_SUCCESS;
 }

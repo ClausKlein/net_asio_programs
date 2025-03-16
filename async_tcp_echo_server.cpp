@@ -30,7 +30,7 @@ using boost::asio::ip::tcp;
 
 class session : public std::enable_shared_from_this< session >
 {
-  static constexpr int max_length{1014};
+  static constexpr int max_length{1024};
 
  public:
   explicit session(tcp::socket socket) : socket_(std::move(socket)) {}
@@ -140,7 +140,7 @@ class server
             __gcov_flush();
 #endif
 
-            exit(0);
+            exit(EXIT_FAILURE);
           }
         });
   }
@@ -157,7 +157,7 @@ auto main(int argc, char* argv[]) -> int
     if (argc != 2)
     {
       std::cerr << "Usage: async_tcp_echo_server <port>\n";
-      return 1;
+      return EXIT_FAILURE;
     }
 
     boost::asio::io_context io_context;
@@ -170,8 +170,8 @@ auto main(int argc, char* argv[]) -> int
   catch (std::exception& e)
   {
     std::cerr << "Exception: " << e.what() << "\n";
-    return 1;
+    return EXIT_FAILURE;
   }
 
-  return 0;
+  return EXIT_SUCCESS;
 }
