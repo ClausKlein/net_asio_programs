@@ -19,6 +19,13 @@
 #include <memory>
 #include <utility>
 
+#ifdef TARGET_CODE_COVERAGE
+// Forward declaration of flush api
+// extern "C" {
+extern void __gcov_flush();
+// }
+#endif
+
 using boost::asio::ip::tcp;
 
 class session : public std::enable_shared_from_this< session >
@@ -41,6 +48,10 @@ class session : public std::enable_shared_from_this< session >
           {
             do_write(length);
           }
+          else
+          {
+            socket_.close();
+          }
         });
   }
 
@@ -53,6 +64,10 @@ class session : public std::enable_shared_from_this< session >
           if (!ec)
           {
             do_read();
+          }
+          else
+          {
+            socket_.close();
           }
         });
   }
@@ -72,6 +87,7 @@ class server
     // provided all registration for the specified signal is made through Asio.
     signals_.add(SIGINT);
     signals_.add(SIGTERM);
+
 #if defined(SIGQUIT)
     signals_.add(SIGQUIT);
 #endif  // defined(SIGQUIT)
@@ -90,23 +106,42 @@ class server
           if (!ec)
           {
             std::make_shared< session >(std::move(socket_))->start();
+            do_accept();
           }
-
-          do_accept();
+          else
+          {
+            acceptor_.close();
+            socket_.close();
+          }
         });
   }
 
+  // Signal handler definition which flushes profiling data
   void do_await_stop()
   {
     signals_.async_wait(
-        [this](std::error_code /*ec*/, int /*signo*/)
+        [this](std::error_code ec, int signo)
         {
-          // The server is stopped by cancelling all outstanding asynchronous
-          // operations. Once all operations have finished the io_context::run()
-          // call will exit.
-          acceptor_.close();
-          socket_.close();
-          // TODO:: connection_manager_.stop_all();
+          std::cerr << "Signal handler called for " << signo << "\n";
+          if (!ec)
+          {
+            // The server is stopped by cancelling all outstanding asynchronous
+            // operations. Once all operations have finished the io_context::run()
+            // call will exit.
+            acceptor_.close();
+            socket_.close();
+          }
+          else
+          {
+            acceptor_.close();
+            socket_.close();
+
+#ifdef TARGET_CODE_COVERAGE
+            __gcov_flush();
+#endif
+
+            exit(0);
+          }
         });
   }
 
@@ -130,10 +165,12 @@ auto main(int argc, char* argv[]) -> int
     server const s(io_context, std::strtol(argv[1], nullptr, 10));
 
     io_context.run();
+    std::cout << "io_service.run complete, shutdown successful\n";
   }
   catch (std::exception& e)
   {
     std::cerr << "Exception: " << e.what() << "\n";
+    return 1;
   }
 
   return 0;

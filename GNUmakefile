@@ -14,7 +14,7 @@ distclean:
 	rm -rf build coverage/*
 
 build: CMakeLists.txt
-	cmake -S . -B $@
+	cmake -S . -B $@ -D CMAKE_BUILD_TYPE=Debug
 
 check: all
 	run-clang-tidy -p build *.cpp

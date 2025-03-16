@@ -311,6 +311,7 @@ auto main(int argc, char* argv[]) -> int
   catch (std::exception& e)
   {
     std::print("Exception: {}\n", e.what());
+    return 1;
   }
 
   return 0;

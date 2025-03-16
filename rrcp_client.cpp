@@ -203,6 +203,7 @@ auto main(int argc, char* argv[]) -> int
   catch (std::exception& e)
   {
     std::cerr << "Exception: " << e.what() << "\n";
+    return 1;
   }
 
   return 0;

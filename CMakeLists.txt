@@ -32,10 +32,11 @@ endif()
 # ---- code coverage ----
 
 option(ENABLE_TEST_COVERAGE "Compile with test-coverage flags" ON)
-if(ENABLE_TEST_COVERAGE)
+if(ENABLE_TEST_COVERAGE AND CMAKE_BUILD_TYPE)
     message(WARNING "ENABLE_TEST_COVERAGE is set!")
     add_compile_options(-O0 -g -fprofile-arcs -ftest-coverage)
     add_link_options(-fprofile-arcs -ftest-coverage)
+    # FIXME: add_compile_definitions(TARGET_CODE_COVERAGE)
 endif()
 
 # ---- ctest ----
