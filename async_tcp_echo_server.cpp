@@ -29,7 +29,7 @@ using boost::asio::ip::tcp;
 
 class session : public std::enable_shared_from_this< session >
 {
-  static constexpr int max_length{1024};
+  static constexpr size_t max_length{1024};
 
  public:
   explicit session(tcp::socket socket) : socket_(std::move(socket)) {}

@@ -26,7 +26,7 @@ using boost::asio::ip::tcp;
 namespace
 {
 
-constexpr int max_length{1024};
+constexpr size_t max_length{1024};
 
 void session(tcp::socket sock)
 {

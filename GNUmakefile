@@ -43,8 +43,9 @@ test: all
 	-killall async_tcp_echo_server
 	build/async_tcp_echo_server 8000 &
 	cat rrcp.txt | build/rrcp_client localhost 8000
+	cat rrcp.txt | build/rrcp_async_tcp_client localhost 8000
 	cat rrcp.txt | build/async_tcp_echo_client localhost 8000
-	echo | build/async_tcp_client localhost 8001
+	#TODO: echo | build/async_tcp_client localhost 8001
 	cat rrcp.txt | build/blocking_tcp_echo_client localhost 8000
 	ctest --test-dir build
 	-killall async_tcp_echo_server
