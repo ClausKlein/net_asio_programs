@@ -11,7 +11,7 @@ all: build
 	ninja -C build
 
 distclean:
-	rm -rf build
+	rm -rf build coverage/*
 
 build: CMakeLists.txt
 	cmake -S . -B $@
@@ -42,6 +42,11 @@ test: all
 	build/async_tcp_echo_server 8000 &
 	cat rrcp.txt | build/rrcp_client localhost 8000
 	cat rrcp.txt | build/async_tcp_echo_client localhost 8000
+	echo | build/async_tcp_client localhost 8001
+	cat rrcp.txt | build/blocking_tcp_echo_client localhost 8000
+	ctest --test-dir build
+	-killall async_tcp_echo_server
+	gcovr
 
 format: .clang-format
 	git ls-files ::*.cpp ::*.hpp | xargs clang-format -i

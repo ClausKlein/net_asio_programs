@@ -33,7 +33,7 @@ class printer
       std::cout << count_ << '\n';
       ++count_;
 
-      timer_.expires_at(timer_.expiry() + boost::asio::chrono::seconds(1));
+      timer_.expires_at(timer_.expiry() + boost::asio::chrono::milliseconds(100));
       // cpp11: timer_.async_wait(std::bind(&printer::print, this));
       timer_.async_wait([this](const boost::system::error_code& /*ec*/) { print(); });
     }

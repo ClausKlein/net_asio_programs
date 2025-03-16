@@ -8,7 +8,10 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
+#include <signal.h>
+
 #include <array>
+#include <boost/asio/signal_set.hpp>
 #include <boost/asio/ts/buffer.hpp>
 #include <boost/asio/ts/internet.hpp>
 #include <cstdlib>
@@ -62,8 +65,19 @@ class server
 {
  public:
   server(boost::asio::io_context& io_context, short port)
-  : acceptor_(io_context, tcp::endpoint(tcp::v4(), port)), socket_(io_context)
+  : acceptor_(io_context, tcp::endpoint(tcp::v4(), port)), socket_(io_context), signals_(io_context)
   {
+    // Register to handle the signals that indicate when the server should exit.
+    // It is safe to register for the same signal multiple times in a program,
+    // provided all registration for the specified signal is made through Asio.
+    signals_.add(SIGINT);
+    signals_.add(SIGTERM);
+#if defined(SIGQUIT)
+    signals_.add(SIGQUIT);
+#endif  // defined(SIGQUIT)
+
+    do_await_stop();
+
     do_accept();
   }
 
@@ -82,8 +96,23 @@ class server
         });
   }
 
+  void do_await_stop()
+  {
+    signals_.async_wait(
+        [this](std::error_code /*ec*/, int /*signo*/)
+        {
+          // The server is stopped by cancelling all outstanding asynchronous
+          // operations. Once all operations have finished the io_context::run()
+          // call will exit.
+          acceptor_.close();
+          socket_.close();
+          // TODO:: connection_manager_.stop_all();
+        });
+  }
+
   tcp::acceptor acceptor_;
   tcp::socket socket_;
+  boost::asio::signal_set signals_;
 };
 
 auto main(int argc, char* argv[]) -> int

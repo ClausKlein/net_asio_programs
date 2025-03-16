@@ -38,6 +38,10 @@ if(ENABLE_TEST_COVERAGE)
     add_link_options(-fprofile-arcs -ftest-coverage)
 endif()
 
+# ---- ctest ----
+
+enable_testing()
+
 add_executable(async_tcp_echo_server async_tcp_echo_server.cpp)
 target_link_libraries(async_tcp_echo_server PUBLIC Boost::asio)
 
@@ -57,12 +61,8 @@ target_link_libraries(
     PUBLIC Boost::asio
 )
 
-add_executable(blocking_tcp_echo_server blocking_tcp_echo_server.cpp)
-target_link_libraries(
-    blocking_tcp_echo_server
-    PRIVATE rrcp_helper
-    PUBLIC Boost::asio
-)
+# add_executable(blocking_tcp_echo_server blocking_tcp_echo_server.cpp)
+# target_link_libraries(blocking_tcp_echo_server PUBLIC Boost::asio)
 
 add_executable(rrcp_client rrcp_client.cpp rrcp_message.hpp)
 target_link_libraries(rrcp_client PRIVATE rrcp_helper PUBLIC Boost::asio)
@@ -70,10 +70,13 @@ target_link_libraries(rrcp_client PRIVATE rrcp_helper PUBLIC Boost::asio)
 if(APPLE)
     add_executable(timer timer.cpp)
     target_link_libraries(timer PUBLIC Boost::asio)
+    add_test(NAME timer COMMAND timer)
 
     add_executable(async_client async_client.cpp)
     target_link_libraries(async_client PUBLIC Boost::asio)
+    add_test(NAME async_client COMMAND async_client)
 endif()
 
 add_executable(async_tcp_client async_tcp_client_v20.cpp)
 target_link_libraries(async_tcp_client PRIVATE rrcp_helper PUBLIC Boost::asio)
+#XXX add_test(NAME async_tcp_client COMMAND echo | async_tcp_client localhost 8001)

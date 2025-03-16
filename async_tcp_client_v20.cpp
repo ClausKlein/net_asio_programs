@@ -96,7 +96,7 @@ class client : public std::enable_shared_from_this< client >
       std::print("Trying {}:{}...\n", endpoint_iter->endpoint().address().to_string(), endpoint_iter->endpoint().port());
 
       // Set a deadline for the connect operation.
-      deadline_.expires_after(60s);
+      deadline_.expires_after(6s);
 
       // Start the asynchronous connect operation.
       socket_.async_connect(endpoint_iter->endpoint(),
@@ -181,7 +181,7 @@ class client : public std::enable_shared_from_this< client >
     if (!error)
     {
       // Extract the newline-delimited message from the buffer.
-      std::string line = input_buffer_.substr(0, n - 1); // NOTE: w/o '\n'
+      std::string line = input_buffer_.substr(0, n - 1);  // NOTE: w/o '\n'
       input_buffer_.erase(0, n);
 
       // Empty messages are heartbeats and so ignored.
