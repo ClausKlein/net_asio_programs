@@ -54,12 +54,10 @@ class client : public std::enable_shared_from_this< client >
 
   void write()
   {
-    while (!stopped_)
-    {
-      std::string message;
-      std::print("Enter message to send: ");
-      std::getline(std::cin, message);
+    auto self(shared_from_this());
 
+    for (std::string message; !stopped_ && std::getline(std::cin, message); std::print("Enter message to send: "))
+    {
       if (message.empty())
       {
         continue;
@@ -67,14 +65,14 @@ class client : public std::enable_shared_from_this< client >
 
       if (message.back() != '\n')
       {
-        message += "\n";
+        message += '\n';
       }
 
       std::print(stderr, "Sending: {}\n", message);
 
       // Start an asynchronous operation to send the message.
       boost::asio::async_write(socket_, boost::asio::buffer(message),
-          [this](const boost::system::error_code& error, std::size_t) { handle_write(error); });
+          [this, self](const boost::system::error_code& error, std::size_t) { handle_write(error); });
     }
   }
 
@@ -183,17 +181,17 @@ class client : public std::enable_shared_from_this< client >
     if (!error)
     {
       // Extract the newline-delimited message from the buffer.
-      std::string line = input_buffer_.substr(0, n);
+      std::string line = input_buffer_.substr(0, n - 1); // NOTE: w/o '\n'
       input_buffer_.erase(0, n);
 
       // Empty messages are heartbeats and so ignored.
-      if (line.length() > 1)
+      if (line.empty())
       {
-        std::print("Received: {}\n", line);
+        std::print(stderr, "Received: {}\n", "hartbeat");
       }
       else
       {
-        std::print(stderr, "Received: {}\n", "hartbeat");
+        std::print("Received: {}\n", line);
       }
 
       start_read();
@@ -213,8 +211,7 @@ class client : public std::enable_shared_from_this< client >
       return;
     }
 
-    std::string message;
-    message += "\n";
+    std::string message{'\n'};
     std::print(stderr, "Sending: {}\n", "hartbeat");
 
     auto self(shared_from_this());
@@ -233,8 +230,13 @@ class client : public std::enable_shared_from_this< client >
 
     if (!error)
     {
+      if (heartbeat_timer_.expiry() <= steady_timer::clock_type::now())
+      {
+        std::print(stderr, "Waiting for next to send: {}\n", "hartbeat");
+      }
+
       // Wait 10 seconds before sending the next heartbeat.
-      std::print(stderr, "Waiting on: {}\n", "hartbeat");
+      heartbeat_timer_.cancel();
       heartbeat_timer_.expires_after(10s);
       heartbeat_timer_.async_wait([this](const boost::system::error_code&) { start_write(); });
     }

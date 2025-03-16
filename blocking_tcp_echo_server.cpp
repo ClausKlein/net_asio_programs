@@ -8,13 +8,13 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
+#include <array>
 #include <boost/asio/buffer.hpp>
 #include <boost/asio/error.hpp>
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/write.hpp>
 #include <boost/system/system_error.hpp>
-#include <array>
 #include <cstdlib>
 #include <exception>
 #include <iostream>
@@ -26,7 +26,7 @@ using boost::asio::ip::tcp;
 namespace
 {
 
-constexpr int max_length {1024};
+constexpr int max_length{1024};
 
 void session(tcp::socket sock)
 {
@@ -34,7 +34,7 @@ void session(tcp::socket sock)
   {
     for (;;)
     {
-      std::array<char, max_length> data{};
+      std::array< char, max_length > data{};
 
       boost::system::error_code error;
       size_t const length = sock.read_some(boost::asio::buffer(data), error);
