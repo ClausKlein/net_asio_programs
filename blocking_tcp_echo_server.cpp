@@ -14,6 +14,7 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/write.hpp>
 #include <boost/system/system_error.hpp>
+#include <array>
 #include <cstdlib>
 #include <exception>
 #include <iostream>
@@ -25,7 +26,7 @@ using boost::asio::ip::tcp;
 namespace
 {
 
-const int max_length = 1024;
+constexpr int max_length {1024};
 
 void session(tcp::socket sock)
 {
@@ -33,7 +34,7 @@ void session(tcp::socket sock)
   {
     for (;;)
     {
-      char data[max_length];
+      std::array<char, max_length> data{};
 
       boost::system::error_code error;
       size_t const length = sock.read_some(boost::asio::buffer(data), error);
@@ -55,7 +56,7 @@ void session(tcp::socket sock)
   }
 }
 
-void server(boost::asio::io_context& io_context, unsigned short port)
+void server(boost::asio::io_context& io_context, short port)
 {
   tcp::acceptor a(io_context, tcp::endpoint(tcp::v4(), port));
   for (;;)

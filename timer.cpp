@@ -24,13 +24,13 @@ class printer
     timer_.async_wait([this](const boost::system::error_code& /*ec*/) { print(); });
   }
 
-  ~printer() { std::cout << "Final count is " << count_ << std::endl; }
+  ~printer() { std::cout << "Final count is " << count_ << '\n'; }
 
   void print()
   {
     if (count_ < kMaxCount)
     {
-      std::cout << count_ << std::endl;
+      std::cout << count_ << '\n';
       ++count_;
 
       timer_.expires_at(timer_.expiry() + boost::asio::chrono::seconds(1));

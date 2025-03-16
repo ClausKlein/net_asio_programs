@@ -28,6 +28,7 @@ hicpp-member-init,\
 hicpp-named-parameter,\
 misc-const-correctness,\
 modernize-use-trailing-return-type,\
+performance-avoid-endl,\
 performance-unnecessary-value-param,\
 readability-braces-around-statements,\
 readability-else-after-return,\
