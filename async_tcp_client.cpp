@@ -7,6 +7,7 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
+// Moderniced from Claus Klein and ChatGPT
 
 #include <boost/asio/buffer.hpp>
 #include <boost/asio/io_context.hpp>
@@ -20,14 +21,12 @@
 #include <exception>
 #include <functional>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <utility>
 
 using boost::asio::steady_timer;
 using boost::asio::ip::tcp;
-using std::placeholders::_1;  // NOLINT
-using std::placeholders::_2;  // NOLINT
-
 using namespace std::chrono_literals;
 
 //
@@ -90,7 +89,7 @@ using namespace std::chrono_literals;
 // newline character) every 10 seconds. In this example, no deadline is applied
 // to message sending.
 //
-class client
+class client : public std::enable_shared_from_this< client >
 {
  public:
   explicit client(boost::asio::io_context& io_context)
@@ -135,9 +134,8 @@ class client
       deadline_.expires_after(60s);
 
       // Start the asynchronous connect operation.
-      socket_.async_connect(endpoint_iter->endpoint(), std::bind(&client::handle_connect, this, _1, endpoint_iter));
-      // FIXME: [this, endpoint_iter](auto && PH1) {
-      // handle_connect(std::forward<decltype(PH1)>(PH1), endpoint_iter); });
+      socket_.async_connect(endpoint_iter->endpoint(),
+          [this, endpoint_iter](const boost::system::error_code& error) { handle_connect(error, endpoint_iter); });
     }
     else
     {
@@ -158,7 +156,7 @@ class client
     // time then the timeout handler must have run first.
     if (!socket_.is_open())
     {
-      std::cout << "Connect timed out\n";
+      std::cerr << "Connect timed out\n";
 
       // Try the next available endpoint.
       start_connect(++endpoint_iter);
@@ -167,7 +165,7 @@ class client
     // Check if the connect operation failed before the deadline expired.
     else if (error)
     {
-      std::cout << "Connect error: " << error.message() << "\n";
+      std::cerr << "Connect error: " << error.message() << "\n";
 
       // We need to close the socket used in the previous connection
       // attempt before starting a new one.
@@ -192,15 +190,19 @@ class client
 
   void start_read()
   {
+    if (stopped_)
+    {
+      return;
+    }
+
     // Set a deadline for the read operation.
     deadline_.expires_after(30s);
 
+    auto self(shared_from_this());
+
     // Start an asynchronous operation to read a newline-delimited message.
-    boost::asio::async_read_until(
-        socket_, boost::asio::dynamic_buffer(input_buffer_), '\n', std::bind(&client::handle_read, this, _1, _2));
-    // FIXME: [this](auto && PH1, auto && PH2) {
-    // handle_read(std::forward<decltype(PH1)>(PH1),
-    // std::forward<decltype(PH2)>(PH2)); });
+    boost::asio::async_read_until(socket_, boost::asio::dynamic_buffer(input_buffer_), '\n',
+        [this, self](const boost::system::error_code& error, std::size_t n) { handle_read(error, n); });
   }
 
   void handle_read(const boost::system::error_code& error, std::size_t n)
@@ -213,7 +215,7 @@ class client
     if (!error)
     {
       // Extract the newline-delimited message from the buffer.
-      std::string const line(input_buffer_.substr(0, n - 1));
+      std::string const line = input_buffer_.substr(0, n - 1);  // NOTE: w/o '\n'
       input_buffer_.erase(0, n);
 
       // Empty messages are heartbeats and so ignored.
@@ -226,7 +228,7 @@ class client
     }
     else
     {
-      std::cout << "Error on receive: " << error.message() << "\n";
+      std::cerr << "Error on receive: " << error.message() << "\n";
 
       stop();
     }
@@ -239,10 +241,14 @@ class client
       return;
     }
 
+    std::string message{'\n'};
+    std::print(stderr, "Sending: {}\n", "hartbeat");
+
+    auto self(shared_from_this());
+
     // Start an asynchronous operation to send a heartbeat message.
-    boost::asio::async_write(socket_, boost::asio::buffer("\n", 1), std::bind(&client::handle_write, this, _1));
-    // XXX [this](const boost::system::error_code& /*e*/, PH1) {
-    // handle_write(std::forward<decltype(PH1)>(PH1)); });
+    boost::asio::async_write(socket_, boost::asio::buffer(message),
+        [this, self](const boost::system::error_code& error, std::size_t) { handle_write(error); });
   }
 
   void handle_write(const boost::system::error_code& error)
@@ -256,12 +262,11 @@ class client
     {
       // Wait 10 seconds before sending the next heartbeat.
       heartbeat_timer_.expires_after(10s);
-      // cpp11: heartbeat_timer_.async_wait(std::bind(&client::start_write, this));
       heartbeat_timer_.async_wait([this](const boost::system::error_code& /*e*/) { start_write(); });
     }
     else
     {
-      std::cout << "Error on heartbeat: " << error.message() << "\n";
+      std::cerr << "Error on heartbeat: " << error.message() << "\n";
 
       stop();
     }
@@ -289,12 +294,13 @@ class client
       deadline_.expires_at(steady_timer::time_point::max());
     }
 
+    auto self(shared_from_this());
+
     // Put the actor back to sleep.
-    // cpp11: deadline_.async_wait(std::bind(&client::check_deadline, this));
-    deadline_.async_wait([this](const boost::system::error_code& /*e*/) { check_deadline(); });
+    deadline_.async_wait([this, self](const boost::system::error_code& /*e*/) { check_deadline(); });
   }
 
-  bool stopped_ = false;
+  bool stopped_{false};
   tcp::resolver::results_type endpoints_;
   tcp::socket socket_;
   std::string input_buffer_;
@@ -313,10 +319,11 @@ auto main(int argc, char* argv[]) -> int
     }
 
     boost::asio::io_context io_context;
-    tcp::resolver r(io_context);
-    client c(io_context);
+    tcp::resolver resolver(io_context);
 
-    c.start(r.resolve(argv[1], argv[2]));
+    auto c = std::make_shared< client >(io_context);
+
+    c->start(resolver.resolve(argv[1], argv[2]));
 
     io_context.run();
   }

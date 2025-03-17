@@ -62,6 +62,12 @@ target_link_libraries(
     PUBLIC Boost::asio
 )
 
+# add_executable(async_tcp_client_v20 async_tcp_client_v20.cpp)
+# target_link_libraries(async_tcp_client_v20 PUBLIC Boost::asio)
+
+# add_executable(async_tcp_client async_tcp_client.cpp)
+# target_link_libraries(async_tcp_client PUBLIC Boost::asio)
+
 # add_executable(blocking_tcp_echo_server blocking_tcp_echo_server.cpp)
 # target_link_libraries(blocking_tcp_echo_server PUBLIC Boost::asio)
 
@@ -79,5 +85,9 @@ if(APPLE)
 endif()
 
 add_executable(rrcp_async_tcp_client rrcp_async_tcp_client.cpp)
-target_link_libraries(rrcp_async_tcp_client PRIVATE rrcp_helper PUBLIC Boost::asio)
+target_link_libraries(
+    rrcp_async_tcp_client
+    PRIVATE rrcp_helper
+    PUBLIC Boost::asio
+)
 # TODO: add_test(NAME rrcp_async_tcp_client COMMAND echo | rrcp_async_tcp_client localhost 8001)

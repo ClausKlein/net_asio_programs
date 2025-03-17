@@ -3,12 +3,12 @@
 #include <string>
 #include <string_view>
 
-constexpr const char LF{0x0A};  // \n
-constexpr const char CR{0x0D};  // \r
+constexpr const char START{0x0A};  // \n
+constexpr const char STOP{0x0D};  // \r
 
 /**
- * @brief Gets the message between <LF>message<CR> and
- *        replaces the escape sequences for LF and CR
+ * @brief Gets the message between <START>message<STOP> and
+ *        replaces the escape sequences for START and STOP
  *
  *
  * @param data: read from socket
@@ -18,7 +18,7 @@ constexpr const char CR{0x0D};  // \r
 extern auto esc2char(std::string_view data) -> std::string;
 
 /**
- * @brief Replaces LF, CR with Escape sequence
+ * @brief Replaces START, STOP with Escape sequence
  *
  * @param data: data to send
  *

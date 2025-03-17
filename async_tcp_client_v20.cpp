@@ -6,6 +6,8 @@
  *
  * Distributed under the Boost Software License, Version 1.0. (See accompanying
  * file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+ *
+ * Moderniced from Claus Klein and ChatGPT
  ***/
 
 #include <boost/asio/buffer.hpp>
@@ -15,7 +17,7 @@
 #include <boost/asio/steady_timer.hpp>
 #include <boost/asio/write.hpp>
 #include <boost/system/detail/error_code.hpp>
-#include <chrono>
+#include <chrono>  // NOLINT(misc-include-cleaner)
 #include <cstddef>
 #include <exception>
 #include <format>
@@ -238,7 +240,7 @@ class client : public std::enable_shared_from_this< client >
       // Wait 10 seconds before sending the next heartbeat.
       heartbeat_timer_.cancel();
       heartbeat_timer_.expires_after(10s);
-      heartbeat_timer_.async_wait([this](const boost::system::error_code&) { start_write(); });
+      heartbeat_timer_.async_wait([this](const boost::system::error_code& /*e*/) { start_write(); });
     }
     else
     {
@@ -273,7 +275,7 @@ class client : public std::enable_shared_from_this< client >
     auto self(shared_from_this());
 
     // Put the actor back to sleep.
-    deadline_.async_wait([this, self](const boost::system::error_code&) { check_deadline(); });
+    deadline_.async_wait([this, self](const boost::system::error_code& /*e*/) { check_deadline(); });
   }
 
   bool stopped_{false};

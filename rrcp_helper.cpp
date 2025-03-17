@@ -18,7 +18,7 @@ auto esc2char(std::string_view data) -> std::string
   {
     char c = data[i];
 
-    if (c == '\r')
+    if (c == STOP)
     {
       return message;
     }

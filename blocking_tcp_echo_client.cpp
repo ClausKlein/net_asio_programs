@@ -7,6 +7,7 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
+// Moderniced from Claus Klein and ChatGPT
 
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/asio/buffer.hpp>
@@ -60,8 +61,8 @@ auto main(int argc, char* argv[]) -> int
 
       // TODO: check boost::system::error_code ec;
       std::string command = char2esc(line);
-      command.insert(0, 1, LF);
-      command += CR;
+      command.insert(0, 1, START);
+      command += STOP;
       boost::asio::write(s, boost::asio::buffer(command.c_str(), command.length()));
 
       // TODO: wait for endchar with timeout!
@@ -71,7 +72,7 @@ auto main(int argc, char* argv[]) -> int
 
       do
       {
-        size_t const reply_length = boost::asio::read_until(s, sb2, CR);  // NOLINT(clang-analyzer-deadcode.DeadStores)
+        size_t const reply_length = boost::asio::read_until(s, sb2, STOP);  // NOLINT(clang-analyzer-deadcode.DeadStores)
         std::string const response = esc2char(data);
         if (response.empty())
         {
