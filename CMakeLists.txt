@@ -43,8 +43,17 @@ endif()
 
 enable_testing()
 
+function(do_test target arg result)
+    add_test(NAME ${target}${arg} COMMAND ${target} ${arg})
+    set_tests_properties(
+        ${target}${arg}
+        PROPERTIES PASS_REGULAR_EXPRESSION ${result}
+    )
+endfunction()
+
 add_executable(async_tcp_echo_server async_tcp_echo_server.cpp)
 target_link_libraries(async_tcp_echo_server PUBLIC Boost::asio)
+do_test(async_tcp_echo_server "" port)
 
 add_library(rrcp_helper STATIC rrcp_helper.cpp rrcp_helper.hpp)
 
@@ -54,6 +63,7 @@ target_link_libraries(
     PRIVATE rrcp_helper
     PUBLIC Boost::asio fmt::fmt-header-only
 )
+do_test(async_tcp_echo_client --help Usage)
 
 add_executable(blocking_tcp_echo_client blocking_tcp_echo_client.cpp)
 target_link_libraries(
@@ -61,18 +71,23 @@ target_link_libraries(
     PRIVATE rrcp_helper
     PUBLIC Boost::asio
 )
+do_test(blocking_tcp_echo_client --help Usage)
 
 # add_executable(async_tcp_client_v20 async_tcp_client_v20.cpp)
 # target_link_libraries(async_tcp_client_v20 PUBLIC Boost::asio)
+# do_test(async_tcp_client_v20 --help Usage)
 
 # add_executable(async_tcp_client async_tcp_client.cpp)
 # target_link_libraries(async_tcp_client PUBLIC Boost::asio)
+# do_test(async_tcp_client --help Usage)
 
 # add_executable(blocking_tcp_echo_server blocking_tcp_echo_server.cpp)
 # target_link_libraries(blocking_tcp_echo_server PUBLIC Boost::asio)
+#XXX do_test(blocking_tcp_echo_server port Usage)
 
 add_executable(rrcp_client rrcp_client.cpp rrcp_message.hpp)
 target_link_libraries(rrcp_client PRIVATE rrcp_helper PUBLIC Boost::asio)
+do_test(rrcp_client --help Usage)
 
 if(APPLE)
     add_executable(timer timer.cpp)
@@ -90,4 +105,4 @@ target_link_libraries(
     PRIVATE rrcp_helper
     PUBLIC Boost::asio
 )
-# TODO: add_test(NAME rrcp_async_tcp_client COMMAND echo | rrcp_async_tcp_client localhost 8001)
+do_test(rrcp_async_tcp_client --help Usage)

@@ -131,7 +131,7 @@ class client : public std::enable_shared_from_this< client >
       std::cout << "Trying " << endpoint_iter->endpoint() << "...\n";
 
       // Set a deadline for the connect operation.
-      deadline_.expires_after(60s);
+      deadline_.expires_after(3s);
 
       // Start the asynchronous connect operation.
       socket_.async_connect(endpoint_iter->endpoint(),
@@ -196,7 +196,7 @@ class client : public std::enable_shared_from_this< client >
     }
 
     // Set a deadline for the read operation.
-    deadline_.expires_after(30s);
+    deadline_.expires_after(13s);
 
     auto self(shared_from_this());
 
