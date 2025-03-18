@@ -192,14 +192,14 @@ class AsynchronousTCPClient : public std::enable_shared_from_this< AsynchronousT
 
 auto main(int argc, char* argv[]) -> int
 {
+  if (argc != 3)
+  {
+    fmt::print(stderr, "Usage: {} <host> <port>\n", argv[0]);
+    return EXIT_FAILURE;
+  }
+
   try
   {
-    if (argc != 3)
-    {
-      fmt::print(stderr, "Usage: async_tcp_echo_client <host> <port>\n");
-      return EXIT_FAILURE;
-    }
-
     boost::asio::io_context io_context;
 
     auto client = std::make_shared< AsynchronousTCPClient >(io_context, argv[1], argv[2]);
@@ -226,7 +226,7 @@ auto main(int argc, char* argv[]) -> int
 
       client->write(command);
     }
-    std::this_thread::sleep_for(timeout_duration);  // NOLINT(misc-include-cleaner)
+    std::this_thread::sleep_for(timeout_duration);
 
     client->stop();
     io_thread.join();

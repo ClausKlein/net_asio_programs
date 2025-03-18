@@ -11,7 +11,7 @@ all: build
 	ninja -C build
 
 distclean:
-	rm -rf build coverage/*
+	rm -rf build coverage/* *~ ctags
 
 build: CMakeLists.txt
 	cmake -S . -B $@ -D CMAKE_BUILD_TYPE=Debug

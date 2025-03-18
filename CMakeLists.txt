@@ -69,7 +69,7 @@ add_executable(blocking_tcp_echo_client blocking_tcp_echo_client.cpp)
 target_link_libraries(
     blocking_tcp_echo_client
     PRIVATE rrcp_helper
-    PUBLIC Boost::asio
+    PUBLIC Boost::asio fmt::fmt-header-only
 )
 do_test(blocking_tcp_echo_client --help Usage)
 
@@ -103,6 +103,6 @@ add_executable(rrcp_async_tcp_client rrcp_async_tcp_client.cpp)
 target_link_libraries(
     rrcp_async_tcp_client
     PRIVATE rrcp_helper
-    PUBLIC Boost::asio
+    PUBLIC Boost::asio fmt::fmt-header-only
 )
 do_test(rrcp_async_tcp_client --help Usage)

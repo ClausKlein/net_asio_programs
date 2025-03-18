@@ -10,9 +10,16 @@
  * Moderniced from Claus Klein and ChatGPT
  ***/
 
+#include <fmt/format.h>
+
+#include <boost/algorithm/string/trim.hpp>
 #include <boost/asio.hpp>
+#include <boost/asio/steady_timer.hpp>
 #include <boost/system/error_code.hpp>
 #include <chrono>
+#include <cstdlib>
+#include <deque>
+#include <exception>
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -23,19 +30,24 @@
 
 using boost::asio::ip::tcp;
 using namespace std::chrono_literals;
+using message_queue = std::deque< std::string >;
+
+constexpr size_t max_length = 65432;
+constexpr auto timeout_duration = 3s;
+constexpr auto heartbeat_interval = 10s;
 
 class rrcp_client : public std::enable_shared_from_this< rrcp_client >
 {
  public:
   explicit rrcp_client(boost::asio::io_context& io_context)
-  : socket_(io_context), deadline_(io_context), heartbeat_timer_(io_context)
+  : io_context_(io_context), socket_(io_context), deadline_(io_context), heartbeat_timer_(io_context)
   {
     deadline_.expires_at(boost::asio::steady_timer::time_point::max());
   }
 
   void start(const tcp::resolver::results_type& endpoints)
   {
-    deadline_.expires_after(3s);
+    deadline_.expires_after(timeout_duration);
     check_deadline();
 
     boost::asio::async_connect(socket_, endpoints,
@@ -43,40 +55,44 @@ class rrcp_client : public std::enable_shared_from_this< rrcp_client >
         {
           if (!ec)
           {
-            std::cout << "Connected to server.\n";
+            fmt::print(stderr, "Connected to server.\n");
+            self->connected_ = true;
             self->read();
             self->send_heartbeat();
           }
           else
           {
-            std::cerr << "Failed to connect: " << ec.message() << '\n';
+            fmt::print(stderr, "Failed to connect: {}\n", ec.message());
           }
         });
   }
 
-  void write()
+  auto connected() -> bool { return connected_; }
+
+  // This function write the message into the msg queue and starts the write actor
+  void write(const std::string& message)
   {
-    std::string message;
-    while (std::getline(std::cin, message))
+    while (!connected_)
     {
       if (stopped_)
       {
         return;
       }
-
-      message = START + char2esc(message) + STOP;
-      boost::asio::async_write(socket_, boost::asio::buffer(message),
-          [self = shared_from_this()](const boost::system::error_code& ec, std::size_t)
-          {
-            if (ec)
-            {
-              std::cerr << "Error sending message: " << ec.message() << '\n';
-              self->stop();
-            }
-          });
-
-      deadline_.expires_after(3s);
+      fmt::print(stderr, "Client is not connected yet.\n");
+      std::this_thread::sleep_for(timeout_duration);
     }
+
+    boost::asio::post(io_context_,
+        [this, message]()
+        {
+          bool const write_in_progress = !write_msgs_.empty();
+          write_msgs_.push_back(message);
+          if (!write_in_progress)
+          {
+            deadline_.expires_after(timeout_duration);
+            do_write();
+          }
+        });
   }
 
   void read()
@@ -89,16 +105,16 @@ class rrcp_client : public std::enable_shared_from_this< rrcp_client >
             std::string const line = esc2char(self->input_buffer_.substr(1, length - 1));  // w/o START, STOP
             self->input_buffer_.erase(0, length);
 
-            if (!line.ends_with("Ping"))
+            if (!line.starts_with("gPing"))
             {
-              std::cout << line << '\n';
+              fmt::print("{}\n", line);
             }
-            self->deadline_.expires_after(13s);
+            self->deadline_.expires_after(heartbeat_interval + timeout_duration);
             self->read();
           }
           else
           {
-            std::cerr << "Error reading message: " << ec.message() << '\n';
+            fmt::print(stderr, "Error reading message: {}\n", ec.message());
             self->stop();
           }
         });
@@ -106,8 +122,9 @@ class rrcp_client : public std::enable_shared_from_this< rrcp_client >
 
   void stop()
   {
-    std::cerr << "stop called, disconnecting...\n";
+    fmt::print(stderr, "stop called, disconnecting...\n");
     stopped_ = true;
+    connected_ = false;
     boost::system::error_code ec;
     socket_.close(ec);
     heartbeat_timer_.cancel();
@@ -115,6 +132,30 @@ class rrcp_client : public std::enable_shared_from_this< rrcp_client >
   }
 
  private:
+  void do_write()
+  {
+    auto self(shared_from_this());
+    boost::asio::async_write(socket_, boost::asio::buffer(write_msgs_.front()),
+        [this, self](boost::system::error_code ec, std::size_t /*length*/)
+        {
+          if (!ec)
+          {
+            fmt::print(stderr, "Message sent.\n");
+            write_msgs_.pop_front();
+            if (!write_msgs_.empty())
+            {
+              do_write();
+            }
+          }
+          else
+          {
+            // There are no more endpoints to try. Shut down the client.
+            fmt::print(stderr, "Error writeing message: {}\n", ec.message());
+            stop();
+          }
+        });
+  }
+
   void send_heartbeat()
   {
     if (stopped_)
@@ -122,19 +163,19 @@ class rrcp_client : public std::enable_shared_from_this< rrcp_client >
       return;
     }
 
-    std::string heartbeat_message{START + char2esc("M:Utility GPing") + STOP};
-    std::cerr << "Send heartbeat: " << heartbeat_message << '\n';
+    std::string heartbeat_message{START + char2esc("M:Utility GPing\"ÄÖÜ€0ß\"") + STOP};
+    fmt::print(stderr, "Send heartbeat: {}\n", heartbeat_message);
     boost::asio::async_write(socket_, boost::asio::buffer(heartbeat_message),
         [self = shared_from_this()](const boost::system::error_code& ec, std::size_t)
         {
           if (!ec)
           {
-            self->heartbeat_timer_.expires_after(10s);
+            self->heartbeat_timer_.expires_after(heartbeat_interval);
             self->heartbeat_timer_.async_wait([self](const boost::system::error_code&) { self->send_heartbeat(); });
           }
           else
           {
-            std::cerr << "Error sending heartbeat: " << ec.message() << '\n';
+            fmt::print(stderr, "Error sedning heartbeat: {}\n", ec.message());
             self->stop();
           }
         });
@@ -149,7 +190,7 @@ class rrcp_client : public std::enable_shared_from_this< rrcp_client >
 
     if (deadline_.expiry() <= boost::asio::steady_timer::clock_type::now())
     {
-      std::cerr << "No response from server, disconnecting...\n";
+      fmt::print(stderr, "No response from server, disconnecting...\n");
       stop();
       return;
     }
@@ -157,9 +198,13 @@ class rrcp_client : public std::enable_shared_from_this< rrcp_client >
     deadline_.async_wait([self = shared_from_this()](const boost::system::error_code&) { self->check_deadline(); });
   }
 
+  boost::asio::io_context& io_context_;
   tcp::socket socket_;
-  boost::asio::steady_timer deadline_, heartbeat_timer_;
+  boost::asio::steady_timer deadline_;
+  boost::asio::steady_timer heartbeat_timer_;
   std::string input_buffer_;
+  message_queue write_msgs_;
+  bool connected_{false};
   bool stopped_{false};
 };
 
@@ -167,7 +212,7 @@ auto main(int argc, char* argv[]) -> int
 {
   if (argc != 3)
   {
-    std::cerr << "Usage: " << argv[0] << " <host> <port>\n";
+    fmt::print(stderr, "Usage: {} <host> <port>\n", argv[0]);
     return EXIT_FAILURE;
   }
 
@@ -181,15 +226,35 @@ auto main(int argc, char* argv[]) -> int
 
     std::thread io_thread([&io_context]() { io_context.run(); });
 
-    std::this_thread::sleep_for(3s);  // NOLINT(misc-include-cleaner)
-    c->write();
+    std::this_thread::sleep_for(timeout_duration); // NOTE: only for gcov results! CK
+
+    for (std::string line; c->connected() && std::getline(std::cin, line); fmt::print(stderr, "Enter command: "))
+    {
+      const std::string::size_type sz = line.find("//");
+      if ((sz != std::string::npos))
+      {
+        line.resize(sz);  // NOTE: w/o c++ comments
+      }
+
+      boost::trim_right(line);
+      if (line.empty())
+      {
+        continue;
+      }
+
+      std::string command = char2esc(line);
+      command.insert(0, 1, START);
+      command += STOP;
+
+      c->write(command);
+    }
 
     c->stop();
     io_thread.join();
   }
   catch (std::exception& e)
   {
-    std::cerr << "Exception: " << e.what() << "\n";
+    fmt::print(stderr, "Exception: {}\n", e.what());
     return EXIT_FAILURE;
   }
 
