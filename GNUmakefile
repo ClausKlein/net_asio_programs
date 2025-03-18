@@ -44,6 +44,7 @@ test: all
 	-echo | build/async_tcp_echo_client localhost 8000
 	build/async_tcp_echo_server 8000 &
 	-(cat rrcp.txt | build/async_tcp_echo_client localhost 8000) &
+	sleep 1
 	-killall async_tcp_echo_server
 	-(echo | build/async_tcp_echo_server 8000) &
 	cat rrcp.txt | build/rrcp_client localhost 8000
