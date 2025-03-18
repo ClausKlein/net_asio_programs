@@ -41,7 +41,11 @@ readability-use-std-min-max,\
 
 test: all
 	-killall async_tcp_echo_server
+	-echo | build/async_tcp_echo_client localhost 8000
 	build/async_tcp_echo_server 8000 &
+	-(cat rrcp.txt | build/async_tcp_echo_client localhost 8000) &
+	-killall async_tcp_echo_server
+	-(echo | build/async_tcp_echo_server 8000) &
 	cat rrcp.txt | build/rrcp_client localhost 8000
 	cat rrcp.txt | build/rrcp_async_tcp_client localhost 8000
 	cat rrcp.txt | build/async_tcp_echo_client localhost 8000

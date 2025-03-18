@@ -49,8 +49,7 @@ class rrcp_client : public std::enable_shared_from_this< rrcp_client >
           }
           else
           {
-            // FIXME: this aborts! CK
-            throw std::runtime_error("Failed to connect: " + ec.message());
+            std::cerr << "Failed to connect: " << ec.message() << '\n';
           }
         });
   }
@@ -90,12 +89,12 @@ class rrcp_client : public std::enable_shared_from_this< rrcp_client >
             std::string const line = esc2char(self->input_buffer_.substr(1, length - 1));  // w/o START, STOP
             self->input_buffer_.erase(0, length);
 
-            if (!line.starts_with("gPing"))
+            if (!line.ends_with("Ping"))
             {
               std::cout << line << '\n';
             }
-            self->read();
             self->deadline_.expires_after(13s);
+            self->read();
           }
           else
           {
