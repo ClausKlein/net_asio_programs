@@ -150,7 +150,7 @@ class rrcp_client : public std::enable_shared_from_this< rrcp_client >
           else
           {
             // There are no more endpoints to try. Shut down the client.
-            fmt::print(stderr, "Error writeing message: {}\n", ec.message());
+            fmt::print(stderr, "Error writing message: {}\n", ec.message());
             stop();
           }
         });
@@ -226,7 +226,7 @@ auto main(int argc, char* argv[]) -> int
 
     std::thread io_thread([&io_context]() { io_context.run(); });
 
-    std::this_thread::sleep_for(timeout_duration); // NOTE: only for gcov results! CK
+    std::this_thread::sleep_for(timeout_duration);  // NOTE: only for gcov results! CK
     for (std::string line; c->connected() && std::getline(std::cin, line); fmt::print(stderr, "Enter command: "))
     {
       const std::string::size_type sz = line.find("//");
@@ -247,7 +247,7 @@ auto main(int argc, char* argv[]) -> int
 
       c->write(command);
     }
-    std::this_thread::sleep_for(heartbeat_interval); // NOTE: only for gcov results! CK
+    std::this_thread::sleep_for(heartbeat_interval);  // NOTE: only for gcov results! CK
 
     c->stop();
     io_thread.join();

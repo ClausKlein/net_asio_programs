@@ -106,3 +106,31 @@ target_link_libraries(
     PUBLIC Boost::asio fmt::fmt-header-only
 )
 do_test(rrcp_async_tcp_client --help Usage)
+
+if(APPLE)
+    # Set up googletest
+    include(FetchContent)
+    FetchContent_Declare(
+        googletest
+        GIT_TAG v1.16.0
+        GIT_REPOSITORY https://github.com/google/googletest.git
+        FIND_PACKAGE_ARGS 1.16.0 NAMES GTest COMPONENTS gmain_main
+        EXCLUDE_FROM_ALL
+        SYSTEM
+    )
+
+    # For Windows: Prevent overriding the parent project's compiler/linker settings
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(googletest)
+
+    add_library(Base64 STATIC)
+    target_sources(
+        Base64
+        PRIVATE Base64.cpp
+        PUBLIC FILE_SET HEADERS FILES Base64.hpp
+    )
+
+    add_executable(Base64-test Base64-test.cpp)
+    target_link_libraries(Base64-test PRIVATE Base64 GTest::gtest_main)
+    add_test(NAME Base64-test COMMAND Base64-test)
+endif()

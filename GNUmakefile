@@ -27,8 +27,11 @@ hicpp-explicit-conversions,\
 hicpp-member-init,\
 hicpp-named-parameter,\
 misc-const-correctness,\
-modernize-use-trailing-return-type,\
 modernize-deprecated-headers,\
+modernize-loop-convert,\
+modernize-use-nodiscard,\
+modernize-use-std-print,\
+modernize-use-trailing-return-type,\
 performance-avoid-endl,\
 performance-unnecessary-value-param,\
 readability-avoid-const-params-in-decls,\
