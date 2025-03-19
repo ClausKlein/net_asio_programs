@@ -1,13 +1,11 @@
 #include "Base64.hpp"
 
-#include <cassert>
+// XXX #include <cassert>
 #include <cstring>
 #include <stdexcept>
 
 namespace RRCP::Common
 {
-
-void Base64::setLineBreak(bool lbrk) { m_encodeWithLinebreak = lbrk; }
 
 auto Base64::encode(std::string_view data) const -> std::string
 {
@@ -27,7 +25,7 @@ auto Base64::encode(std::string_view data) const -> std::string
     auto i2 = std::uint8_t(((data[pos] & 0x03) << 4U) | ((data[pos + 1] & 0xf0) >> 4U));
     auto i3 = std::uint8_t(((data[pos + 1] & 0x0f) << 2U) | ((data[pos + 2] & 0xfc) >> 6U));
     auto i4 = std::uint8_t((data[pos + 2] & 0x3f));
-    assert((i1 < 64) && (i2 < 64) && (i3 < 64) && (i4 < 64));
+    // XXX assert((i1 < 64) && (i2 < 64) && (i3 < 64) && (i4 < 64));
 
     encoded.append(1, m_BaseChars[i1]);
     encoded.append(1, m_BaseChars[i2]);
@@ -50,7 +48,7 @@ auto Base64::encode(std::string_view data) const -> std::string
     // One octet remaining.
     auto i1 = std::uint8_t((data[data.size() - 1] & 0xfc) >> 2U);
     auto i2 = std::uint8_t(((data[data.size() - 1] & 0x03) << 4U));
-    assert((i1 < 64) && (i2 < 64));
+    // XXX assert((i1 < 64) && (i2 < 64));
 
     encoded.append(1, m_BaseChars[i1]);
     encoded.append(1, m_BaseChars[i2]);
@@ -62,7 +60,7 @@ auto Base64::encode(std::string_view data) const -> std::string
     auto i1 = std::uint8_t((data[data.size() - 2] & 0xfc) >> 2U);
     auto i2 = std::uint8_t(((data[data.size() - 2] & 0x03) << 4U) | ((data[data.size() - 1] & 0xf0) >> 4U));
     auto i3 = std::uint8_t(((data[data.size() - 1] & 0x0f) << 2U));
-    assert((i1 < 64) && (i2 < 64) && (i3 < 64));
+    // XXX assert((i1 < 64) && (i2 < 64) && (i3 < 64));
 
     encoded.append(1, m_BaseChars[i1]);
     encoded.append(1, m_BaseChars[i2]);
