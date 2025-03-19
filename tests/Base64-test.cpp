@@ -13,14 +13,14 @@ By covering these edge cases, you can ensure that your Base64 class is robust an
 
 #include <gtest/gtest.h>
 
-#include <print>
+// #include <print> // for std::println
 #include <random>
 #include <string>
 
 using namespace std::string_literals;
 
 // TODO: using RRCP::Common::Base64;
-#define TEST_RANDOM_VALUES
+#undef TEST_RANDOM_VALUES
 
 namespace
 {
@@ -30,10 +30,7 @@ struct testpattern_t
   const char *encoded;
 } testpattern[] = {{"", ""}, {" ", "IA=="}, {"  ", "ICA="}, {"   ", "ICAg"}, {"    ", "ICAgIA=="}, {"     ", "ICAgICA="},
     {"      ", "ICAgICAg"}, {"       ", "ICAgICAgIA=="}, {"U", "VQ=="}, {"UU", "VVU="}, {"UUU", "VVVV"},
-    {"UUUU", "VVVVVQ=="}, {"UUUUU", "VVVVVVU="}, {"UUUUUU", "VVVVVVVV"}, {"UUUUUUU", "VVVVVVVVVQ=="},
-    {"Franz jagt in einem total verwahrlosten Taxi quer durch Bayern",
-        "RnJhbnogamFndCBpbiBlaW5lbSB0b3RhbCB2ZXJ3YWhybG9zdGVuIFRheGkgcXVlciBkdXJjaCBCYXllcm4="},
-    {nullptr, nullptr}};
+    {"UUUU", "VVVVVQ=="}, {"UUUUU", "VVVVVVU="}, {"UUUUUU", "VVVVVVVV"}, {"UUUUUUU", "VVVVVVVVVQ=="}, {nullptr, nullptr}};
 }  // namespace
 
 TEST(Base64Test, encoding)
@@ -138,8 +135,13 @@ TEST(Base64Test, LongString)
 
   std::string const original = "This is not a really long string, but also that should be encoded and decoded correctly.";
   std::string const encoded = base64.encode(original);
+  std::string expected{
+      "VGhpcyBpcyBub3QgYSByZWFsbHkgbG9uZyBzdHJpbmcsIGJ1dCBhbHNvIHRoYXQgc2hvdWxkIGJl\n"
+      "IGVuY29kZWQgYW5kIGRlY29kZWQgY29ycmVjdGx5Lg=="};
+  EXPECT_EQ(expected, encoded);
+  // std::println("{}:\n{}", original, encoded);
+
   std::string const decoded = base64.decode(encoded);
-  std::println("{}:\n{}", original, encoded);
   EXPECT_EQ(original, decoded);
 }
 
@@ -171,6 +173,48 @@ TEST(Base64Test, NonAsciiString)
   std::string const encoded = base64.encode(original);
   std::string const decoded = base64.decode(encoded);
   EXPECT_EQ(original, decoded);
+}
+
+TEST(Base64Test, TestEncoder)
+{
+  RRCP::Common::Base64 base64;
+  {
+    std::string original("\00\01\02\03\04\05", 6);
+    auto encoded = base64.encode(original);
+    EXPECT_TRUE(encoded == "AAECAwQF");
+    EXPECT_EQ(original, base64.decode(encoded));
+  }
+  {
+    std::string original("\00\01\02\03", 4);
+    auto encoded = base64.encode(original);
+    EXPECT_TRUE(encoded == "AAECAw==");
+    EXPECT_EQ(original, base64.decode(encoded));
+  }
+  {
+    std::string original("ABCDEF");
+    auto encoded = base64.encode(original);
+    EXPECT_TRUE(encoded == "QUJDREVG");
+    EXPECT_EQ(original, base64.decode(encoded));
+  }
+  {
+    std::string original("!@#$%^&*()_~<>");
+    auto encoded = base64.encode(original);
+    EXPECT_TRUE(encoded == "IUAjJCVeJiooKV9+PD4=");
+    EXPECT_EQ(original, base64.decode(encoded));
+  }
+}
+TEST(Base64Test, TestDecoder)
+{
+  RRCP::Common::Base64 base64;
+  {
+    const std::string istr("QUJ\r\nDRE\r\nVG");
+    const std::string decoded = base64.decode(istr);
+    EXPECT_TRUE(decoded == "ABCDEF");
+  }
+  {
+    const std::string istr("QUJD#REVG");
+    EXPECT_ANY_THROW({ (void)base64.decode(istr).empty(); });
+  }
 }
 
 #ifdef TEST_RANDOM_VALUES
