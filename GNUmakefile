@@ -62,7 +62,7 @@ test: all
 
 format: .clang-format
 	git ls-files ::*.cpp ::*.hpp | xargs clang-format -i
-	gersemi -i CMakeLists.txt
+	git ls-files ::*CMakeLists.txt | xargs gersemi -i
 
 # These rules keep make from trying to use the match-anything rule below
 # to rebuild the makefiles--ouch!

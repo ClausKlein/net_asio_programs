@@ -31,6 +31,7 @@ endif()
 
 # ---- code coverage ----
 
+option(BUILD_EXAMPLES "Compile examples too" ON)
 option(ENABLE_TEST_COVERAGE "Compile with test-coverage flags" ON)
 if(ENABLE_TEST_COVERAGE AND CMAKE_BUILD_TYPE)
     message(WARNING "ENABLE_TEST_COVERAGE is set!")
@@ -135,3 +136,7 @@ target_sources(
 add_executable(Base64-test tests/Base64-test.cpp)
 target_link_libraries(Base64-test PRIVATE Base64 base64c GTest::gtest_main)
 # FIXME: add_test(NAME Base64-test COMMAND Base64-test)
+
+if(APPLE AND BUILD_EXAMPLES)
+    add_subdirectory(examples)
+endif()
