@@ -1,10 +1,10 @@
 # Usage examples
 
-## Build with cmake
+## Build with CMake
 
-cmake -S . -G build -G Ninja
-cd build
-ninja
+    cmake -S . -G build -G Ninja
+    cd build
+    ninja
 
 ## Tests
 

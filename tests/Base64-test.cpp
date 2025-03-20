@@ -31,7 +31,7 @@ using namespace std::string_literals;
 
 // TODO(CK): using RRCP::Common::Base64;
 
-// FIXME: aktivate and fix! CK
+// FIXME: activate and fix! CK
 #undef TEST_RANDOM_VALUES
 
 namespace
