@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.28...4.0)
 
-project(RRCP-client VERSION 0.1.0 LANGUAGES CXX)
+project(RRCP-client VERSION 0.1.0 LANGUAGES CXX C)
 
 # ---- add dependencies ----
 
@@ -122,6 +122,9 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
+add_library(base64c STATIC)
+target_sources(base64c PRIVATE base64.c PUBLIC FILE_SET HEADERS FILES base64.h)
+
 add_library(Base64 STATIC)
 target_sources(
     Base64
@@ -130,5 +133,5 @@ target_sources(
 )
 
 add_executable(Base64-test tests/Base64-test.cpp)
-target_link_libraries(Base64-test PRIVATE Base64 GTest::gtest_main)
+target_link_libraries(Base64-test PRIVATE Base64 base64c GTest::gtest_main)
 # FIXME: add_test(NAME Base64-test COMMAND Base64-test)

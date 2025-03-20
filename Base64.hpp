@@ -1,5 +1,5 @@
-#ifndef BASE64_H
-#define BASE64_H
+#ifndef BASE64_HPP
+#define BASE64_HPP
 
 #include <cstdint>
 #include <string>
@@ -25,7 +25,7 @@ class Base64
    * Set the line break flag for encoding.
    * @param lbrk If true, the encoded string will have a maximum line length of 80 characters.
    */
-  void setLineBreak(bool lbrk) { m_encodeWithLinebreak = lbrk; }
+  void setLineBreak(bool lbrk) { encodeWithLinebreak_ = lbrk; }
 
   /**
    * Encode binary data to base64.
@@ -56,10 +56,10 @@ class Base64
    */
   [[nodiscard]] auto base64CharValue(char c) const -> std::uint8_t;
 
-  const std::string_view m_BaseChars{"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"};
-  bool m_encodeWithLinebreak{false};
+  const std::string_view BaseChars_{"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"};
+  bool encodeWithLinebreak_{false};
 };
 
 }  // namespace RRCP::Common
 
-#endif  // BASE64_H
+#endif  // BASE64_HPP

@@ -24,6 +24,7 @@ performance-*,\
 portability-*,\
 readability-*,\
 -readability-identifier-length,\
+-readability-identifier-naming,\
 -*magic-numbers,\
 -*avoid-c-arrays,\
 "
@@ -31,4 +32,13 @@ WarningsAsErrors: 'clang-*'
 HeaderFilterRegex: '.*'
 FormatStyle:     file
 User:            clausklein
+# options: hicpp-signed-bitwise.IgnorePositiveIntegerLiterals
+CheckOptions:
+  - { key: readability-identifier-naming.NamespaceCase,        value: lower_case }
+  - { key: readability-identifier-naming.ClassCase,            value: CamelCase  }
+  - { key: readability-identifier-naming.MethodCase,           value: lower_case }
+  - { key: readability-identifier-naming.MemberCase,           value: lower_case }
+  - { key: readability-identifier-naming.MemberSuffix,         value: _          }
+  - { key: hicpp-signed-bitwise.IgnorePositiveIntegerLiterals, value: true       }
 ...
+

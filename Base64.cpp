@@ -11,7 +11,8 @@ auto Base64::encode(std::string_view data) const -> std::string
 {
   if (data.empty())
   {
-    throw std::invalid_argument("Invalid input data");
+    // NO! throw std::invalid_argument("Invalid input data");
+    return {};
   }
 
   std::string encoded;
@@ -27,11 +28,11 @@ auto Base64::encode(std::string_view data) const -> std::string
     auto i4 = std::uint8_t((data[pos + 2] & 0x3f));
     // XXX assert((i1 < 64) && (i2 < 64) && (i3 < 64) && (i4 < 64));
 
-    encoded.append(1, m_BaseChars[i1]);
-    encoded.append(1, m_BaseChars[i2]);
-    encoded.append(1, m_BaseChars[i3]);
-    encoded.append(1, m_BaseChars[i4]);
-    if (m_encodeWithLinebreak)
+    encoded.append(1, BaseChars_[i1]);
+    encoded.append(1, BaseChars_[i2]);
+    encoded.append(1, BaseChars_[i3]);
+    encoded.append(1, BaseChars_[i4]);
+    if (encodeWithLinebreak_)
     {
       linelen += 4;
       if (linelen >= 76)
@@ -50,8 +51,8 @@ auto Base64::encode(std::string_view data) const -> std::string
     auto i2 = std::uint8_t(((data[data.size() - 1] & 0x03) << 4U));
     // XXX assert((i1 < 64) && (i2 < 64));
 
-    encoded.append(1, m_BaseChars[i1]);
-    encoded.append(1, m_BaseChars[i2]);
+    encoded.append(1, BaseChars_[i1]);
+    encoded.append(1, BaseChars_[i2]);
     encoded.append(2, '=');
   }
   else if ((data.size() % 3) == 2)
@@ -62,9 +63,9 @@ auto Base64::encode(std::string_view data) const -> std::string
     auto i3 = std::uint8_t(((data[data.size() - 1] & 0x0f) << 2U));
     // XXX assert((i1 < 64) && (i2 < 64) && (i3 < 64));
 
-    encoded.append(1, m_BaseChars[i1]);
-    encoded.append(1, m_BaseChars[i2]);
-    encoded.append(1, m_BaseChars[i3]);
+    encoded.append(1, BaseChars_[i1]);
+    encoded.append(1, BaseChars_[i2]);
+    encoded.append(1, BaseChars_[i3]);
     encoded.append(1, '=');
   }
 
@@ -77,7 +78,7 @@ auto Base64::decode(std::string_view in) -> std::string
   std::string fourChars;
 
   // Iterate over the input string
-  for (char i : in)
+  for (const char i : in)
   {
     if (isBase64Char(i) || (i == '='))
     {
@@ -100,11 +101,11 @@ auto Base64::decode(std::string_view in) -> std::string
       decoded += static_cast< char >((i1 << 2U) | (i2 >> 4U));
       if (i3 != 0)
       {
-        decoded += static_cast< char >(((i2 << 4U) /* & 0xf0 */) | (i3 >> 2U));
+        decoded += static_cast< char >(((i2 << 4U) & 0xf0) | (i3 >> 2U));
       }
       if (i4 != 0)
       {
-        decoded += static_cast< char >(((i3 << 6U) /* & 0xc0 */) | i4);
+        decoded += static_cast< char >(((i3 << 6U) & 0xc0) | i4);
       }
 
       fourChars.clear();
