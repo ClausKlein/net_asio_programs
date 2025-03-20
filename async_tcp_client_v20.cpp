@@ -74,7 +74,7 @@ class client : public std::enable_shared_from_this< client >
 
       // Start an asynchronous operation to send the message.
       boost::asio::async_write(socket_, boost::asio::buffer(message),
-          [this, self](const boost::system::error_code& error, std::size_t) { handle_write(error); });
+          [self](const boost::system::error_code& error, std::size_t) { self->handle_write(error); });
     }
   }
 
@@ -98,7 +98,7 @@ class client : public std::enable_shared_from_this< client >
       std::print("Trying {}:{}...\n", endpoint_iter->endpoint().address().to_string(), endpoint_iter->endpoint().port());
 
       // Set a deadline for the connect operation.
-      deadline_.expires_after(6s);
+      deadline_.expires_after(3s);
 
       // Start the asynchronous connect operation.
       socket_.async_connect(endpoint_iter->endpoint(),
@@ -164,13 +164,12 @@ class client : public std::enable_shared_from_this< client >
     }
 
     // Set a deadline for the read operation.
-    deadline_.expires_after(30s);
-
-    auto self(shared_from_this());
+    deadline_.expires_after(13s);
 
     // Start an asynchronous operation to read a newline-delimited message.
     boost::asio::async_read_until(socket_, boost::asio::dynamic_buffer(input_buffer_), '\n',
-        [this, self](const boost::system::error_code& error, std::size_t n) { handle_read(error, n); });
+        [self = shared_from_this()](const boost::system::error_code& error, std::size_t n)
+        { self->handle_read(error, n); });
   }
 
   void handle_read(const boost::system::error_code& error, std::size_t n)
@@ -183,7 +182,7 @@ class client : public std::enable_shared_from_this< client >
     if (!error)
     {
       // Extract the newline-delimited message from the buffer.
-      std::string line = input_buffer_.substr(0, n - 1);  // NOTE: w/o '\n'
+      std::string const line = input_buffer_.substr(0, n - 1);  // NOTE: w/o '\n'
       input_buffer_.erase(0, n);
 
       // Empty messages are heartbeats and so ignored.
@@ -216,11 +215,9 @@ class client : public std::enable_shared_from_this< client >
     std::string message{'\n'};
     std::print(stderr, "Sending: {}\n", "hartbeat");
 
-    auto self(shared_from_this());
-
     // Start an asynchronous operation to send a heartbeat message.
     boost::asio::async_write(socket_, boost::asio::buffer(message),
-        [this, self](const boost::system::error_code& error, std::size_t) { handle_write(error); });
+        [self = shared_from_this()](const boost::system::error_code& error, std::size_t) { self->handle_write(error); });
   }
 
   void handle_write(const boost::system::error_code& error)
@@ -272,10 +269,8 @@ class client : public std::enable_shared_from_this< client >
       deadline_.expires_at(steady_timer::time_point::max());
     }
 
-    auto self(shared_from_this());
-
     // Put the actor back to sleep.
-    deadline_.async_wait([this, self](const boost::system::error_code& /*e*/) { check_deadline(); });
+    deadline_.async_wait([self = shared_from_this()](const boost::system::error_code& /*e*/) { self->check_deadline(); });
   }
 
   bool stopped_{false};

@@ -198,11 +198,10 @@ class client : public std::enable_shared_from_this< client >
     // Set a deadline for the read operation.
     deadline_.expires_after(13s);
 
-    auto self(shared_from_this());
-
     // Start an asynchronous operation to read a newline-delimited message.
     boost::asio::async_read_until(socket_, boost::asio::dynamic_buffer(input_buffer_), '\n',
-        [this, self](const boost::system::error_code& error, std::size_t n) { handle_read(error, n); });
+        [self = shared_from_this()](const boost::system::error_code& error, std::size_t n)
+        { self->handle_read(error, n); });
   }
 
   void handle_read(const boost::system::error_code& error, std::size_t n)
@@ -244,11 +243,9 @@ class client : public std::enable_shared_from_this< client >
     std::string message{'\n'};
     std::print(stderr, "Sending: {}\n", "hartbeat");
 
-    auto self(shared_from_this());
-
     // Start an asynchronous operation to send a heartbeat message.
     boost::asio::async_write(socket_, boost::asio::buffer(message),
-        [this, self](const boost::system::error_code& error, std::size_t) { handle_write(error); });
+        [self = shared_from_this()](const boost::system::error_code& error, std::size_t) { self->handle_write(error); });
   }
 
   void handle_write(const boost::system::error_code& error)
@@ -294,10 +291,8 @@ class client : public std::enable_shared_from_this< client >
       deadline_.expires_at(steady_timer::time_point::max());
     }
 
-    auto self(shared_from_this());
-
     // Put the actor back to sleep.
-    deadline_.async_wait([this, self](const boost::system::error_code& /*e*/) { check_deadline(); });
+    deadline_.async_wait([self = shared_from_this()](const boost::system::error_code& /*e*/) { self->check_deadline(); });
   }
 
   bool stopped_{false};

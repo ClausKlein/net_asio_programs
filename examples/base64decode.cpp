@@ -22,7 +22,7 @@ int main(int argc, char** argv)
 {
   if (argc < 2)
   {
-    std::cout << "usage: " << argv[0] << ": <input_file> <output_file>" << std::endl
+    std::cerr << "usage: " << argv[0] << ": <input_file> <output_file>" << std::endl
               << "       read base64-encoded <input_file>, decode it and write the result to <output_file>" << std::endl
               << "       read from stdin if <input_file> is '-', decode it and write the result to stdout" << std::endl;
     return 1;

@@ -10,7 +10,9 @@ target_link_libraries(base64decode PUBLIC Poco::Foundation)
 add_executable(base64encode base64encode.cpp)
 target_link_libraries(base64encode PUBLIC Poco::Foundation)
 
-if(DEFINED do_test)
-    do_test(base64decode --help stdin)
-    do_test(base64encode --help stdin)
+if(PROJECT_IS_TOP_LEVEL)
+    return()
 endif()
+
+do_test(base64decode --help input)
+do_test(base64encode --help input)

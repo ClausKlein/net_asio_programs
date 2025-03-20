@@ -161,7 +161,7 @@ auto main(int argc, char* argv[]) -> int
     std::thread t([&io_context]() { io_context.run(); });
 
     //================================================================
-    std::string binary = "\nAB_(\0\001\002\003\004\005\006\a\b\n\r\t\v\x1b\20\'\"\?)-CD\r"s;
+    std::string binary{"\nAB_(\0\001\002\003\004\005\006\a\b\n\r\t\v\x1b\20\'\"\?)-CD\r"s};
     std::cerr << binary.length() << ' ' << std::quoted(binary) << '\n';
     auto quoted = char2esc(binary);
     std::cerr << quoted.length() << ' ' << std::quoted(quoted) << '\n';
