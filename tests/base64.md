@@ -1,6 +1,6 @@
-RFC 2045                Internet Message Bodies            November 1996
+## Parts of RFC 2045 Internet Message Bodies, November 1996
 
-                    Table 1: The Base64 Alphabet
+### Table 1: The Base64 Alphabet
 
      Value Encoding  Value Encoding  Value Encoding  Value Encoding
          0 A            17 R            34 i            51 z
@@ -68,6 +68,12 @@ important thing to note is that this may be done directly by the
 encoder rather than in a prior canonicalization step in some
 implementations.
 
-NOTE: There is no need to worry about quoting potential boundary
+#### NOTE:
+
+There is no need to worry about quoting potential boundary
 delimiters within base64-encoded bodies within multipart entities
 because no hyphen characters are used in the base64 encoding.
+
+## see too rfc4648
+
+https://datatracker.ietf.org/doc/html/rfc4648#section-4
