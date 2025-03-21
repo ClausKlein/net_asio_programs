@@ -3,11 +3,12 @@
 #define USE_BOOST_BEAST
 #ifdef USE_BOOST_BEAST
 // with homebrew /usr/local/include/boost/beast/core/detail/base64.hpp
+// and its impl. /usr/local/include/boost/beast/core/detail/base64.ipp
 // /Users/clausklein/.local/include/boost/beast/core/detail/base64.hpp
 #include <boost/beast/core/detail/base64.hpp>
 #endif
 
-// XXX #include <cassert>
+#include <algorithm>
 #include <cstring>
 #include <stdexcept>
 
@@ -23,7 +24,15 @@ using boost::beast::detail::base64::encoded_size;
 
 class base64
 {
- public:
+  // Function to remove all whitespace characters from a std::string
+  static auto remove_whitespace(std::string_view input) -> std::string
+  {
+    std::string result{input.data(), input.length()};
+    result.erase(
+        std::remove_if(result.begin(), result.end(), [](unsigned char c) { return std::isspace(c); }), result.end());
+    return result;
+  }
+
   static auto base64_encode(std::uint8_t const* data, std::size_t len) -> std::string
   {
     std::string dest;
@@ -32,6 +41,7 @@ class base64
     return dest;
   }
 
+ public:
   static auto base64_encode(std::string_view s) -> std::string
   {
     return base64_encode(reinterpret_cast< std::uint8_t const* >(s.data()), s.size());
@@ -41,13 +51,20 @@ class base64
   {
     std::string dest;
     dest.resize(decoded_size(data.size()));
-    auto const result = decode(&dest[0], data.data(), data.size());
+
+    // TODO(CK): remove first at least all "\n\r" or better all non printable chars!
+    std::string striped = remove_whitespace(data);
+    auto const result = decode(&dest[0], striped.data(), striped.size());
     dest.resize(result.first);
     return dest;
   }
 };
 
 }  // namespace
+
+#else
+
+// XXX #include <cassert>
 
 #endif
 
