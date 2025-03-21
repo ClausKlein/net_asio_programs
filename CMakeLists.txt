@@ -1,10 +1,16 @@
 cmake_minimum_required(VERSION 3.28...4.0)
 
-project(RRCP-client VERSION 0.1.0 LANGUAGES CXX C)
+project(RRCP-client VERSION 0.1.0 LANGUAGES CXX)
 
 # ---- add dependencies ----
 
-find_package(Boost 1.87 COMPONENTS headers REQUIRED HINTS $ENV{HOME}/.local)
+find_package(
+    Boost
+    1.87
+    COMPONENTS headers beast
+    REQUIRED
+    HINTS $ENV{HOME}/.local
+)
 find_package(fmt 11 REQUIRED HINTS $ENV{HOME}/.local)
 
 # ---- default settings ----
@@ -123,8 +129,8 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
-add_library(base64c STATIC)
-target_sources(base64c PRIVATE base64.c PUBLIC FILE_SET HEADERS FILES base64.h)
+# add_library(base64c STATIC)
+# target_sources(base64c PRIVATE base64.c PUBLIC FILE_SET HEADERS FILES base64.h)
 
 add_library(Base64 STATIC)
 target_sources(
@@ -132,10 +138,11 @@ target_sources(
     PRIVATE Base64.cpp
     PUBLIC FILE_SET HEADERS FILES Base64.hpp
 )
+target_link_libraries(Base64 PUBLIC Boost::beast)
 
 add_executable(Base64-test tests/Base64-test.cpp)
-target_link_libraries(Base64-test PRIVATE Base64 base64c GTest::gtest_main)
-# FIXME: add_test(NAME Base64-test COMMAND Base64-test)
+target_link_libraries(Base64-test PRIVATE Base64 GTest::gtest_main)
+add_test(NAME Base64-test COMMAND Base64-test)
 
 if(APPLE AND BUILD_EXAMPLES)
     add_subdirectory(examples)

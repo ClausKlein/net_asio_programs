@@ -1,8 +1,55 @@
 #include "Base64.hpp"
 
+#define USE_BOOST_BEAST
+#ifdef USE_BOOST_BEAST
+// with homebrew /usr/local/include/boost/beast/core/detail/base64.hpp
+// /Users/clausklein/.local/include/boost/beast/core/detail/base64.hpp
+#include <boost/beast/core/detail/base64.hpp>
+#endif
+
 // XXX #include <cassert>
 #include <cstring>
 #include <stdexcept>
+
+#ifdef USE_BOOST_BEAST
+
+namespace
+{
+
+using boost::beast::detail::base64::decode;
+using boost::beast::detail::base64::decoded_size;
+using boost::beast::detail::base64::encode;
+using boost::beast::detail::base64::encoded_size;
+
+class base64
+{
+ public:
+  static auto base64_encode(std::uint8_t const* data, std::size_t len) -> std::string
+  {
+    std::string dest;
+    dest.resize(encoded_size(len));
+    dest.resize(encode(&dest[0], data, len));
+    return dest;
+  }
+
+  static auto base64_encode(std::string_view s) -> std::string
+  {
+    return base64_encode(reinterpret_cast< std::uint8_t const* >(s.data()), s.size());
+  }
+
+  static auto base64_decode(std::string_view data) -> std::string
+  {
+    std::string dest;
+    dest.resize(decoded_size(data.size()));
+    auto const result = decode(&dest[0], data.data(), data.size());
+    dest.resize(result.first);
+    return dest;
+  }
+};
+
+}  // namespace
+
+#endif
 
 namespace RRCP::Common
 {
@@ -11,9 +58,14 @@ auto Base64::encode(std::string_view data) const -> std::string
 {
   if (data.empty())
   {
-    // NO! throw std::invalid_argument("Invalid input data");
     return {};
   }
+
+#ifdef USE_BOOST_BEAST
+
+  return base64::base64_encode(data);
+
+#else
 
   std::string encoded;
   size_t linelen = 0;
@@ -70,10 +122,18 @@ auto Base64::encode(std::string_view data) const -> std::string
   }
 
   return encoded;
+
+#endif
 }
 
 auto Base64::decode(std::string_view in) -> std::string
 {
+#ifdef USE_BOOST_BEAST
+
+  return base64::base64_decode(in);
+
+#else
+
   std::string decoded;
   std::string fourChars;
 
@@ -119,8 +179,11 @@ auto Base64::decode(std::string_view in) -> std::string
   }
 
   return decoded;
+
+#endif
 }
 
+#ifndef USE_BOOST_BEAST
 auto Base64::isBase64Char(char c) const -> bool
 {
   return (
@@ -151,5 +214,6 @@ auto Base64::base64CharValue(char c) const -> std::uint8_t
   }
   throw std::invalid_argument("Invalid Base64 character");
 }
+#endif
 
 }  // namespace RRCP::Common
