@@ -8,11 +8,14 @@
 #include <boost/beast/core/detail/base64.hpp>
 #endif
 
-#include <algorithm>
-#include <cstring>
-#include <stdexcept>
-
 #ifdef USE_BOOST_BEAST
+
+#include <algorithm>
+#include <cctype>
+
+#ifdef __cpp_lib_ranges
+#include <ranges>
+#endif
 
 namespace
 {
@@ -24,7 +27,8 @@ using boost::beast::detail::base64::encoded_size;
 
 class base64
 {
-  // Function to remove all whitespace characters from a std::string
+#ifndef __cpp_lib_ranges
+  // Function to remove all whitespace characters from a std::string (C++17)
   static auto remove_whitespace(std::string_view input) -> std::string
   {
     std::string result{input.data(), input.length()};
@@ -32,6 +36,14 @@ class base64
         std::remove_if(result.begin(), result.end(), [](unsigned char c) { return std::isspace(c); }), result.end());
     return result;
   }
+#else
+  // Function to remove all whitespace characters from a std::string_view (C++20)
+  static auto remove_whitespace(std::string_view input) -> std::string
+  {
+    auto filtered = input | std::views::filter([](unsigned char c) { return !std::isspace(c); });
+    return std::string(filtered.begin(), filtered.end());
+  }
+#endif
 
   static auto base64_encode(std::uint8_t const* data, std::size_t len) -> std::string
   {
@@ -65,6 +77,7 @@ class base64
 #else
 
 // XXX #include <cassert>
+#include <stdexcept>
 
 #endif
 
