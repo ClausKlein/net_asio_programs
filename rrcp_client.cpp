@@ -7,6 +7,7 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
+// Moderniced from Claus Klein and ChatGPT
 
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/asio/buffer.hpp>
@@ -148,7 +149,7 @@ auto main(int argc, char* argv[]) -> int
     if (argc != 3)
     {
       std::cerr << "Usage: rrcp_client <host> <port>\n";
-      return 1;
+      return EXIT_FAILURE;
     }
 
     boost::asio::io_context io_context;
@@ -160,7 +161,7 @@ auto main(int argc, char* argv[]) -> int
     std::thread t([&io_context]() { io_context.run(); });
 
     //================================================================
-    std::string binary = "\nAB_(\0\001\002\003\004\005\006\a\b\n\r\t\v\x1b\20\'\"\?)-CD\r"s;
+    std::string binary{"\nAB_(\0\001\002\003\004\005\006\a\b\n\r\t\v\x1b\20\'\"\?)-CD\r"s};
     std::cerr << binary.length() << ' ' << std::quoted(binary) << '\n';
     auto quoted = char2esc(binary);
     std::cerr << quoted.length() << ' ' << std::quoted(quoted) << '\n';
@@ -203,7 +204,8 @@ auto main(int argc, char* argv[]) -> int
   catch (std::exception& e)
   {
     std::cerr << "Exception: " << e.what() << "\n";
+    return EXIT_FAILURE;
   }
 
-  return 0;
+  return EXIT_SUCCESS;
 }

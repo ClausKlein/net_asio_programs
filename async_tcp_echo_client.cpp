@@ -1,3 +1,15 @@
+/***
+ * async_tcp_echo_client.cpp
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~
+ *
+ * Copyright (c) 2003-2024 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+ *
+ * Distributed under the Boost Software License, Version 1.0. (See accompanying
+ * file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+ *
+ * Moderniced from Claus Klein and ChatGPT
+ ***/
+
 #include <fmt/format.h>
 
 #include <boost/algorithm/string/trim.hpp>
@@ -137,18 +149,18 @@ class AsynchronousTCPClient : public std::enable_shared_from_this< AsynchronousT
           });
     }
 
-    boost::asio::async_read_until(socket_, boost::asio::dynamic_buffer(data_), CR,
+    boost::asio::async_read_until(socket_, boost::asio::dynamic_buffer(data_), STOP,
         [this, self](boost::system::error_code ec, std::size_t length)
         {
           timer_.cancel();
           if (!ec)
           {
-            std::string response = esc2char(data_.substr(1, length));  // NOTE: w/o LF!
+            std::string response = esc2char(data_.substr(1, length));  // NOTE: w/o START!
 
             // NOTE: data_.erase(0, length); is used instead of data_.clear() because:
 
             // - Partial Data Handling: The async_read_until() function reads
-            //   data up to the delimiter (CR) but doesn’t guarantee it consumes
+            //   data up to the delimiter (STOP) but doesn’t guarantee it consumes
             //   all the data in the socket.
             //   There might be extra data left in the buffer after the delimiter!
 
@@ -180,14 +192,14 @@ class AsynchronousTCPClient : public std::enable_shared_from_this< AsynchronousT
 
 auto main(int argc, char* argv[]) -> int
 {
+  if (argc != 3)
+  {
+    fmt::print(stderr, "Usage: {} <host> <port>\n", argv[0]);
+    return EXIT_FAILURE;
+  }
+
   try
   {
-    if (argc != 3)
-    {
-      fmt::print(stderr, "Usage: async_tcp_echo_client <host> <port>\n");
-      return EXIT_FAILURE;
-    }
-
     boost::asio::io_context io_context;
 
     auto client = std::make_shared< AsynchronousTCPClient >(io_context, argv[1], argv[2]);
@@ -209,12 +221,12 @@ auto main(int argc, char* argv[]) -> int
       }
 
       std::string command = char2esc(line);
-      command.insert(0, 1, LF);
-      command += CR;
+      command.insert(0, 1, START);
+      command += STOP;
 
       client->write(command);
     }
-    std::this_thread::sleep_for(timeout_duration);  // NOLINT(misc-include-cleaner)
+    std::this_thread::sleep_for(timeout_duration);
 
     client->stop();
     io_thread.join();

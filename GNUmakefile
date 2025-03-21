@@ -11,10 +11,10 @@ all: build
 	ninja -C build
 
 distclean:
-	rm -rf build
+	rm -rf build coverage/* *~ ctags
 
 build: CMakeLists.txt
-	cmake -S . -B $@
+	cmake -S . -B $@ -D CMAKE_BUILD_TYPE=Debug
 
 check: all
 	run-clang-tidy -p build *.cpp
@@ -27,8 +27,14 @@ hicpp-explicit-conversions,\
 hicpp-member-init,\
 hicpp-named-parameter,\
 misc-const-correctness,\
+modernize-deprecated-headers,\
+modernize-loop-convert,\
+modernize-use-nodiscard,\
+modernize-use-std-print,\
 modernize-use-trailing-return-type,\
+performance-avoid-endl,\
 performance-unnecessary-value-param,\
+readability-avoid-const-params-in-decls,\
 readability-braces-around-statements,\
 readability-else-after-return,\
 readability-redundant-member-init,\
@@ -38,13 +44,25 @@ readability-use-std-min-max,\
 
 test: all
 	-killall async_tcp_echo_server
+	-echo | build/async_tcp_echo_client localhost 8000
 	build/async_tcp_echo_server 8000 &
+	-(cat rrcp.txt | build/async_tcp_echo_client localhost 8000) &
+	sleep 1
+	-killall async_tcp_echo_server
+	-(echo | build/async_tcp_echo_server 8000) &
 	cat rrcp.txt | build/rrcp_client localhost 8000
+	cat rrcp.txt | build/rrcp_async_tcp_client localhost 8000
 	cat rrcp.txt | build/async_tcp_echo_client localhost 8000
+	-build/async_tcp_echo_client localhost
+	-echo | build/async_tcp_echo_client localhost 8001
+	cat rrcp.txt | build/blocking_tcp_echo_client localhost 8000
+	ctest --test-dir build
+	-killall async_tcp_echo_server
+	gcovr
 
 format: .clang-format
 	git ls-files ::*.cpp ::*.hpp | xargs clang-format -i
-	gersemi -i CMakeLists.txt
+	git ls-files ::*CMakeLists.txt | xargs gersemi -i
 
 # These rules keep make from trying to use the match-anything rule below
 # to rebuild the makefiles--ouch!

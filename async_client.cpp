@@ -15,14 +15,17 @@
 namespace
 {
 
-const auto noop = std::bind([] {});  // FIXME: deprecated! convert to std::forward<>; CK
+const auto noop = std::bind([] {});  // NOLINT(modernize-avoid-bind) NOTE: deprecated too! CK
 const std::string delimiter{"\r\n\r\n"};
 
 boost::asio::io_context io_context;
 boost::asio::ip::tcp::acceptor acceptor(io_context, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), 0));
 boost::asio::ip::tcp::socket socket1(io_context);
 boost::asio::ip::tcp::socket socket2(io_context);
-boost::asio::streambuf streambuf;
+
+std::string input_buffer_;
+auto streambuf = boost::asio::dynamic_buffer(input_buffer_);
+;
 
 // void do_read();
 
@@ -30,15 +33,17 @@ void handle_read(boost::system::error_code /*unused*/, std::size_t xfer)
 {
   assert(streambuf.size() >= xfer);
 
-  std::string const command{buffers_begin(streambuf.data()), buffers_begin(streambuf.data()) + xfer - delimiter.length()};
+  std::string const command{input_buffer_.data(), xfer - delimiter.length()};
 
   streambuf.consume(xfer);
 
-  // XXX assert(command == "cmd1");
   std::cout << "received command: " << command << "\n"
             << "streambuf contains " << streambuf.size() << " bytes.\n";
 
-  boost::asio::async_read_until(socket2, streambuf, delimiter, handle_read);
+  if (command == "cmd1")
+  {
+    boost::asio::async_read_until(socket2, streambuf, delimiter, handle_read);
+  }
 }
 
 }  // namespace

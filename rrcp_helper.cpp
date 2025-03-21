@@ -1,125 +1,79 @@
 #include "rrcp_helper.hpp"
 
-#include <cstddef>
 #include <iostream>
+#include <stdexcept>
 #include <string>
+#include <string_view>
 
-constexpr const char ESC = 0x1B;
-constexpr const char REPLACE_LF = 0x01;
-constexpr const char REPLACE_CR = 0x02;
-constexpr const char REPLACE_ESC = 0x03;
+constexpr char ESC = 0x1B;
+constexpr char REPLACE_LF = 0x01;
+constexpr char REPLACE_CR = 0x02;
+constexpr char REPLACE_ESC = 0x03;
 
-// constexpr const char SP = 0x20;
-// constexpr const char DOT = 0x2E;
-// constexpr const char SEMICOLON = 0x3B;
-// constexpr const char COMMA = 0x2C;
-// constexpr const char SHARP = 0x23;
-// constexpr const char DQUOTE = '\"';
-// constexpr const char BACKSLASH = '\\';
-// constexpr const char COLON = 0x3A;
-
-auto esc2char(const std::string& data) -> std::string
+auto esc2char(std::string_view data) -> std::string
 {
   std::string message;
-  size_t const len = data.size();
-  char c = 0;
-  size_t i = 0;
-  while (i < len)
+  auto len = data.size();
+  for (size_t i = 0; i < len; ++i)
   {
-    // get next char
-    c = data[i];
+    char c = data[i];
 
-    // end mark found, the message is complete.
-    // TODO: Why is the CR not needed anymore? CK
-    if (c == CR)
+    if (c == STOP)
     {
-      // XXX message += c;
       return message;
     }
 
-    // An escape is found thus we want to
-    // replace the escape sequence
     if (c == ESC)
     {
-      // On the ESC should follow an replacement character
-      // REPLACE_LF... REPLACE_ESC
-      if (i != (len - 1))
+      if (i == len - 1)
       {
-        // get next character
-        i++;
-
-        c = data[i];
-        if (REPLACE_LF == c)
-        {
-          c = static_cast< char >(LF);
-        }
-        else if (REPLACE_CR == c)
-        {
-          c = static_cast< char >(CR);
-        }
-        else if (REPLACE_ESC == c)
-        {
-          c = static_cast< char >(ESC);
-        }
-        else
-        {
-          std::cerr << "esc2char: Error contains unexpected ESC character!\n";
-          return "";
-        }
+        throw std::runtime_error("esc2char: Error - message ends with escape character!");
       }
-      else
+
+      char const next = data[++i];
+      switch (next)
       {
-        std::cerr << "esc2char: Error message ends with escape character!\n";
-        return "";
+      case REPLACE_LF:
+        c = '\n';
+        break;
+      case REPLACE_CR:
+        c = '\r';
+        break;
+      case REPLACE_ESC:
+        c = ESC;
+        break;
+      default:
+        throw std::runtime_error("esc2char: Error - unexpected ESC character!");
       }
     }
 
-    // append current character
-    message += c;
-    // continue with next character
-    i++;
+    message.push_back(c);
   }
   return message;
 }
 
-auto char2esc(const std::string& data) -> std::string
+auto char2esc(std::string_view data) -> std::string
 {
   std::string message;
-  size_t const len = data.size();
-  char c = 0;
-  size_t i = 0;
-
-  while (i < len)
+  for (char const c : data)
   {
-    // get next char
-    c = data[i++];
-    // and replace CR and LF and the ESC itself
     switch (c)
     {
-    case LF:
-    {
-      message += static_cast< char >(ESC);
-      message += static_cast< char >(REPLACE_LF);
-    };
-    break;
-    case CR:
-    {
-      message += static_cast< char >(ESC);
-      message += static_cast< char >(REPLACE_CR);
-    };
-    break;
-
+    case '\n':
+      message.push_back(ESC);
+      message.push_back(REPLACE_LF);
+      break;
+    case '\r':
+      message.push_back(ESC);
+      message.push_back(REPLACE_CR);
+      break;
     case ESC:
-    {
-      message += static_cast< char >(ESC);
-      message += static_cast< char >(REPLACE_ESC);
-    };
-    break;
+      message.push_back(ESC);
+      message.push_back(REPLACE_ESC);
+      break;
     default:
-    {
-      message += c;
-    }
-    break;
+      message.push_back(c);
+      break;
     }
   }
   return message;

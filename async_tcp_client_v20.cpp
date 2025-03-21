@@ -1,13 +1,14 @@
-//
-// async_tcp_client.cpp
-// ~~~~~~~~~~~~~~~~~~~~
-//
-// Copyright (c) 2003-2024 Christopher M. Kohlhoff (chris at kohlhoff dot com)
-//
-// Distributed under the Boost Software License, Version 1.0. (See accompanying
-// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
-//
-// Moderniced from Claus Klein and ChatGPT
+/***
+ * async_tcp_client_v20.cpp
+ * ~~~~~~~~~~~~~~~~~~~~~~~~
+ *
+ * Copyright (c) 2003-2024 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+ *
+ * Distributed under the Boost Software License, Version 1.0. (See accompanying
+ * file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+ *
+ * Moderniced from Claus Klein and ChatGPT
+ ***/
 
 #include <boost/asio/buffer.hpp>
 #include <boost/asio/io_context.hpp>
@@ -19,76 +20,18 @@
 #include <chrono>  // NOLINT(misc-include-cleaner)
 #include <cstddef>
 #include <exception>
-#include <functional>
-#include <iostream>
+#include <format>
+#include <iostream>  // For std::getline
 #include <memory>
+#include <print>
 #include <string>
+#include <thread>
 #include <utility>
 
 using boost::asio::steady_timer;
 using boost::asio::ip::tcp;
 using namespace std::chrono_literals;
 
-//
-// This class manages socket timeouts by applying the concept of a deadline.
-// Some asynchronous operations are given deadlines by which they must complete.
-// Deadlines are enforced by an "actor" that persists for the lifetime of the
-// client object:
-//
-//  +----------------+
-//  |                |
-//  | check_deadline |<---+
-//  |                |    |
-//  +----------------+    | async_wait()
-//              |         |
-//              +---------+
-//
-// If the deadline actor determines that the deadline has expired, the socket
-// is closed and any outstanding operations are consequently cancelled.
-//
-// Connection establishment involves trying each endpoint in turn until a
-// connection is successful, or the available endpoints are exhausted. If the
-// deadline actor closes the socket, the connect actor is woken up and moves to
-// the next endpoint.
-//
-//  +---------------+
-//  |               |
-//  | start_connect |<---+
-//  |               |    |
-//  +---------------+    |
-//           |           |
-//  async_-  |    +----------------+
-// connect() |    |                |
-//           +--->| handle_connect |
-//                |                |
-//                +----------------+
-//                          :
-// Once a connection is     :
-// made, the connect        :
-// actor forks in two -     :
-//                          :
-// an actor for reading     :       and an actor for
-// inbound messages:        :       sending heartbeats:
-//                          :
-//  +------------+          :          +-------------+
-//  |            |<- - - - -+- - - - ->|             |
-//  | start_read |                     | start_write |<---+
-//  |            |<---+                |             |    |
-//  +------------+    |                +-------------+    | async_wait()
-//          |         |                        |          |
-//  async_- |    +-------------+       async_- |    +--------------+
-//   read_- |    |             |       write() |    |              |
-//  until() +--->| handle_read |               +--->| handle_write |
-//               |             |                    |              |
-//               +-------------+                    +--------------+
-//
-// The input actor reads messages from the socket, where messages are delimited
-// by the newline character. The deadline for a complete message is 30 seconds.
-//
-// The heartbeat actor sends a heartbeat (a message that consists of a single
-// newline character) every 10 seconds. In this example, no deadline is applied
-// to message sending.
-//
 class client : public std::enable_shared_from_this< client >
 {
  public:
@@ -111,6 +54,30 @@ class client : public std::enable_shared_from_this< client >
     deadline_.async_wait([this](const boost::system::error_code& /*e*/) { check_deadline(); });
   }
 
+  void write()
+  {
+    auto self(shared_from_this());
+
+    for (std::string message; !stopped_ && std::getline(std::cin, message); std::print("Enter message to send: "))
+    {
+      if (message.empty())
+      {
+        continue;
+      }
+
+      if (message.back() != '\n')
+      {
+        message += '\n';
+      }
+
+      std::print(stderr, "Sending: {}\n", message);
+
+      // Start an asynchronous operation to send the message.
+      boost::asio::async_write(socket_, boost::asio::buffer(message),
+          [self](const boost::system::error_code& error, std::size_t) { self->handle_write(error); });
+    }
+  }
+
   // This function terminates all the actors to shut down the connection. It
   // may be called by the user of the client class, or by the class itself in
   // response to graceful termination or an unrecoverable error.
@@ -128,7 +95,7 @@ class client : public std::enable_shared_from_this< client >
   {
     if (endpoint_iter != endpoints_.end())
     {
-      std::cout << "Trying " << endpoint_iter->endpoint() << "...\n";
+      std::print("Trying {}:{}...\n", endpoint_iter->endpoint().address().to_string(), endpoint_iter->endpoint().port());
 
       // Set a deadline for the connect operation.
       deadline_.expires_after(3s);
@@ -156,7 +123,7 @@ class client : public std::enable_shared_from_this< client >
     // time then the timeout handler must have run first.
     if (!socket_.is_open())
     {
-      std::cerr << "Connect timed out\n";
+      std::print(stderr, "Connect timed out\n");
 
       // Try the next available endpoint.
       start_connect(++endpoint_iter);
@@ -165,7 +132,7 @@ class client : public std::enable_shared_from_this< client >
     // Check if the connect operation failed before the deadline expired.
     else if (error)
     {
-      std::cerr << "Connect error: " << error.message() << "\n";
+      std::print(stderr, "Error on Connect: {}\n", error.message());
 
       // We need to close the socket used in the previous connection
       // attempt before starting a new one.
@@ -178,7 +145,8 @@ class client : public std::enable_shared_from_this< client >
     // Otherwise we have successfully established a connection.
     else
     {
-      std::cout << "Connected to " << endpoint_iter->endpoint() << "\n";
+      std::print(
+          "Connected to {}:{}\n", endpoint_iter->endpoint().address().to_string(), endpoint_iter->endpoint().port());
 
       // Start the input actor.
       start_read();
@@ -218,16 +186,20 @@ class client : public std::enable_shared_from_this< client >
       input_buffer_.erase(0, n);
 
       // Empty messages are heartbeats and so ignored.
-      if (!line.empty())
+      if (line.empty())
       {
-        std::cout << "Received: " << line << "\n";
+        std::print(stderr, "Received: {}\n", "hartbeat");
+      }
+      else
+      {
+        std::print("Received: {}\n", line);
       }
 
       start_read();
     }
     else
     {
-      std::cerr << "Error on receive: " << error.message() << "\n";
+      std::print(stderr, "Error on receive: {}\n", error.message());
 
       stop();
     }
@@ -257,13 +229,19 @@ class client : public std::enable_shared_from_this< client >
 
     if (!error)
     {
+      if (heartbeat_timer_.expiry() <= steady_timer::clock_type::now())
+      {
+        std::print(stderr, "Waiting for next to send: {}\n", "hartbeat");
+      }
+
       // Wait 10 seconds before sending the next heartbeat.
+      heartbeat_timer_.cancel();
       heartbeat_timer_.expires_after(10s);
       heartbeat_timer_.async_wait([this](const boost::system::error_code& /*e*/) { start_write(); });
     }
     else
     {
-      std::cerr << "Error on heartbeat: " << error.message() << "\n";
+      std::print(stderr, "Error on sending heartbeat: {}\n", error.message());
 
       stop();
     }
@@ -309,7 +287,7 @@ auto main(int argc, char* argv[]) -> int
   {
     if (argc != 3)
     {
-      std::cerr << "Usage: async_tcp_client <host> <port>\n";
+      std::print("Usage: {} <host> <port>\n", *argv);
       return EXIT_FAILURE;
     }
 
@@ -320,11 +298,16 @@ auto main(int argc, char* argv[]) -> int
 
     c->start(resolver.resolve(argv[1], argv[2]));
 
-    io_context.run();
+    std::thread io_thread([&io_context]() { io_context.run(); });
+
+    c->write();
+
+    c->stop();
+    io_thread.join();
   }
   catch (std::exception& e)
   {
-    std::cerr << "Exception: " << e.what() << "\n";
+    std::print("Exception: {}\n", e.what());
     return EXIT_FAILURE;
   }
 

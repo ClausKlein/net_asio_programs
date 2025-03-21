@@ -7,7 +7,9 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
+// Moderniced from Claus Klein and ChatGPT
 
+#include <array>
 #include <boost/asio/buffer.hpp>
 #include <boost/asio/error.hpp>
 #include <boost/asio/io_context.hpp>
@@ -25,7 +27,7 @@ using boost::asio::ip::tcp;
 namespace
 {
 
-const int max_length = 1024;
+constexpr size_t max_length{1024};
 
 void session(tcp::socket sock)
 {
@@ -33,7 +35,7 @@ void session(tcp::socket sock)
   {
     for (;;)
     {
-      char data[max_length];
+      std::array< char, max_length > data{};
 
       boost::system::error_code error;
       size_t const length = sock.read_some(boost::asio::buffer(data), error);
@@ -55,7 +57,7 @@ void session(tcp::socket sock)
   }
 }
 
-void server(boost::asio::io_context& io_context, unsigned short port)
+void server(boost::asio::io_context& io_context, short port)
 {
   tcp::acceptor a(io_context, tcp::endpoint(tcp::v4(), port));
   for (;;)
@@ -75,7 +77,7 @@ auto main(int argc, char* argv[]) -> int
     if (argc != 2)
     {
       std::cerr << "Usage: blocking_tcp_echo_server <port>\n";
-      return 1;
+      return EXIT_FAILURE;
     }
 
     boost::asio::io_context io_context;
@@ -87,5 +89,5 @@ auto main(int argc, char* argv[]) -> int
     std::cerr << "Exception: " << e.what() << "\n";
   }
 
-  return 0;
+  return EXIT_SUCCESS;
 }

@@ -7,6 +7,7 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
+// Moderniced from Claus Klein and ChatGPT
 
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/steady_timer.hpp>
@@ -24,16 +25,16 @@ class printer
     timer_.async_wait([this](const boost::system::error_code& /*ec*/) { print(); });
   }
 
-  ~printer() { std::cout << "Final count is " << count_ << std::endl; }
+  ~printer() { std::cout << "Final count is " << count_ << '\n'; }
 
   void print()
   {
     if (count_ < kMaxCount)
     {
-      std::cout << count_ << std::endl;
+      std::cout << count_ << '\n';
       ++count_;
 
-      timer_.expires_at(timer_.expiry() + boost::asio::chrono::seconds(1));
+      timer_.expires_at(timer_.expiry() + boost::asio::chrono::milliseconds(100));
       // cpp11: timer_.async_wait(std::bind(&printer::print, this));
       timer_.async_wait([this](const boost::system::error_code& /*ec*/) { print(); });
     }
@@ -55,8 +56,8 @@ auto main() -> int
   catch (const std::exception& e)
   {
     std::print("Error: {}\n", e.what());
-    return 1;
+    return EXIT_FAILURE;
   }
 
-  return 0;
+  return EXIT_SUCCESS;
 }
