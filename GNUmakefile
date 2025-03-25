@@ -14,7 +14,7 @@ clean: build
 	- ninja -C $< $@
 	- find $< -name '*.gcda' -delete
 
-distclean: clean
+distclean: # XXX clean
 	rm -rf build coverage/* *~ ctags
 
 build: CMakeLists.txt

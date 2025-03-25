@@ -74,7 +74,7 @@ target_link_libraries(
 )
 do_test(blocking_tcp_echo_client --help Usage)
 
-if(APPLE)
+if(APPLE AND NOT ENABLE_TEST_COVERAGE)
     add_executable(async_tcp_client_v20 async_tcp_client_v20.cpp)
     target_link_libraries(
         async_tcp_client_v20
@@ -83,12 +83,15 @@ if(APPLE)
     do_test(async_tcp_client_v20 --help Usage)
 
     add_executable(async_tcp_client async_tcp_client.cpp)
-    target_link_libraries(async_tcp_client PUBLIC Boost::asio fmt::fmt-header-only)
+    target_link_libraries(
+        async_tcp_client
+        PUBLIC Boost::asio fmt::fmt-header-only
+    )
     do_test(async_tcp_client --help Usage)
 
-    # add_executable(blocking_tcp_echo_server blocking_tcp_echo_server.cpp)
-    # target_link_libraries(blocking_tcp_echo_server PUBLIC Boost::asio)
-    #XXX do_test(blocking_tcp_echo_server port Usage)
+    add_executable(blocking_tcp_echo_server blocking_tcp_echo_server.cpp)
+    target_link_libraries(blocking_tcp_echo_server PUBLIC Boost::asio)
+    # FIXME: do_test(blocking_tcp_echo_server port Usage)
 endif()
 
 add_executable(rrcp_client rrcp_client.cpp rrcp_message.hpp)

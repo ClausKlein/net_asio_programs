@@ -11,6 +11,8 @@
     echo '!@#$%^&*()_~<>' > base64.dat
     cat base64.dat | ./base64encode - > base64.txt
     cat base64.dat | ./base64encode - | ./base64decode - | diff base64.dat -
+    ./base64encode base64.dat base64.txt
+    ./base64decode base64.txt base64.dat
 
 hexdump -C base64.dat
 
