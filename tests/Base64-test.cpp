@@ -16,10 +16,11 @@ extern "C"
   // #include "base64.h"
 }
 
+#include <fmt/format.h>
 #include <gtest/gtest.h>
 
 #include <array>
-#include <print>  // for std::println
+// XXX #include <print>  // for std::println
 #include <random>
 #include <string>
 
@@ -75,7 +76,7 @@ TEST(Base64Test, encoding)
   {
     const std::string binary(testpattern[i].bin);
     const std::string encoded{testpattern[i].encoded};
-    std::println("'{}':\t{}", binary, encoded);
+    fmt::println("'{}':\t{}", binary, encoded);
 
     const std::string base64_encoded = base64.encode(binary);
     EXPECT_EQ(encoded, base64_encoded);
@@ -94,7 +95,7 @@ TEST(Base64Test, decoding)
   {
     const std::string encoded{testpattern[i].encoded};
     const std::string binary{testpattern[i].bin};
-    std::println("'{}':\t{}", binary, encoded);
+    fmt::println("'{}':\t{}", binary, encoded);
 
     const std::string decoded = base64.decode(encoded);
     EXPECT_EQ(binary, decoded);
@@ -108,7 +109,7 @@ TEST(Base64Test, ShortString1)
   Base64 base64;
   std::string const original = "A";
   std::string const encoded = base64.encode(original);
-  // std::println("{}:\t{}", original, encoded);
+  // fmt::println("{}:\t{}", original, encoded);
   EXPECT_EQ(encoded, "QQ==");
 
   std::string const decoded = base64.decode(encoded);
@@ -120,7 +121,7 @@ TEST(Base64Test, ShortString2)
   Base64 base64;
   std::string const original = "AA";
   std::string const encoded = base64.encode(original);
-  // std::println("{}:\t{}", original, encoded);
+  // fmt::println("{}:\t{}", original, encoded);
   EXPECT_EQ(encoded, "QUE=");
 
   std::string const decoded = base64.decode(encoded);
@@ -132,7 +133,7 @@ TEST(Base64Test, ShortString3)
   Base64 base64;
   std::string const original = "AAA";
   std::string const encoded = base64.encode(original);
-  // std::println("{}:\t{}", original, encoded);
+  // fmt::println("{}:\t{}", original, encoded);
   EXPECT_EQ(encoded, "QUFB");
 
   std::string const decoded = base64.decode(encoded);
@@ -173,7 +174,7 @@ TEST(Base64Test, LongString)
       "VGhpcyBpcyBub3QgYSByZWFsbHkgbG9uZyBzdHJpbmcsIGJ1dCBhbHNvIHRoYXQgc2hvdWxkIGJl"
       "IGVuY29kZWQgYW5kIGRlY29kZWQgY29ycmVjdGx5Lg=="};
   EXPECT_EQ(expected, encoded);
-  // std::println("{}:\n{}", original, encoded);
+  // fmt::println("{}:\n{}", original, encoded);
 
   std::string const decoded = base64.decode(encoded);
   EXPECT_EQ(original, decoded);
@@ -185,7 +186,7 @@ TEST(Base64Test, FoxString)
   std::string const original = "The quick brown fox jumped over the lazy dogs.";
   std::string const encoded = base64.encode(original);
   EXPECT_EQ(encoded, "VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wZWQgb3ZlciB0aGUgbGF6eSBkb2dzLg==");
-  // std::println("{}:\t{}", original, encoded);
+  // fmt::println("{}:\t{}", original, encoded);
 
   std::string const decoded = base64.decode(encoded);
   EXPECT_EQ(original, decoded);
@@ -205,7 +206,7 @@ TEST(Base64Test, NonAsciiString)
   Base64 base64;
   std::string const original = "\xFC@NOs[\xFEVJ\t@\x80\v\xD0\xAA\xF5";
   std::string const encoded = base64.encode(original);
-  // std::println("'{}':\t{}", original, encoded);
+  // fmt::println("'{}':\t{}", original, encoded);
 
   std::string const decoded = base64.decode(encoded);
   EXPECT_EQ(original, decoded);
@@ -236,7 +237,7 @@ TEST(Base64Test, TestEncoder)
     std::string original("!@#$%^&*()_~<>");
     std::string expected{"IUAjJCVeJiooKV9+PD4="};
     auto encoded = base64.encode(original);
-    std::println("'{}':\t{}", original, encoded);
+    fmt::println("'{}':\t{}", original, encoded);
 
     EXPECT_EQ(encoded, expected);
     EXPECT_EQ(original, base64.decode(encoded));
