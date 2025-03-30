@@ -32,6 +32,8 @@ using boost::asio::ip::tcp;
 using namespace std::chrono_literals;
 using message_queue = std::deque< std::string >;
 
+using namespace RRCP;
+
 constexpr size_t max_length = 65432;
 constexpr auto timeout_duration = 1s;
 

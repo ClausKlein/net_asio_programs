@@ -33,6 +33,8 @@ auto main(int argc, char* argv[]) -> int
 {
   try
   {
+    using namespace RRCP;
+
     if (argc != 3)
     {
       std::cerr << "Usage: blocking_tcp_echo_client <host> <port>\n";

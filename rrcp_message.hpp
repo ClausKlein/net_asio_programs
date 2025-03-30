@@ -21,6 +21,8 @@
 
 #include "rrcp_helper.hpp"
 
+using namespace RRCP;
+
 class rrcp_message
 {
  public:

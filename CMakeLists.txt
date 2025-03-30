@@ -112,7 +112,11 @@ if(APPLE)
     add_test(NAME async_client COMMAND async_client)
 endif()
 
-add_executable(rrcp_async_tcp_client rrcp_async_tcp_client.cpp)
+add_executable(
+    rrcp_async_tcp_client
+    rrcp_async_tcp_client.cpp
+    async_rrcp_client.hpp
+)
 target_link_libraries(
     rrcp_async_tcp_client
     PRIVATE rrcp_helper
