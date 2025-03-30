@@ -83,7 +83,7 @@ class AsynchronousTCPClient : public std::enable_shared_from_this< AsynchronousT
     boost::asio::post(io_context_,
         [this, message]()
         {
-          bool const write_in_progress = !write_msgs_.empty();
+          bool const write_in_progress{!write_msgs_.empty()};
           write_msgs_.push_back(message);
           if (!write_in_progress)
           {

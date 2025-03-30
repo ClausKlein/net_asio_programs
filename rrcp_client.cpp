@@ -50,7 +50,7 @@ class rrcp_client
     boost::asio::post(io_context_,
         [this, msg]()
         {
-          bool const write_in_progress = !write_msgs_.empty();
+          bool const write_in_progress{!write_msgs_.empty()};
           write_msgs_.push_back(msg);
           if (!write_in_progress)
           {

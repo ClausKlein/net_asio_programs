@@ -72,6 +72,8 @@ class rrcp_message
   {
     const std::string header(data_.data(), header_length);
     msg_length_ = std::stoul(header, nullptr, 16);
+
+    // NOLINTNEXTLINE(readability-simplify-boolean-expr)
     if (msg_length_ > max_msg_length)
     {
       fmt::print(stderr, "Invalid msg_length!\n");
@@ -79,6 +81,7 @@ class rrcp_message
       msg_length_ = 0;
       return false;
     }
+
     return true;
   }
 

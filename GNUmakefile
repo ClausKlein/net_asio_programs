@@ -26,11 +26,9 @@ check: all
 fix: all
 	run-clang-tidy -p build -fix \
 	 -checks='-*,\
-cppcoreguidelines-init-variables,\
 hicpp-explicit-conversions,\
 hicpp-member-init,\
 hicpp-named-parameter,\
-misc-const-correctness,\
 modernize-deprecated-headers,\
 modernize-loop-convert,\
 modernize-use-nodiscard,\
@@ -44,6 +42,7 @@ readability-container-data-pointer,\
 readability-else-after-return,\
 readability-make-member-function-const,\
 readability-redundant-member-init,\
+readability-simplify-boolean-expr,\
 readability-use-std-min-max,\
 ' \
 	 *.cpp
