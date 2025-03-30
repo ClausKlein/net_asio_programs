@@ -74,7 +74,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
         });
   }
 
-  auto connected() -> bool { return connected_; }
+  auto connected() const -> bool { return connected_; }
 
   // This function write the message into the msg queue and starts the write actor
   void write(const std::string& message)

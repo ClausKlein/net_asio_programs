@@ -40,7 +40,9 @@ performance-avoid-endl,\
 performance-unnecessary-value-param,\
 readability-avoid-const-params-in-decls,\
 readability-braces-around-statements,\
+readability-container-data-pointer,\
 readability-else-after-return,\
+readability-make-member-function-const,\
 readability-redundant-member-init,\
 readability-use-std-min-max,\
 ' \

@@ -49,7 +49,7 @@ class base64
   {
     std::string dest;
     dest.resize(encoded_size(len));
-    dest.resize(encode(&dest[0], data, len));
+    dest.resize(encode(dest.data(), data, len));
     return dest;
   }
 
@@ -66,7 +66,7 @@ class base64
 
     // TODO(CK): remove first at least all "\n\r" or better all non printable chars!
     std::string striped = remove_whitespace(data);
-    auto const result = decode(&dest[0], striped.data(), striped.size());
+    auto const result = decode(dest.data(), striped.data(), striped.size());
     dest.resize(result.first);
     return dest;
   }
