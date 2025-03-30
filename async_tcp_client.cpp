@@ -241,7 +241,7 @@ class client : public std::enable_shared_from_this< client >
     }
 
     std::string message{'\n'};
-    std::print(stderr, "Sending: {}\n", "hartbeat");
+    std::cerr << "Sending: heartbeat\n";
 
     // Start an asynchronous operation to send a heartbeat message.
     boost::asio::async_write(socket_, boost::asio::buffer(message),

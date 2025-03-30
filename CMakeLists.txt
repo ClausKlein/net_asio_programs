@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.28...4.0)
 
-project(RRCP-client VERSION 0.1.0 LANGUAGES CXX C)
+project(RRCP-client VERSION 0.1.0 LANGUAGES CXX)
 
 # ---- add dependencies ----
 
-find_package(Boost 1.87 COMPONENTS headers REQUIRED HINTS $ENV{HOME}/.local)
+find_package(Boost 1.87 COMPONENTS asio beast REQUIRED HINTS $ENV{HOME}/.local)
 find_package(fmt 11 REQUIRED HINTS $ENV{HOME}/.local)
 
 # ---- default settings ----
@@ -53,7 +53,7 @@ function(do_test target arg result)
 endfunction()
 
 add_executable(async_tcp_echo_server async_tcp_echo_server.cpp)
-target_link_libraries(async_tcp_echo_server PUBLIC Boost::headers)
+target_link_libraries(async_tcp_echo_server PUBLIC Boost::asio)
 do_test(async_tcp_echo_server "" port)
 
 add_library(rrcp_helper STATIC rrcp_helper.cpp rrcp_helper.hpp)
@@ -62,7 +62,7 @@ add_executable(async_tcp_echo_client async_tcp_echo_client.cpp)
 target_link_libraries(
     async_tcp_echo_client
     PRIVATE rrcp_helper
-    PUBLIC Boost::headers fmt::fmt-header-only
+    PUBLIC Boost::asio fmt::fmt-header-only
 )
 do_test(async_tcp_echo_client --help Usage)
 
@@ -70,33 +70,45 @@ add_executable(blocking_tcp_echo_client blocking_tcp_echo_client.cpp)
 target_link_libraries(
     blocking_tcp_echo_client
     PRIVATE rrcp_helper
-    PUBLIC Boost::headers fmt::fmt-header-only
+    PUBLIC Boost::asio fmt::fmt-header-only
 )
 do_test(blocking_tcp_echo_client --help Usage)
 
-add_executable(async_tcp_client_v20 async_tcp_client_v20.cpp)
-target_link_libraries(async_tcp_client_v20 PUBLIC Boost::headers)
-do_test(async_tcp_client_v20 --help Usage)
+if(APPLE AND NOT ENABLE_TEST_COVERAGE)
+    add_executable(async_tcp_client_v20 async_tcp_client_v20.cpp)
+    target_link_libraries(
+        async_tcp_client_v20
+        PUBLIC Boost::asio fmt::fmt-header-only
+    )
+    do_test(async_tcp_client_v20 --help Usage)
 
-add_executable(async_tcp_client async_tcp_client.cpp)
-target_link_libraries(async_tcp_client PUBLIC Boost::headers)
-do_test(async_tcp_client --help Usage)
+    add_executable(async_tcp_client async_tcp_client.cpp)
+    target_link_libraries(
+        async_tcp_client
+        PUBLIC Boost::asio fmt::fmt-header-only
+    )
+    do_test(async_tcp_client --help Usage)
 
-# add_executable(blocking_tcp_echo_server blocking_tcp_echo_server.cpp)
-# target_link_libraries(blocking_tcp_echo_server PUBLIC Boost::headers)
-#XXX do_test(blocking_tcp_echo_server port Usage)
+    add_executable(blocking_tcp_echo_server blocking_tcp_echo_server.cpp)
+    target_link_libraries(blocking_tcp_echo_server PUBLIC Boost::asio)
+    # FIXME: do_test(blocking_tcp_echo_server port Usage)
+endif()
 
 add_executable(rrcp_client rrcp_client.cpp rrcp_message.hpp)
-target_link_libraries(rrcp_client PRIVATE rrcp_helper PUBLIC Boost::headers)
+target_link_libraries(
+    rrcp_client
+    PRIVATE rrcp_helper
+    PUBLIC Boost::asio fmt::fmt-header-only
+)
 do_test(rrcp_client --help Usage)
 
 if(APPLE)
     add_executable(timer timer.cpp)
-    target_link_libraries(timer PUBLIC Boost::headers)
+    target_link_libraries(timer PUBLIC Boost::asio fmt::fmt-header-only)
     add_test(NAME timer COMMAND timer)
 
     add_executable(async_client async_client.cpp)
-    target_link_libraries(async_client PUBLIC Boost::headers)
+    target_link_libraries(async_client PUBLIC Boost::asio fmt::fmt-header-only)
     add_test(NAME async_client COMMAND async_client)
 endif()
 
@@ -104,7 +116,7 @@ add_executable(rrcp_async_tcp_client rrcp_async_tcp_client.cpp)
 target_link_libraries(
     rrcp_async_tcp_client
     PRIVATE rrcp_helper
-    PUBLIC Boost::headers fmt::fmt-header-only
+    PUBLIC Boost::asio fmt::fmt-header-only
 )
 do_test(rrcp_async_tcp_client --help Usage)
 
@@ -123,8 +135,8 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
-add_library(base64c STATIC)
-target_sources(base64c PRIVATE base64.c PUBLIC FILE_SET HEADERS FILES base64.h)
+# add_library(base64c STATIC)
+# target_sources(base64c PRIVATE base64.c PUBLIC FILE_SET HEADERS FILES base64.h)
 
 add_library(Base64 STATIC)
 target_sources(
@@ -132,10 +144,14 @@ target_sources(
     PRIVATE Base64.cpp
     PUBLIC FILE_SET HEADERS FILES Base64.hpp
 )
+target_link_libraries(Base64 PUBLIC Boost::beast)
 
 add_executable(Base64-test tests/Base64-test.cpp)
-target_link_libraries(Base64-test PRIVATE Base64 base64c GTest::gtest_main)
-# FIXME: add_test(NAME Base64-test COMMAND Base64-test)
+target_link_libraries(
+    Base64-test
+    PRIVATE Base64 GTest::gtest_main fmt::fmt-header-only
+)
+add_test(NAME Base64-test COMMAND Base64-test)
 
 if(APPLE AND BUILD_EXAMPLES)
     add_subdirectory(examples)

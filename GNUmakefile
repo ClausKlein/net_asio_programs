@@ -10,7 +10,11 @@ MAKEFLAGS+= --warn-undefined-variables
 all: build
 	ninja -C build
 
-distclean:
+clean: build
+	- ninja -C $< $@
+	- find $< -name '*.gcda' -delete
+
+distclean: # XXX clean
 	rm -rf build coverage/* *~ ctags
 
 build: CMakeLists.txt
