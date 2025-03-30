@@ -4,8 +4,12 @@ project(RRCP-client VERSION 0.1.0 LANGUAGES CXX)
 
 # ---- add dependencies ----
 
-find_package(Boost 1.71 COMPONENTS asio beast REQUIRED HINTS $ENV{HOME}/.local)
-find_package(fmt 11 REQUIRED HINTS $ENV{HOME}/.local)
+if(NOT TARGET Boost::headers)
+    find_package(Boost 1.71 COMPONENTS headers REQUIRED HINTS $ENV{HOME}/.local)
+endif()
+if(NOT TARGET fmt::fmt-header-only)
+    find_package(fmt 11 REQUIRED HINTS $ENV{HOME}/.local)
+endif()
 
 # ---- default settings ----
 
@@ -60,7 +64,7 @@ function(do_test target arg result)
 endfunction()
 
 add_executable(async_tcp_echo_server async_tcp_echo_server.cpp)
-target_link_libraries(async_tcp_echo_server PUBLIC Boost::asio)
+target_link_libraries(async_tcp_echo_server PUBLIC Boost::headers)
 do_test(async_tcp_echo_server "" port)
 
 add_library(rrcp_helper STATIC)
@@ -69,67 +73,55 @@ target_sources(
     PRIVATE rrcp_helper.cpp
     PUBLIC FILE_SET HEADERS FILES async_rrcp_client.hpp rrcp_helper.hpp
 )
+target_link_libraries(rrcp_helper PUBLIC Boost::headers fmt::fmt-header-only)
 
 add_executable(async_tcp_echo_client async_tcp_echo_client.cpp)
-target_link_libraries(
-    async_tcp_echo_client
-    PRIVATE rrcp_helper
-    PUBLIC Boost::asio fmt::fmt-header-only
-)
+target_link_libraries(async_tcp_echo_client PRIVATE rrcp_helper)
 do_test(async_tcp_echo_client --help Usage)
 
 add_executable(blocking_tcp_echo_client blocking_tcp_echo_client.cpp)
-target_link_libraries(
-    blocking_tcp_echo_client
-    PRIVATE rrcp_helper
-    PUBLIC Boost::asio fmt::fmt-header-only
-)
+target_link_libraries(blocking_tcp_echo_client PRIVATE rrcp_helper)
 do_test(blocking_tcp_echo_client --help Usage)
 
 if(APPLE AND NOT ENABLE_TEST_COVERAGE)
     add_executable(async_tcp_client_v20 async_tcp_client_v20.cpp)
     target_link_libraries(
         async_tcp_client_v20
-        PUBLIC Boost::asio fmt::fmt-header-only
+        PUBLIC Boost::headers fmt::fmt-header-only
     )
     do_test(async_tcp_client_v20 --help Usage)
 
     add_executable(async_tcp_client async_tcp_client.cpp)
     target_link_libraries(
         async_tcp_client
-        PUBLIC Boost::asio fmt::fmt-header-only
+        PUBLIC Boost::headers fmt::fmt-header-only
     )
     do_test(async_tcp_client --help Usage)
 
     add_executable(blocking_tcp_echo_server blocking_tcp_echo_server.cpp)
-    target_link_libraries(blocking_tcp_echo_server PUBLIC Boost::asio)
+    target_link_libraries(blocking_tcp_echo_server PUBLIC Boost::headers)
     # FIXME: do_test(blocking_tcp_echo_server port Usage)
 endif()
 
 if(APPLE AND BUILD_TESTING)
     add_executable(rrcp_client rrcp_client.cpp rrcp_message.hpp)
-    target_link_libraries(
-        rrcp_client
-        PRIVATE rrcp_helper
-        PUBLIC Boost::asio fmt::fmt-header-only
-    )
+    target_link_libraries(rrcp_client PRIVATE rrcp_helper)
     do_test(rrcp_client --help Usage)
 
     add_executable(timer timer.cpp)
-    target_link_libraries(timer PUBLIC Boost::asio fmt::fmt-header-only)
+    target_link_libraries(timer PUBLIC Boost::headers fmt::fmt-header-only)
     add_test(NAME timer COMMAND timer)
 
     add_executable(async_client async_client.cpp)
-    target_link_libraries(async_client PUBLIC Boost::asio fmt::fmt-header-only)
+    target_link_libraries(
+        async_client
+        PUBLIC Boost::headers fmt::fmt-header-only
+    )
     add_test(NAME async_client COMMAND async_client)
 endif()
 
 add_executable(rrcp_async_tcp_client rrcp_async_tcp_client.cpp)
-target_link_libraries(
-    rrcp_async_tcp_client
-    PRIVATE rrcp_helper
-    PUBLIC Boost::asio fmt::fmt-header-only
-)
+target_link_libraries(rrcp_async_tcp_client PRIVATE rrcp_helper)
 do_test(rrcp_async_tcp_client --help Usage)
 
 if(BUILD_TESTING)
@@ -156,13 +148,12 @@ if(BUILD_TESTING)
         PRIVATE Base64.cpp
         PUBLIC FILE_SET HEADERS FILES Base64.hpp
     )
-    target_link_libraries(rrcp_helper PUBLIC Boost::beast)
+    target_link_libraries(
+        rrcp_helper # Not needed: PUBLIC Boost::beast
+    )
 
     add_executable(Base64-test tests/Base64-test.cpp)
-    target_link_libraries(
-        Base64-test
-        PRIVATE rrcp_helper GTest::gtest_main fmt::fmt-header-only
-    )
+    target_link_libraries(Base64-test PRIVATE rrcp_helper GTest::gtest_main)
     add_test(NAME Base64-test COMMAND Base64-test)
 endif()
 

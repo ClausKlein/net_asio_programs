@@ -7,6 +7,7 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
+// Moderniced from Claus Klein and ChatGPT
 
 #ifndef RRCP_MESSAGE_HPP
 #define RRCP_MESSAGE_HPP
@@ -14,12 +15,10 @@
 #include <fmt/format.h>
 
 #include <algorithm>
-#include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <iostream>
 #include <string>
-// #include <string_view>
+// XXX #include <string_view>
 
 #include "rrcp_helper.hpp"
 
@@ -51,7 +50,7 @@ class rrcp_message
   {
     msg_length_ = new_length;
     msg_length_ = std::min(msg_length_, max_msg_length);
-    std::cerr << "body_length(" << msg_length_ << ")\n";
+    fmt::print(stderr, "body_length({})\n", msg_length_);
   }
 
   auto decode_body() -> bool
@@ -60,7 +59,7 @@ class rrcp_message
     auto result = esc2char(std::string(body(), msg_length_));
     if (result.length() != msg_length_)
     {
-      std::cerr << result << '\n';
+      fmt::print(stderr, "{}\n", result);
 
       body_length(result.length());
       std::memcpy(body(), result.c_str(), msg_length_);
@@ -75,7 +74,7 @@ class rrcp_message
     msg_length_ = std::stoul(header, nullptr, 16);
     if (msg_length_ > max_msg_length)
     {
-      std::cerr << "Invalid msg_length!\n";
+      fmt::print(stderr, "Invalid msg_length!\n");
 
       msg_length_ = 0;
       return false;
