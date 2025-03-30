@@ -9,6 +9,8 @@
 //
 // Moderniced from Claus Klein and ChatGPT
 
+#include <fmt/format.h>
+
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/steady_timer.hpp>
 #include <functional>
@@ -55,7 +57,7 @@ auto main() -> int
   }
   catch (const std::exception& e)
   {
-    std::print("Error: {}\n", e.what());
+    fmt::print("Error: {}\n", e.what());
     return EXIT_FAILURE;
   }
 

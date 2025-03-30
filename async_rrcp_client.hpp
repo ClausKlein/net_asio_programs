@@ -14,6 +14,7 @@
 
 #include <fmt/format.h>
 
+#include <boost/algorithm/string/predicate.hpp>  // for starts_with
 #include <boost/asio/buffer.hpp>
 #include <boost/asio/connect.hpp>
 #include <boost/asio/io_context.hpp>
@@ -112,7 +113,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
             std::string const line = esc2char(self->input_buffer_.substr(1, length - 1));  // w/o START, STOP
             self->input_buffer_.erase(0, length);
 
-            if (!line.starts_with("gPing"))
+            if (!boost::algorithm::starts_with(line, "gPing"))
             {
               fmt::print("{}\n", line);
             }

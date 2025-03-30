@@ -11,6 +11,8 @@
 #ifndef RRCP_MESSAGE_HPP
 #define RRCP_MESSAGE_HPP
 
+#include <fmt/format.h>
+
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
@@ -31,14 +33,14 @@ class rrcp_message
 
   rrcp_message() = default;
 
-  // TODO: or better const &std::string_view?
+  // TODO(CK): or better const &std::string_view?
   [[nodiscard]] auto data() const -> const char* { return data_.data(); }
 
   auto data() -> char* { return data_.data(); }
 
   [[nodiscard]] auto length() const -> std::size_t { return header_length + msg_length_; }
 
-  // TODO: or better const &std::string_view?
+  // TODO(CK): or better const &std::string_view?
   [[nodiscard]] auto body() const -> const char* { return data_.data() + header_length; }
 
   auto body() -> char* { return data_.data() + header_length; }
@@ -54,7 +56,7 @@ class rrcp_message
 
   auto decode_body() -> bool
   {
-    // TODO: or better const &std::string_view?
+    // TODO(CK): or better const &std::string_view?
     auto result = esc2char(std::string(body(), msg_length_));
     if (result.length() != msg_length_)
     {
@@ -83,7 +85,7 @@ class rrcp_message
 
   void encode_body()
   {
-    // TODO: or better const &std::string_view?
+    // TODO(CK): or better const &std::string_view?
     auto msg = char2esc(std::string(body(), msg_length_));
     if (msg.length() != msg_length_)
     {
@@ -94,7 +96,7 @@ class rrcp_message
 
   void encode_header()
   {
-    std::string header = std::format("{:04x}", static_cast< uint16_t >(msg_length_));
+    std::string header = fmt::format("{:04x}", static_cast< uint16_t >(msg_length_));
     std::memcpy(data_.data(), header.data(), header_length);
   }
 

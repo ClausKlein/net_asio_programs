@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.28...4.0)
+cmake_minimum_required(VERSION 3.25...4.0)
 
 project(Base64-examples VERSION 0.1.0 LANGUAGES CXX)
 
