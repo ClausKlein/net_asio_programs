@@ -65,7 +65,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
           {
             fmt::print(stderr, "Connected to server.\n");
             self->connected_ = true;
-            self->read();
+            self->do_read();
             self->send_heartbeat();
           }
           else
@@ -90,42 +90,54 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
       std::this_thread::sleep_for(timeout_duration);
     }
 
+    std::string msg_id = fmt::format("{:d} ", (++msg_id_));
+    std::string msg = msg_id + message;
+    fmt::print(stderr, "write_msgs_.push_back({})\n", msg);
+
     boost::asio::post(io_context_,
-        [this, message]()
+        [this, msg]()
         {
           bool const write_in_progress{!write_msgs_.empty()};
-          write_msgs_.push_back(message);
+          write_msgs_.push_back(msg);
           if (!write_in_progress)
           {
             deadline_.expires_after(timeout_duration);
             do_write();
           }
         });
+
+    auto result = read(msg_id);
   }
 
-  void read()
+  auto read(const std::string& msg_id) -> std::string
   {
-    boost::asio::async_read_until(socket_, boost::asio::dynamic_buffer(input_buffer_), STOP,
-        [self = shared_from_this()](const boost::system::error_code& ec, std::size_t length)
-        {
-          if (!ec)
-          {
-            std::string const line = esc2char(self->input_buffer_.substr(1, length - 1));  // w/o START, STOP
-            self->input_buffer_.erase(0, length);
+    std::string message;
 
-            if (!boost::algorithm::starts_with(line, "gPing"))
-            {
-              fmt::print("{}\n", line);
-            }
-            self->deadline_.expires_after(heartbeat_interval + timeout_duration);
-            self->read();
-          }
-          else
+    do
+    {
+      boost::asio::post(io_context_,
+          [this, &message]()
           {
-            fmt::print(stderr, "Error reading message: {}\n", ec.message());
-            self->stop();
-          }
-        });
+            if (!read_msgs_.empty())
+            {
+              message = read_msgs_.front();
+              read_msgs_.pop_front();
+            }
+          });
+
+      if (message.length())
+      {
+        fmt::print(stderr, "read_msgs_.front({})\n", message);
+        if (!boost::algorithm::starts_with(message, msg_id))
+        {
+          fmt::print("{}\n", message);
+          break;
+        }
+      }
+      std::this_thread::sleep_for(500ms);
+    } while (!stopped_);
+
+    return message;
   }
 
   void stop()
@@ -140,6 +152,32 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
   }
 
  private:
+  void do_read()
+  {
+    boost::asio::async_read_until(socket_, boost::asio::dynamic_buffer(input_buffer_), STOP,
+        [self = shared_from_this()](const boost::system::error_code& ec, std::size_t length)
+        {
+          if (!ec)
+          {
+            std::string const line = esc2char(self->input_buffer_.substr(1, length - 1));  // w/o START, STOP
+            self->input_buffer_.erase(0, length);
+
+            if (!boost::algorithm::starts_with(line, "gPing"))
+            {
+              fmt::print(stderr, "{}\n", line);
+              self->read_msgs_.push_back(line);
+            }
+            self->deadline_.expires_after(heartbeat_interval + timeout_duration);
+            self->do_read();
+          }
+          else
+          {
+            fmt::print(stderr, "Error reading message: {}\n", ec.message());
+            self->stop();
+          }
+        });
+  }
+
   void do_write()
   {
     auto self(shared_from_this());
@@ -148,7 +186,6 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
         {
           if (!ec)
           {
-            fmt::print(stderr, "Message sent.\n");
             write_msgs_.pop_front();
             if (!write_msgs_.empty())
             {
@@ -171,7 +208,8 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
       return;
     }
 
-    std::string heartbeat_message{START + char2esc("M:Utility GPing\"ÄÖÜ€0ß\"") + STOP};
+    // FIXME: std::string heartbeat_message{START + char2esc("M:Utility GPing\"ÄÖÜ€0ß\"") + STOP};
+    std::string heartbeat_message{START + char2esc("gPing\"ÄÖÜ€0ß\"") + STOP};
     fmt::print(stderr, "Send heartbeat: {}\n", heartbeat_message);
     boost::asio::async_write(socket_, boost::asio::buffer(heartbeat_message),
         [self = shared_from_this()](const boost::system::error_code& ec, std::size_t)
@@ -211,7 +249,9 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
   boost::asio::steady_timer deadline_;
   boost::asio::steady_timer heartbeat_timer_;
   std::string input_buffer_;
+  message_queue read_msgs_;
   message_queue write_msgs_;
+  uint16_t msg_id_{1000};
   bool connected_{false};
   bool stopped_{false};
 };
