@@ -145,7 +145,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
             }
           });
 
-      if (response.length())
+      if (!response.empty())
       {
         // DEBUG:
         fmt::print(stderr, "read_msgs_.front({})\n", response);

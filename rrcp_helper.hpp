@@ -31,7 +31,7 @@ extern auto char2esc(std::string_view data) -> std::string;
 
 // Here’s a C++17 function that inserts a given string after the first word in an input string,
 // where words are separated by WS
-inline std::string insertAfterFirstWord(const std::string& input, const std::string& toInsert)
+inline auto insertAfterFirstWord(const std::string& input, const std::string& toInsert) -> std::string
 {
   if (toInsert.empty())
   {
