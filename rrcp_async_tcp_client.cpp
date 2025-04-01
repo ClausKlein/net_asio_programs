@@ -63,7 +63,8 @@ auto main(int argc, char* argv[]) -> int
         continue;
       }
 
-      c->write(line);
+      const auto response = c->write(line);
+      fmt::print("{}\n", response);
     }
     std::this_thread::sleep_for(heartbeat_interval);  // NOTE: only for gcov results! CK
 

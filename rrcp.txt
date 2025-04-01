@@ -29,6 +29,32 @@ M:Audio GAudioVolume    // without optionl parts
 // NOTE: M:RADIO d FREQUENCY 123456789   // trap data message
 // NOTE: M:Utility S Binary #36:AAECAwQFBgcICQoLDA0OD8KAwoHDvsO/Cg==   // bas64 encoded binary data
 
+// XXX Test output:
+// XXX Enter command: write_msgs_.push_back(M:Mission 1032 GGlobalAddr)
+// XXX 1032 gGlobalAddr"SDHR-RGA"
+// XXX read_msgs_.front(1032 gGlobalAddr"SDHR-RGA")
+// XXX 1032 gGlobalAddr"SDHR-RGA"
+// XXX Enter command: write_msgs_.push_back(M:Mission 1033 SGlobalAddr"testString")
+// XXX 1033 s0GlobalAddr
+// XXX read_msgs_.front(1033 s0GlobalAddr)
+// XXX 1033 s0GlobalAddr
+// XXX Enter command: write_msgs_.push_back(M:Mission 1034 GMissions)
+// XXX 1034 gMissions1,"ExWF_Test","Original"
+// XXX read_msgs_.front(1034 gMissions1,"ExWF_Test","Original")
+// XXX 1034 gMissions1,"ExWF_Test","Original"
+// XXX Enter command: write_msgs_.push_back(M:Mission 1035 GPresets0,1)
+// XXX 1035 gPresets5,1,"Mission","ExWF","RN1",2,"Mission","ExWF","RN2",3,"Mission","ExWF","RN3",4,"Mission","ExWF","RN4",5,"Mission","ExWF","RN5"
+// XXX read_msgs_.front(1035 gPresets5,1,"Mission","ExWF","RN1",2,"Mission","ExWF","RN2",3,"Mission","ExWF","RN3",4,"Mission","ExWF","RN4",5,"Mission","ExWF","RN5")
+// XXX 1035 gPresets5,1,"Mission","ExWF","RN1",2,"Mission","ExWF","RN2",3,"Mission","ExWF","RN3",4,"Mission","ExWF","RN4",5,"Mission","ExWF","RN5"
+// XXX Enter command: write_msgs_.push_back(M:OBIT 1036 GGOState)
+// XXX 1036 g0GOState
+// XXX read_msgs_.front(1036 g0GOState)
+// XXX 1036 g0GOState
+// XXX Enter command: write_msgs_.push_back(M:OBIT 1037 TGOState1)
+// XXX 1037 t0GOState
+// XXX Send heartbeat:
+// XXX M:Utility GPing"async client"
+
 //
 // The more real samples:
 //

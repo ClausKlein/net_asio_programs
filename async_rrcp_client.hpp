@@ -15,6 +15,7 @@
 #include <fmt/format.h>
 
 #include <boost/algorithm/string/predicate.hpp>  // for starts_with
+#include <boost/algorithm/string/trim.hpp>  // for trim_left
 #include <boost/asio/buffer.hpp>
 #include <boost/asio/connect.hpp>
 #include <boost/asio/io_context.hpp>
@@ -77,29 +78,37 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
 
   [[nodiscard]] auto connected() const -> bool { return connected_; }
 
-  // This function write the message into the send msg queue and starts the write actor
+  // This function write the message into the send msg queue and starts the write actor.
+  // It wait for the response message and return this.
   //
   // TODO(CK): should  have to input strings: the MIB name and the command string!
   //
-  void write(const std::string& message)
+  [[nodiscard]] auto write(const std::string& message) -> std::string
   {
     while (!connected_)
     {
       if (stopped_)
       {
-        return;
+        return {};
       }
       fmt::print(stderr, "Client is not connected yet.\n");
       std::this_thread::sleep_for(timeout_duration);
     }
 
-    // TODO(CK): prevent to use the msg_id for trap commands!
-    std::string msg_id = fmt::format("{:d}", (++msg_id_));
+    // Insert the next message number for Set/Get request.
+    // But prevent to insert the msg_id for Trap commands!
+    std::string msg_id;
+    auto trap_cmd = message.find(" T");
+    if (trap_cmd == std::string::npos)
+    {
+      msg_id = fmt::format("{:d}", (++msg_id_));
+    }
     std::string msg = insertAfterFirstWord(message, msg_id);
 
     // TRACE:
     fmt::print(stderr, "write_msgs_.push_back({})\n", msg);
 
+    // Create the RRCP message frame
     std::string command = char2esc(msg);
     command.insert(0, 1, START);
     command += STOP;
@@ -116,8 +125,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
           }
         });
 
-    auto response = read(msg_id);
-    fmt::print("{}\n", response);
+    return read(msg_id);
   }
 
   // This function try to read the response message from the receive msg queue
@@ -142,15 +150,25 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
         // DEBUG:
         fmt::print(stderr, "read_msgs_.front({})\n", response);
 
-        // FIXME: if (boost::algorithm::starts_with(response, msg_id))
+        // FIXME: wrong order for error responses like this: "E:2 10001"
         auto pos = response.find(msg_id);
-        if(pos != std::string::npos)
+        if (pos != std::string::npos)
         {
-          // FIXME: response = response.substr(0, pos - 1)
+          // Remove the inserted message number for Set/Get responses.
+          if (boost::algorithm::starts_with(response, msg_id))
+          {
+            response = response.substr(pos + msg_id.length());
+            boost::trim_left(response);
+          }
+          break;
+        }
+
+        if (boost::algorithm::starts_with(response, "E:"))
+        {
           break;
         }
       }
-      std::this_thread::sleep_for(500ms);
+      std::this_thread::sleep_for(250ms);
     } while (!stopped_);
 
     return response;
@@ -181,7 +199,8 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
             if (boost::algorithm::starts_with(line, "d"))
             {
               // Handle trap data messages
-              fmt::print("{}\n", line);
+              fmt::print(stderr, "Ignored trap data: {}\n", line);
+              // TODO(CK): fmt::print("{}\n", line);
             }
             else if (!boost::algorithm::starts_with(line, "gPing"))
             {
@@ -271,7 +290,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
   std::string input_buffer_;
   message_queue read_msgs_;
   message_queue write_msgs_;
-  uint16_t msg_id_{1000};
+  uint16_t msg_id_{10000};
   bool connected_{false};
   bool stopped_{false};
 };

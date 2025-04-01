@@ -33,21 +33,22 @@ extern auto char2esc(std::string_view data) -> std::string;
 // where words are separated by WS
 inline std::string insertAfterFirstWord(const std::string& input, const std::string& toInsert)
 {
-  // XXX size_t firstSpace = input.find_first_of(" \t\n\r");  // Find first whitespace
   size_t firstSpace = input.find_first_of(" \t");  // Find first whitespace
-  if (firstSpace == std::string::npos)
+  if (toInsert.empty() || (firstSpace == std::string::npos))
   {
     return input;  // No spaces found, return original string
   }
 
-  size_t nextNonSpace = input.find_first_not_of(" \t\n", firstSpace);
-
-  // If there's no second word, just append toInsert after the first word
+  // NOTE: Only if Set/Get command request, NOT for Trap commands!
+  size_t nextNonSpace = input.find_first_of("SG", firstSpace);
   if (nextNonSpace == std::string::npos)
   {
-    return input + " " + toInsert;
+    // If there's no second valid command, just return the input!
+    // XXX return input + " " + toInsert;
+    return input;
   }
 
+  // If there's valid command, just append toInsert after the first word
   return input.substr(0, firstSpace + 1) + toInsert + " " + input.substr(nextNonSpace);
 }
 
