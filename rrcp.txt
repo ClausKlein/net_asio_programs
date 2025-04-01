@@ -1,31 +1,37 @@
 M:Utility GInitialInfo"v8.53.2","async",10
 M:Radio SString"\rHallo\tWorld\n"
-M:WF.FF.Main 123456 T Octet 1   // with optional Message Number:
-M:WF.FF.Main 123456 t
-M:OBit L:1 123456 GGoState  // with optional Logical Address:
+
+// NOTE: M:WF.FF.Main 123456 T Octet 1  // with optional Message Number:
+// NOTE: M:WF.FF.Main 123456 t
+// NOTE: M:OBit L:1 123456 GGoState     // with optional Logical Address:
+
 M:Audio GAudioVolume    // without optionl parts
-M:Log SStruct 1,-1,3.14 // multiple parameters
+// NOTE: M:Log SStruct 1,-1,3.14 // multiple parameters
 
 // The magic part
 // GET-request TU SET-request TU GET-request TU:
-GFRQ;MOD SFRQ10000000;MOD13;BW80000 GFRQ;MOD
+// NOTE: GFRQ;MOD SFRQ10000000;MOD13;BW80000 GFRQ;MOD
+//
 // GET-response TU SET-response TU GET-response TU:
-gFRQ18000000;MOD12 s5BW gFRQ18000000;MOD12
+// NOTE: gFRQ18000000;MOD12 s5BW gFRQ18000000;MOD12
+
 // NOTE:
 // There is an error within the BW command, the complete SET-request TU is cancelled.
 // The GET-request TU is replied by the corresponding GET-response TU.
-M:MultilCmd S Octet 1;Long-1;String"Hallo World\n";Struct 1,+1,+3.14   // multiple commands's
-M:Test 123456 S FREQ123456;MOD12;LOGIN"user","password" G FREQ;MOD;STATUS    // multiple TU
-M:Test gFREQ180000;MOD12 s5BW gFREQ180000;MOD12;STATUS"Running"   // TU partly failed
+// NOTE: M:MultilCmd S Octet 1;Long-1;String"Hallo World\n";Struct 1,+1,+3.14   // multiple commands's
+// NOTE: M:Test 123456 S FREQ123456;MOD12;LOGIN"user","password" G FREQ;MOD;STATUS    // multiple TU
+// NOTE: M:Test gFREQ180000;MOD12 s5BW gFREQ180000;MOD12;STATUS"Running"   // TU partly failed
 // M:eRADIO S FREQUENCY 123456789
 // E:12  // MU error
 
-M:RADIO T FREQUENCY 1   // register trap
-M:RADIO t               // trap response OK
-M:RADIO d FREQUENCY 123456789   // trap data message
-M:Utility S Binary #36:AAECAwQFBgcICQoLDA0OD8KAwoHDvsO/Cg==   // bas64 encoded binary data
+// NOTE: M:RADIO T FREQUENCY 1  // register trap
+// NOTE: M:RADIO t              // trap response OK
+// NOTE: M:RADIO d FREQUENCY 123456789   // trap data message
+// NOTE: M:Utility S Binary #36:AAECAwQFBgcICQoLDA0OD8KAwoHDvsO/Cg==   // bas64 encoded binary data
 
-// The more real samples
+//
+// The more real samples:
+//
 M:Access GHasControl
 M:Access THasControl1
 M:Access GOwnSession

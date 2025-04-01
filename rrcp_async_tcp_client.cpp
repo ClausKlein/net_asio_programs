@@ -52,17 +52,18 @@ auto main(int argc, char* argv[]) -> int
         line.resize(sz);  // NOTE: w/o c++ comments
       }
 
-      boost::trim_right(line);
+      boost::trim(line);
       if (line.empty())
       {
         continue;
       }
 
-      std::string command = char2esc(line);
-      command.insert(0, 1, START);
-      command += STOP;
+      if (boost::algorithm::starts_with(line, "E:"))
+      {
+        continue;
+      }
 
-      c->write(command);
+      c->write(line);
     }
     std::this_thread::sleep_for(heartbeat_interval);  // NOTE: only for gcov results! CK
 

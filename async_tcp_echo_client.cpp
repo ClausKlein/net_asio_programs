@@ -216,7 +216,7 @@ auto main(int argc, char* argv[]) -> int
         line.resize(sz);  // NOTE: w/o c++ comments
       }
 
-      boost::trim_right(line);
+      boost::trim(line);
       if (line.empty())
       {
         continue;
