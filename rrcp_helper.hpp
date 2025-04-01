@@ -33,8 +33,13 @@ extern auto char2esc(std::string_view data) -> std::string;
 // where words are separated by WS
 inline std::string insertAfterFirstWord(const std::string& input, const std::string& toInsert)
 {
+  if (toInsert.empty())
+  {
+    return input;   // Nothing to do
+  }
+
   size_t firstSpace = input.find_first_of(" \t");  // Find first whitespace
-  if (toInsert.empty() || (firstSpace == std::string::npos))
+  if (firstSpace == std::string::npos)
   {
     return input;  // No spaces found, return original string
   }

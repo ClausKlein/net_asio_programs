@@ -260,7 +260,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
           }
           else
           {
-            fmt::print(stderr, "Error sedning heartbeat: {}\n", ec.message());
+            fmt::print(stderr, "Error sending heartbeat: {}\n", ec.message());
             self->stop();
           }
         });
