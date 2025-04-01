@@ -15,6 +15,7 @@
 #include <fmt/format.h>
 
 #include <boost/algorithm/string/predicate.hpp>  // for starts_with
+#include <boost/algorithm/string/trim.hpp>  // for trim_left
 #include <boost/asio/buffer.hpp>
 #include <boost/asio/connect.hpp>
 #include <boost/asio/io_context.hpp>
@@ -65,7 +66,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
           {
             fmt::print(stderr, "Connected to server.\n");
             self->connected_ = true;
-            self->read();
+            self->do_read();
             self->send_heartbeat();
           }
           else
@@ -77,55 +78,100 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
 
   [[nodiscard]] auto connected() const -> bool { return connected_; }
 
-  // This function write the message into the msg queue and starts the write actor
-  void write(const std::string& message)
+  // This function write the message into the send msg queue and starts the write actor.
+  // It wait for the response message and return this.
+  //
+  // TODO(CK): should  have to input strings: the MIB name and the command string!
+  //
+  [[nodiscard]] auto write(const std::string& message) -> std::string
   {
     while (!connected_)
     {
       if (stopped_)
       {
-        return;
+        return {};
       }
       fmt::print(stderr, "Client is not connected yet.\n");
       std::this_thread::sleep_for(timeout_duration);
     }
 
+    // Insert the next message number for Set/Get request.
+    // But prevent to insert the msg_id for Trap commands!
+    std::string msg_id;
+    auto trap_cmd = message.find(" T");
+    if (trap_cmd == std::string::npos)
+    {
+      msg_id = fmt::format("{:d}", (++msg_id_));
+    }
+    std::string msg = insertAfterFirstWord(message, msg_id);
+
+    // TRACE:
+    fmt::print(stderr, "write_msgs_.push_back({})\n", msg);
+
+    // Create the RRCP message frame
+    std::string command = char2esc(msg);
+    command.insert(0, 1, START);
+    command += STOP;
+
     boost::asio::post(io_context_,
-        [this, message]()
+        [this, command]()
         {
           bool const write_in_progress{!write_msgs_.empty()};
-          write_msgs_.push_back(message);
+          write_msgs_.push_back(command);
           if (!write_in_progress)
           {
             deadline_.expires_after(timeout_duration);
             do_write();
           }
         });
+
+    return read(msg_id);
   }
 
-  void read()
+  // This function try to read the response message from the receive msg queue
+  auto read(const std::string& msg_id) -> std::string
   {
-    boost::asio::async_read_until(socket_, boost::asio::dynamic_buffer(input_buffer_), STOP,
-        [self = shared_from_this()](const boost::system::error_code& ec, std::size_t length)
-        {
-          if (!ec)
-          {
-            std::string const line = esc2char(self->input_buffer_.substr(1, length - 1));  // w/o START, STOP
-            self->input_buffer_.erase(0, length);
+    std::string response;
 
-            if (!boost::algorithm::starts_with(line, "gPing"))
-            {
-              fmt::print("{}\n", line);
-            }
-            self->deadline_.expires_after(heartbeat_interval + timeout_duration);
-            self->read();
-          }
-          else
+    do
+    {
+      boost::asio::post(io_context_,
+          [this, &response]()
           {
-            fmt::print(stderr, "Error reading message: {}\n", ec.message());
-            self->stop();
+            if (!read_msgs_.empty())
+            {
+              response = read_msgs_.front();
+              read_msgs_.pop_front();
+            }
+          });
+
+      if (!response.empty())
+      {
+        // DEBUG:
+        fmt::print(stderr, "read_msgs_.front({})\n", response);
+
+        // FIXME: wrong order for error responses like this: "E:2 10001"
+        auto pos = response.find(msg_id);
+        if (pos != std::string::npos)
+        {
+          // Remove the inserted message number for Set/Get responses.
+          if (boost::algorithm::starts_with(response, msg_id))
+          {
+            response = response.substr(pos + msg_id.length());
+            boost::trim_left(response);
           }
-        });
+          break;
+        }
+
+        if (boost::algorithm::starts_with(response, "E:"))
+        {
+          break;
+        }
+      }
+      std::this_thread::sleep_for(250ms);
+    } while (!stopped_);
+
+    return response;
   }
 
   void stop()
@@ -140,26 +186,57 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
   }
 
  private:
-  void do_write()
+  void do_read()
   {
-    auto self(shared_from_this());
-    boost::asio::async_write(socket_, boost::asio::buffer(write_msgs_.front()),
-        [this, self](boost::system::error_code ec, std::size_t /*length*/)
+    boost::asio::async_read_until(socket_, boost::asio::dynamic_buffer(input_buffer_), STOP,
+        [self = shared_from_this()](const boost::system::error_code& ec, std::size_t length)
         {
           if (!ec)
           {
-            fmt::print(stderr, "Message sent.\n");
-            write_msgs_.pop_front();
-            if (!write_msgs_.empty())
+            std::string const line = esc2char(self->input_buffer_.substr(1, length - 1));  // w/o START, STOP
+            self->input_buffer_.erase(0, length);
+
+            if (boost::algorithm::starts_with(line, "d"))
             {
-              do_write();
+              // Handle trap data messages
+              fmt::print(stderr, "Ignored trap data: {}\n", line);
+              // TODO(CK): fmt::print("{}\n", line);
+            }
+            else if (!boost::algorithm::starts_with(line, "gPing"))
+            {
+              // Other responses the trap and ping messages
+              fmt::print(stderr, "{}\n", line);
+              self->read_msgs_.push_back(line);
+            }
+            self->deadline_.expires_after(heartbeat_interval + timeout_duration);
+            self->do_read();
+          }
+          else
+          {
+            fmt::print(stderr, "Error reading message: {}\n", ec.message());
+            self->stop();
+          }
+        });
+  }
+
+  void do_write()
+  {
+    boost::asio::async_write(socket_, boost::asio::buffer(write_msgs_.front()),
+        [self = shared_from_this()](boost::system::error_code ec, std::size_t /*length*/)
+        {
+          if (!ec)
+          {
+            self->write_msgs_.pop_front();
+            if (!self->write_msgs_.empty())
+            {
+              self->do_write();
             }
           }
           else
           {
             // There are no more endpoints to try. Shut down the client.
             fmt::print(stderr, "Error writing message: {}\n", ec.message());
-            stop();
+            self->stop();
           }
         });
   }
@@ -171,7 +248,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
       return;
     }
 
-    std::string heartbeat_message{START + char2esc("M:Utility GPing\"ÄÖÜ€0ß\"") + STOP};
+    std::string heartbeat_message{START + char2esc("M:Utility GPing\"async client\"") + STOP};
     fmt::print(stderr, "Send heartbeat: {}\n", heartbeat_message);
     boost::asio::async_write(socket_, boost::asio::buffer(heartbeat_message),
         [self = shared_from_this()](const boost::system::error_code& ec, std::size_t)
@@ -183,7 +260,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
           }
           else
           {
-            fmt::print(stderr, "Error sedning heartbeat: {}\n", ec.message());
+            fmt::print(stderr, "Error sending heartbeat: {}\n", ec.message());
             self->stop();
           }
         });
@@ -211,7 +288,9 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
   boost::asio::steady_timer deadline_;
   boost::asio::steady_timer heartbeat_timer_;
   std::string input_buffer_;
+  message_queue read_msgs_;
   message_queue write_msgs_;
+  uint16_t msg_id_{10000};
   bool connected_{false};
   bool stopped_{false};
 };

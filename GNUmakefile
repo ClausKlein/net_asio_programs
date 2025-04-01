@@ -25,7 +25,7 @@ check: all
 
 fix: all
 	run-clang-tidy -p build -fix \
-	 -checks='-*,\
+	-checks='-*,\
 hicpp-explicit-conversions,\
 hicpp-member-init,\
 hicpp-named-parameter,\
@@ -39,7 +39,9 @@ performance-unnecessary-value-param,\
 readability-avoid-const-params-in-decls,\
 readability-braces-around-statements,\
 readability-container-data-pointer,\
+readability-container-size-empty,\
 readability-else-after-return,\
+readability-implicit-bool-conversion,\
 readability-make-member-function-const,\
 readability-redundant-member-init,\
 readability-simplify-boolean-expr,\

@@ -4,6 +4,8 @@ project(RRCP-client VERSION 0.1.0 LANGUAGES CXX)
 
 # ---- add dependencies ----
 
+find_package(Threads)
+
 if(NOT TARGET Boost::headers)
     find_package(Boost 1.71 COMPONENTS headers REQUIRED HINTS $ENV{HOME}/.local)
 endif()
