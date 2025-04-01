@@ -28,7 +28,7 @@ class rrcp_message
 {
  public:
   static constexpr std::size_t header_length = 4;
-  static constexpr std::size_t max_msg_length = 65432;
+  static constexpr std::size_t max_msg_length = MAX_MU_LENGTH;
 
   rrcp_message() = default;
 

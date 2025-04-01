@@ -101,12 +101,13 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
     auto trap_cmd = message.find(" T");
     if (trap_cmd == std::string::npos)
     {
-      msg_id = fmt::format("{:d}", (++msg_id_));
+      msg_id_ = ++msg_id_ % INVALID_ID;
+      msg_id = fmt::format("{}", (msg_id_));
     }
     std::string msg = insertAfterFirstWord(message, msg_id);
 
-    // TRACE:
-    fmt::print(stderr, "write_msgs_.push_back({})\n", msg);
+    // DEBUG:
+    fmt::print("write_msgs_.push_back({})\n", msg);
 
     // Create the RRCP message frame
     std::string command = char2esc(msg);
@@ -147,10 +148,9 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
 
       if (!response.empty())
       {
-        // DEBUG:
-        fmt::print(stderr, "read_msgs_.front({})\n", response);
+        // DEBUG: fmt::print("read_msgs_.front({})\n", response);
 
-        // FIXME: wrong order for error responses like this: "E:2 10001"
+        // NOTE: other order for error responses like this: "E:2 10001"
         auto pos = response.find(msg_id);
         if (pos != std::string::npos)
         {
@@ -168,7 +168,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
           break;
         }
       }
-      std::this_thread::sleep_for(250ms);
+      std::this_thread::sleep_for(125ms);
     } while (!stopped_);
 
     return response;
@@ -176,7 +176,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
 
   void stop()
   {
-    fmt::print(stderr, "stop called, disconnecting...\n");
+    fmt::print(stderr, "Stoped, disconnecting ...\n");
     stopped_ = true;
     connected_ = false;
     boost::system::error_code ec;
@@ -200,7 +200,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
             {
               // Handle trap data messages
               fmt::print(stderr, "Ignored trap data: {}\n", line);
-              // TODO(CK): fmt::print("{}\n", line);
+              fmt::print("{}\n", line);
             }
             else if (!boost::algorithm::starts_with(line, "gPing"))
             {
@@ -275,7 +275,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
 
     if (deadline_.expiry() <= boost::asio::steady_timer::clock_type::now())
     {
-      fmt::print(stderr, "No response from server, disconnecting...\n");
+      fmt::print(stderr, "No response from server, stopping ...\n");
       stop();
       return;
     }
@@ -290,7 +290,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
   std::string input_buffer_;
   message_queue read_msgs_;
   message_queue write_msgs_;
-  uint16_t msg_id_{10000};
+  int msg_id_{10000};
   bool connected_{false};
   bool stopped_{false};
 };

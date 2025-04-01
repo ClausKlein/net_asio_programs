@@ -8,6 +8,8 @@ namespace RRCP
 
 constexpr const char START{0x0A};  // \n
 constexpr const char STOP{0x0D};  // \r
+constexpr const int INVALID_ID{16777216};  // valid range is 0 to 2**24 - 1
+constexpr const size_t MAX_MU_LENGTH{65432};
 
 /**
  * @brief Gets the message between <START>message<STOP> and
@@ -35,7 +37,7 @@ inline auto insertAfterFirstWord(const std::string& input, const std::string& to
 {
   if (toInsert.empty())
   {
-    return input;   // Nothing to do
+    return input;  // Nothing to do
   }
 
   size_t firstSpace = input.find_first_of(" \t");  // Find first whitespace
