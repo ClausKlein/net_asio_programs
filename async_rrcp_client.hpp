@@ -64,7 +64,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
         {
           if (!ec)
           {
-            fmt::print(stderr, "Connected to server.\n");
+            fmt::print(stderr, "Connected to server.\n");   // TRACE
             self->connected_ = true;
             self->do_read();
             self->send_heartbeat();
@@ -91,7 +91,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
       {
         return {};
       }
-      fmt::print(stderr, "Client is not connected yet.\n");
+      fmt::print(stderr, "Client is not connected yet.\n"); // TRACE
       std::this_thread::sleep_for(timeout_duration);
     }
 
@@ -106,8 +106,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
     }
     std::string msg = insertAfterFirstWord(message, msg_id);
 
-    // DEBUG:
-    fmt::print("write_msgs_.push_back({})\n", msg);
+    // DEBUG: fmt::print("write_msgs_.push_back({})\n", msg);
 
     // Create the RRCP message frame
     std::string command = char2esc(msg);
@@ -160,6 +159,11 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
             response = response.substr(pos + msg_id.length());
             boost::trim_left(response);
           }
+          else
+          {
+            response = response.substr(0, pos);
+            boost::trim_right(response);
+          }
           break;
         }
 
@@ -196,16 +200,16 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
             std::string const line = esc2char(self->input_buffer_.substr(1, length - 1));  // w/o START, STOP
             self->input_buffer_.erase(0, length);
 
-            if (boost::algorithm::starts_with(line, "d"))
+            if (boost::algorithm::starts_with(line, "d"))   // Trap data message
             {
               // Handle trap data messages
-              fmt::print(stderr, "Ignored trap data: {}\n", line);
+              fmt::print(stderr, "Ignored trap data: {}\n", line);  // WARNING
               fmt::print("{}\n", line);
             }
             else if (!boost::algorithm::starts_with(line, "gPing"))
             {
-              // Other responses the trap and ping messages
-              fmt::print(stderr, "{}\n", line);
+              // Other responses than Trap and Ping messages
+              fmt::print(stderr, "{}\n", line); // TRACE
               self->read_msgs_.push_back(line);
             }
             self->deadline_.expires_after(heartbeat_interval + timeout_duration);
@@ -249,7 +253,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
     }
 
     std::string heartbeat_message{START + char2esc("M:Utility GPing\"async client\"") + STOP};
-    fmt::print(stderr, "Send heartbeat: {}\n", heartbeat_message);
+    fmt::print(stderr, "Send heartbeat: {}\n", heartbeat_message);  // TRACE
     boost::asio::async_write(socket_, boost::asio::buffer(heartbeat_message),
         [self = shared_from_this()](const boost::system::error_code& ec, std::size_t)
         {
