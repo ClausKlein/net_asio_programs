@@ -167,6 +167,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
           break;
         }
 
+        // NOTE: This is an Error response with or w/o a valid msg_id!
         if (boost::algorithm::starts_with(response, "E:"))
         {
           break;
@@ -180,7 +181,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
 
   void stop()
   {
-    fmt::print(stderr, "Stoped, disconnecting ...\n");
+    fmt::print(stderr, "Stopped, disconnecting ...\n");
     stopped_ = true;
     connected_ = false;
     boost::system::error_code ec;
