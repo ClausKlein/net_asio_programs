@@ -32,14 +32,14 @@ class Base64
    * @param data The data to be encoded.
    * @return The corresponding base64 encoded string.
    */
-  [[nodiscard]] auto encode(std::string_view data) const -> std::string;
+  [[nodiscard]] static auto encode(std::string_view data) -> std::string;
 
   /**
    * Decode a Base64 encoded string.
    * @param in The base64 encoded string.
    * @return The decoded string.
    */
-  [[nodiscard]] auto decode(std::string_view in) -> std::string;
+  [[nodiscard]] static auto decode(std::string_view in) -> std::string;
 
  private:
   /**

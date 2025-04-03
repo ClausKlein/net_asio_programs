@@ -84,7 +84,7 @@ class base64
 namespace RRCP::Common
 {
 
-auto Base64::encode(std::string_view data) const -> std::string
+auto Base64::encode(std::string_view data) -> std::string
 {
   if (data.empty())
   {

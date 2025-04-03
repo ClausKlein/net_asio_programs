@@ -40,6 +40,7 @@ readability-avoid-const-params-in-decls,\
 readability-braces-around-statements,\
 readability-container-data-pointer,\
 readability-container-size-empty,\
+readability-convert-member-functions-to-static,\
 readability-else-after-return,\
 readability-implicit-bool-conversion,\
 readability-make-member-function-const,\

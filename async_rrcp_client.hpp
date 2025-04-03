@@ -15,7 +15,7 @@
 #include <fmt/format.h>
 
 #include <boost/algorithm/string/predicate.hpp>  // for starts_with
-#include <boost/algorithm/string/trim.hpp>  // for trim_left
+#include <boost/algorithm/string/trim.hpp>  // for trim_left, trim_right
 #include <boost/asio/buffer.hpp>
 #include <boost/asio/connect.hpp>
 #include <boost/asio/io_context.hpp>
@@ -81,7 +81,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
   // This function write the message into the send msg queue and starts the write actor.
   // It wait for the response message and return this.
   //
-  // TODO(CK): should  have to input strings: the MIB name and the command string!
+  // TODO(CK): we should have two input strings: the MIB name and the command string!
   //
   [[nodiscard]] auto write(const std::string& message) -> std::string
   {
@@ -95,26 +95,8 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
       std::this_thread::sleep_for(timeout_duration);
     }
 
-    // TODO(CK): refactory to helper class
-    //========================== RRCP ============================
-    // Insert the next message number for Set/Get request.
-    // But prevent to insert the msg_id for Trap commands!
-    std::string msg_id;
-    auto trap_cmd = message.find(" T");
-    if (trap_cmd == std::string::npos)
-    {
-      msg_id_ = ++msg_id_ % INVALID_ID;
-      msg_id = fmt::format("{}", (msg_id_));
-    }
-    std::string msg = insertAfterFirstWord(message, msg_id);
-
-    // DEBUG: fmt::print("rrcp MU to send({})\n", msg);
-
-    // Create the RRCP message frame
-    std::string command = char2esc(msg);
-    command.insert(0, 1, START);
-    command += STOP;
-    //========================== END ============================
+    std::string msg_id_str;
+    auto command = RRCP::create_command_msg(message, msg_id_str, msg_id_);
 
     boost::asio::post(io_context_,
         [this, command]()
@@ -128,7 +110,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
           }
         });
 
-    return read(msg_id);
+    return read(msg_id_str);
   }
 
   // This function try to read the response message from the receive msg queue
@@ -150,36 +132,11 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
 
       if (!response.empty())
       {
-
-        // TODO(CK): refactory to helper class
-        //========================== RRCP ============================
-        // DEBUG: fmt::print("RRCP MU received({})\n", response);
-        // NOTE: different order for error responses like this: "E:2 10001"
-        auto pos = response.find(msg_id);
-        if (pos != std::string::npos)
-        {
-          // Remove the inserted message number for Set/Get responses.
-          if (boost::algorithm::starts_with(response, msg_id))
-          {
-            // NOTE: This is an Command response with msg_id!
-            response = response.substr(pos + msg_id.length());
-            boost::trim_left(response);
-          }
-          else
-          {
-            // NOTE: This is an Error response with msg_id!
-            response = response.substr(0, pos);
-            boost::trim_right(response);
-          }
-          break;
-        }
-        // NOTE: This is an Error response with or w/o a valid msg_id!
-        if (boost::algorithm::starts_with(response, "E:"))
+        // helper which returns true if the msg with matching msg_id was found
+        if (RRCP::find_response_msg(response, msg_id))
         {
           break;
         }
-        //========================== END ============================
-
       }
       std::this_thread::sleep_for(125ms);
     } while (!stopped_);
@@ -206,12 +163,12 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
         {
           if (!ec)
           {
-
             //========================== RRCP ============================
             std::string const line = esc2char(self->input_buffer_.substr(1, length - 1));  // w/o START, STOP
             self->input_buffer_.erase(0, length);
+            //========================== END ============================
 
-            // TODO(CK): refactory to helper class
+            // TODO(CK): maby refactored to helper class?
             //========================== RRCP ============================
             if (boost::algorithm::starts_with(line, "d"))  // Trap data message
             {

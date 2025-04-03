@@ -31,32 +31,14 @@ extern auto esc2char(std::string_view data) -> std::string;
  */
 extern auto char2esc(std::string_view data) -> std::string;
 
-// Here’s a C++17 function that inserts a given string after the first word in an input string,
+// A C++17 function that inserts a given string after the first word in an input string,
 // where words are separated by WS
-inline auto insertAfterFirstWord(const std::string& input, const std::string& toInsert) -> std::string
-{
-  if (toInsert.empty())
-  {
-    return input;  // Nothing to do
-  }
+extern auto insertAfterFirstWord(const std::string& input, const std::string& toInsert) -> std::string;
 
-  size_t firstSpace = input.find_first_of(" \t");  // Find first whitespace
-  if (firstSpace == std::string::npos)
-  {
-    return input;  // No spaces found, return original string
-  }
+// helper which returns true if the msg with matching msg_id was found
+extern auto find_response_msg(std::string& response, const std::string& msg_id) -> bool;
 
-  // NOTE: Only if Set/Get command request, NOT for Trap commands!
-  size_t nextNonSpace = input.find_first_of("SG", firstSpace);
-  if (nextNonSpace == std::string::npos)
-  {
-    // If there's no second valid command, just return the input!
-    // XXX return input + " " + toInsert;
-    return input;
-  }
-
-  // If there's valid command, just append toInsert after the first word
-  return input.substr(0, firstSpace + 1) + toInsert + " " + input.substr(nextNonSpace);
-}
+// helper which returns the command msg with next valid msg_id inserted if needed
+extern auto create_command_msg(const std::string& message, std::string& msg_id_str, int& msg_id) -> std::string;
 
 }  // namespace RRCP
