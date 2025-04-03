@@ -10,7 +10,7 @@ constexpr char REPLACE_LF = 0x01;
 constexpr char REPLACE_CR = 0x02;
 constexpr char REPLACE_ESC = 0x03;
 
-auto esc2char(std::string_view data) -> std::string
+auto RRCP::esc2char(std::string_view data) -> std::string
 {
   std::string message;
   auto len = data.size();
@@ -52,7 +52,7 @@ auto esc2char(std::string_view data) -> std::string
   return message;
 }
 
-auto char2esc(std::string_view data) -> std::string
+auto RRCP::char2esc(std::string_view data) -> std::string
 {
   std::string message;
   for (char const c : data)

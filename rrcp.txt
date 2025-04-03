@@ -1,31 +1,66 @@
 M:Utility GInitialInfo"v8.53.2","async",10
+
 M:Radio SString"\rHallo\tWorld\n"
-M:WF.FF.Main 123456 T Octet 1   // with optional Message Number:
-M:WF.FF.Main 123456 t
-M:OBit L:1 123456 GGoState  // with optional Logical Address:
+E:2 10002   // MU error 
+
+// NOTE: M:WF.FF.Main 123456 T Octet 1  // with optional Message Number:
+// NOTE: M:WF.FF.Main 123456 t
+// NOTE: M:OBit L:1 123456 GGoState     // with optional Logical Address:
+
 M:Audio GAudioVolume    // without optionl parts
-M:Log SStruct 1,-1,3.14 // multiple parameters
+// NOTE: M:Log SStruct 1,-1,3.14 // multiple parameters
 
 // The magic part
 // GET-request TU SET-request TU GET-request TU:
-GFRQ;MOD SFRQ10000000;MOD13;BW80000 GFRQ;MOD
+// NOTE: GFRQ;MOD SFRQ10000000;MOD13;BW80000 GFRQ;MOD
+//
 // GET-response TU SET-response TU GET-response TU:
-gFRQ18000000;MOD12 s5BW gFRQ18000000;MOD12
+// NOTE: gFRQ18000000;MOD12 s5BW gFRQ18000000;MOD12
+
 // NOTE:
 // There is an error within the BW command, the complete SET-request TU is cancelled.
 // The GET-request TU is replied by the corresponding GET-response TU.
-M:MultilCmd S Octet 1;Long-1;String"Hallo World\n";Struct 1,+1,+3.14   // multiple commands's
-M:Test 123456 S FREQ123456;MOD12;LOGIN"user","password" G FREQ;MOD;STATUS    // multiple TU
-M:Test gFREQ180000;MOD12 s5BW gFREQ180000;MOD12;STATUS"Running"   // TU partly failed
-// M:eRADIO S FREQUENCY 123456789
-// E:12  // MU error
+// NOTE: M:MultilCmd S Octet 1;Long-1;String"Hallo World\n";Struct 1,+1,+3.14   // multiple commands's
+// NOTE: M:Test 123456 S FREQ123456;MOD12;LOGIN"user","password" G FREQ;MOD;STATUS    // multiple TU
+// NOTE: M:Test gFREQ180000;MOD12 s5BW gFREQ180000;MOD12;STATUS"Running"   // TU partly failed
 
-M:RADIO T FREQUENCY 1   // register trap
-M:RADIO t               // trap response OK
-M:RADIO d FREQUENCY 123456789   // trap data message
-M:Utility S Binary #36:AAECAwQFBgcICQoLDA0OD8KAwoHDvsO/Cg==   // bas64 encoded binary data
+M:eRADIO S FREQUENCY 123456789
+E:12  // MU error
 
-// The more real samples
+// NOTE: M:RADIO T FREQUENCY 1  // register trap
+// NOTE: M:RADIO t              // trap response OK
+// NOTE: M:RADIO d FREQUENCY 123456789   // trap data message
+// NOTE: M:Utility S Binary #36:AAECAwQFBgcICQoLDA0OD8KAwoHDvsO/Cg==   // bas64 encoded binary data
+
+// XXX Test output:
+// XXX Enter command: write_msgs_.push_back(M:Mission 1032 GGlobalAddr)
+// XXX 1032 gGlobalAddr"SDHR-RGA"
+// XXX read_msgs_.front(1032 gGlobalAddr"SDHR-RGA")
+// XXX 1032 gGlobalAddr"SDHR-RGA"
+// XXX Enter command: write_msgs_.push_back(M:Mission 1033 SGlobalAddr"testString")
+// XXX 1033 s0GlobalAddr
+// XXX read_msgs_.front(1033 s0GlobalAddr)
+// XXX 1033 s0GlobalAddr
+// XXX Enter command: write_msgs_.push_back(M:Mission 1034 GMissions)
+// XXX 1034 gMissions1,"ExWF_Test","Original"
+// XXX read_msgs_.front(1034 gMissions1,"ExWF_Test","Original")
+// XXX 1034 gMissions1,"ExWF_Test","Original"
+// XXX Enter command: write_msgs_.push_back(M:Mission 1035 GPresets0,1)
+// XXX 1035 gPresets5,1,"Mission","ExWF","RN1",2,"Mission","ExWF","RN2",3,"Mission","ExWF","RN3",4,"Mission","ExWF","RN4",5,"Mission","ExWF","RN5"
+// XXX read_msgs_.front(1035 gPresets5,1,"Mission","ExWF","RN1",2,"Mission","ExWF","RN2",3,"Mission","ExWF","RN3",4,"Mission","ExWF","RN4",5,"Mission","ExWF","RN5")
+// XXX 1035 gPresets5,1,"Mission","ExWF","RN1",2,"Mission","ExWF","RN2",3,"Mission","ExWF","RN3",4,"Mission","ExWF","RN4",5,"Mission","ExWF","RN5"
+// XXX Enter command: write_msgs_.push_back(M:OBIT 1036 GGOState)
+// XXX 1036 g0GOState
+// XXX read_msgs_.front(1036 g0GOState)
+// XXX 1036 g0GOState
+// XXX Enter command: write_msgs_.push_back(M:OBIT 1037 TGOState1)
+// XXX 1037 t0GOState
+// XXX Send heartbeat:
+// XXX M:Utility GPing"async client"
+
+//
+// The more real samples:
+//
 M:Access GHasControl
 M:Access THasControl1
 M:Access GOwnSession

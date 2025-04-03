@@ -32,6 +32,8 @@ using boost::asio::ip::tcp;
 using namespace std::chrono_literals;
 using message_queue = std::deque< std::string >;
 
+using namespace RRCP;
+
 constexpr size_t max_length = 65432;
 constexpr auto timeout_duration = 1s;
 
@@ -81,7 +83,7 @@ class AsynchronousTCPClient : public std::enable_shared_from_this< AsynchronousT
     boost::asio::post(io_context_,
         [this, message]()
         {
-          bool const write_in_progress = !write_msgs_.empty();
+          bool const write_in_progress{!write_msgs_.empty()};
           write_msgs_.push_back(message);
           if (!write_in_progress)
           {
@@ -214,7 +216,7 @@ auto main(int argc, char* argv[]) -> int
         line.resize(sz);  // NOTE: w/o c++ comments
       }
 
-      boost::trim_right(line);
+      boost::trim(line);
       if (line.empty())
       {
         continue;

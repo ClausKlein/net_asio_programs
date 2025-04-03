@@ -9,7 +9,7 @@
 //
 // Moderniced from Claus Klein and ChatGPT
 
-#include <boost/algorithm/string/trim.hpp>
+#include <boost/algorithm/string/trim.hpp>  // for trim_right
 #include <boost/asio/buffer.hpp>
 #include <boost/asio/connect.hpp>
 #include <boost/asio/io_context.hpp>
@@ -18,7 +18,6 @@
 #include <boost/asio/write.hpp>
 #include <boost/system/error_code.hpp>
 #include <cstdlib>
-#include <cstring>
 #include <exception>
 #include <iostream>
 #include <string>
@@ -33,6 +32,8 @@ auto main(int argc, char* argv[]) -> int
 {
   try
   {
+    using namespace RRCP;
+
     if (argc != 3)
     {
       std::cerr << "Usage: blocking_tcp_echo_client <host> <port>\n";
@@ -59,13 +60,13 @@ auto main(int argc, char* argv[]) -> int
         continue;
       }
 
-      // TODO: check boost::system::error_code ec;
+      // TODO(CK): check boost::system::error_code ec;
       std::string command = char2esc(line);
       command.insert(0, 1, START);
       command += STOP;
       boost::asio::write(s, boost::asio::buffer(command.c_str(), command.length()));
 
-      // TODO: wait for endchar with timeout!
+      // TODO(CK): wait for endchar with timeout!
       std::string data;
       boost::asio::dynamic_string_buffer< char, std::string::traits_type, std::string::allocator_type > const sb2 =
           boost::asio::dynamic_buffer(data, max_length);

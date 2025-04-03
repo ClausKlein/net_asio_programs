@@ -7,13 +7,14 @@ cert-*,\
 clang-analyzer-*,\
 -clang-analyzer-unix.BlockInCriticalSection,\
 cppcoreguidelines-*,\
--cppcoreguidelines-avoid-do-while,\
--cppcoreguidelines-macro-to-enum,\
--cppcoreguidelines-macro-usage,\
+-cppcoreguidelines-avoid-*,\
+-cppcoreguidelines-init-variables,\
+-cppcoreguidelines-macro-*,\
 -cppcoreguidelines-owning-memory,\
 -cppcoreguidelines-pro-bounds-pointer-arithmetic,\
 hicpp-*,\
 misc-*,\
+-misc-const-correctness,\
 -misc-include-cleaner,\
 -misc-no-recursion,\
 modernize-*,\
