@@ -64,9 +64,13 @@ function(do_test target arg result)
     endif()
 endfunction()
 
+# ---- server needed for tests ----
+
 add_executable(async_tcp_echo_server examples/async_tcp_echo_server.cpp)
 target_link_libraries(async_tcp_echo_server PUBLIC Boost::headers)
 do_test(async_tcp_echo_server "" port)
+
+# ---- rrcp class sources and helpers as a library ----
 
 add_library(rrcp_helper STATIC)
 target_sources(
@@ -89,10 +93,12 @@ target_link_libraries(rrcp_client PRIVATE rrcp_helper)
 do_test(rrcp_client --help Usage)
 
 if(APPLE AND BUILD_TESTING)
+    # TODO(CK): mv to examples too!
     add_executable(timer timer.cpp)
     target_link_libraries(timer PUBLIC Boost::headers fmt::fmt-header-only)
     add_test(NAME timer COMMAND timer)
 
+    # TODO(CK): rm this stupid example?
     add_executable(async_client async_client.cpp)
     target_link_libraries(
         async_client
@@ -101,11 +107,16 @@ if(APPLE AND BUILD_TESTING)
     add_test(NAME async_client COMMAND async_client)
 endif()
 
+# ---- rrcp client class usage examples main  ----
+
 add_executable(rrcp_async_tcp_client rrcp_async_tcp_client.cpp)
 target_link_libraries(rrcp_async_tcp_client PRIVATE rrcp_helper)
 do_test(rrcp_async_tcp_client --help Usage)
 
+# TODO(CK): mv this part to tests/CMakeLists.txt
 if(BUILD_TESTING)
+    # XXX add_subdirectory(tests)
+
     # we need googletest
     include(FetchContent)
     FetchContent_Declare(

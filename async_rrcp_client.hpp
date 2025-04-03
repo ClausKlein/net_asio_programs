@@ -95,6 +95,8 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
       std::this_thread::sleep_for(timeout_duration);
     }
 
+    // TODO(CK): refactory to helper class
+    //========================== RRCP ============================
     // Insert the next message number for Set/Get request.
     // But prevent to insert the msg_id for Trap commands!
     std::string msg_id;
@@ -106,12 +108,13 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
     }
     std::string msg = insertAfterFirstWord(message, msg_id);
 
-    // DEBUG: fmt::print("write_msgs_.push_back({})\n", msg);
+    // DEBUG: fmt::print("rrcp MU to send({})\n", msg);
 
     // Create the RRCP message frame
     std::string command = char2esc(msg);
     command.insert(0, 1, START);
     command += STOP;
+    //========================== END ============================
 
     boost::asio::post(io_context_,
         [this, command]()
@@ -147,31 +150,36 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
 
       if (!response.empty())
       {
-        // DEBUG: fmt::print("read_msgs_.front({})\n", response);
 
-        // NOTE: other order for error responses like this: "E:2 10001"
+        // TODO(CK): refactory to helper class
+        //========================== RRCP ============================
+        // DEBUG: fmt::print("RRCP MU received({})\n", response);
+        // NOTE: different order for error responses like this: "E:2 10001"
         auto pos = response.find(msg_id);
         if (pos != std::string::npos)
         {
           // Remove the inserted message number for Set/Get responses.
           if (boost::algorithm::starts_with(response, msg_id))
           {
+            // NOTE: This is an Command response with msg_id!
             response = response.substr(pos + msg_id.length());
             boost::trim_left(response);
           }
           else
           {
+            // NOTE: This is an Error response with msg_id!
             response = response.substr(0, pos);
             boost::trim_right(response);
           }
           break;
         }
-
         // NOTE: This is an Error response with or w/o a valid msg_id!
         if (boost::algorithm::starts_with(response, "E:"))
         {
           break;
         }
+        //========================== END ============================
+
       }
       std::this_thread::sleep_for(125ms);
     } while (!stopped_);
@@ -198,9 +206,13 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
         {
           if (!ec)
           {
+
+            //========================== RRCP ============================
             std::string const line = esc2char(self->input_buffer_.substr(1, length - 1));  // w/o START, STOP
             self->input_buffer_.erase(0, length);
 
+            // TODO(CK): refactory to helper class
+            //========================== RRCP ============================
             if (boost::algorithm::starts_with(line, "d"))  // Trap data message
             {
               // Handle trap data messages
@@ -213,6 +225,8 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
               fmt::print(stderr, "{}\n", line);  // TRACE
               self->read_msgs_.push_back(line);
             }
+            //========================== END ============================
+
             self->deadline_.expires_after(heartbeat_interval + timeout_duration);
             self->do_read();
           }
@@ -253,7 +267,10 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
       return;
     }
 
+    //========================== RRCP ============================
     std::string heartbeat_message{START + char2esc("M:Utility GPing\"async client\"") + STOP};
+    //========================== END ============================
+
     fmt::print(stderr, "Send heartbeat: {}\n", heartbeat_message);  // TRACE
     boost::asio::async_write(socket_, boost::asio::buffer(heartbeat_message),
         [self = shared_from_this()](const boost::system::error_code& ec, std::size_t)
