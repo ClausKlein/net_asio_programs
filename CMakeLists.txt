@@ -5,7 +5,6 @@ project(RRCP-client VERSION 0.1.0 LANGUAGES CXX)
 # ---- add dependencies ----
 
 find_package(Threads)
-
 if(NOT TARGET Boost::headers)
     find_package(Boost 1.71 COMPONENTS headers REQUIRED HINTS $ENV{HOME}/.local)
 endif()
@@ -65,7 +64,7 @@ function(do_test target arg result)
     endif()
 endfunction()
 
-add_executable(async_tcp_echo_server async_tcp_echo_server.cpp)
+add_executable(async_tcp_echo_server examples/async_tcp_echo_server.cpp)
 target_link_libraries(async_tcp_echo_server PUBLIC Boost::headers)
 do_test(async_tcp_echo_server "" port)
 
@@ -77,33 +76,13 @@ target_sources(
 )
 target_link_libraries(rrcp_helper PUBLIC Boost::headers fmt::fmt-header-only)
 
-add_executable(async_tcp_echo_client async_tcp_echo_client.cpp)
+add_executable(async_tcp_echo_client examples/async_tcp_echo_client.cpp)
 target_link_libraries(async_tcp_echo_client PRIVATE rrcp_helper)
 do_test(async_tcp_echo_client --help Usage)
 
-add_executable(blocking_tcp_echo_client blocking_tcp_echo_client.cpp)
+add_executable(blocking_tcp_echo_client examples/blocking_tcp_echo_client.cpp)
 target_link_libraries(blocking_tcp_echo_client PRIVATE rrcp_helper)
 do_test(blocking_tcp_echo_client --help Usage)
-
-if(APPLE AND NOT ENABLE_TEST_COVERAGE)
-    add_executable(async_tcp_client_v20 async_tcp_client_v20.cpp)
-    target_link_libraries(
-        async_tcp_client_v20
-        PUBLIC Boost::headers fmt::fmt-header-only
-    )
-    do_test(async_tcp_client_v20 --help Usage)
-
-    add_executable(async_tcp_client async_tcp_client.cpp)
-    target_link_libraries(
-        async_tcp_client
-        PUBLIC Boost::headers fmt::fmt-header-only
-    )
-    do_test(async_tcp_client --help Usage)
-
-    add_executable(blocking_tcp_echo_server blocking_tcp_echo_server.cpp)
-    target_link_libraries(blocking_tcp_echo_server PUBLIC Boost::headers)
-    # FIXME: do_test(blocking_tcp_echo_server port Usage)
-endif()
 
 add_executable(rrcp_client rrcp_client.cpp rrcp_message.hpp)
 target_link_libraries(rrcp_client PRIVATE rrcp_helper)
@@ -143,12 +122,16 @@ if(BUILD_TESTING)
     FetchContent_MakeAvailable(googletest)
 
     # add_library(base64c STATIC)
-    # NO! target_sources(base64c PRIVATE base64.c PUBLIC FILE_SET HEADERS FILES base64.h)
+    # NO! target_sources(base64c PRIVATE tests/base64.c
+    #   PUBLIC FILE_SET HEADERS BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/tests FILES tests/base64.h)
 
     target_sources(
         rrcp_helper
         PRIVATE Base64.cpp
-        PUBLIC FILE_SET HEADERS FILES Base64.hpp
+        PUBLIC
+            FILE_SET HEADERS
+            BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
+            FILES Base64.hpp
     )
     target_link_libraries(
         rrcp_helper # Not needed: PUBLIC Boost::beast

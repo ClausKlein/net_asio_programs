@@ -64,7 +64,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
         {
           if (!ec)
           {
-            fmt::print(stderr, "Connected to server.\n");   // TRACE
+            fmt::print(stderr, "Connected to server.\n");  // TRACE
             self->connected_ = true;
             self->do_read();
             self->send_heartbeat();
@@ -91,7 +91,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
       {
         return {};
       }
-      fmt::print(stderr, "Client is not connected yet.\n"); // TRACE
+      fmt::print(stderr, "Client is not connected yet.\n");  // TRACE
       std::this_thread::sleep_for(timeout_duration);
     }
 
@@ -201,7 +201,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
             std::string const line = esc2char(self->input_buffer_.substr(1, length - 1));  // w/o START, STOP
             self->input_buffer_.erase(0, length);
 
-            if (boost::algorithm::starts_with(line, "d"))   // Trap data message
+            if (boost::algorithm::starts_with(line, "d"))  // Trap data message
             {
               // Handle trap data messages
               fmt::print(stderr, "Ignored trap data: {}\n", line);  // WARNING
@@ -210,7 +210,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
             else if (!boost::algorithm::starts_with(line, "gPing"))
             {
               // Other responses than Trap and Ping messages
-              fmt::print(stderr, "{}\n", line); // TRACE
+              fmt::print(stderr, "{}\n", line);  // TRACE
               self->read_msgs_.push_back(line);
             }
             self->deadline_.expires_after(heartbeat_interval + timeout_duration);
