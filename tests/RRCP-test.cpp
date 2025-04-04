@@ -21,6 +21,7 @@ ut::suite errors = []
     auto found = RRCP::find_response_msg(result, "123456");
     expect(found);
     expect(expected == result);
+    ut::log("{} == {}\n", result, expected);
   };
 
   "doNotfind_error_response_msg"_test = []
@@ -31,6 +32,7 @@ ut::suite errors = []
     auto found = RRCP::find_response_msg(result, "0815");
     expect(found);
     expect(expected == result);
+    ut::log("{} == {}\n", result, expected);
   };
 
   "find_error_response_msg"_test = []
@@ -41,6 +43,7 @@ ut::suite errors = []
     auto found = RRCP::find_response_msg(result, "123456");
     expect(found);
     expect(expected == result);
+    ut::log("{} == {}\n", result, expected);
   };
 
   "doNotfind_response_msg"_test = []
@@ -51,6 +54,7 @@ ut::suite errors = []
     auto found = RRCP::find_response_msg(result, "123456");
     expect(!found);
     expect(expected == result);
+    ut::log("{} == {}\n", result, expected);
   };
 
   // ============================================================
@@ -61,6 +65,7 @@ ut::suite errors = []
     const std::string command{"M:test GGoState"};
     auto result = RRCP::insertAfterFirstWord(command, "123456");
     expect(expected == result);
+    ut::log("{} == {}\n", result, expected);
   };
 
   "doNotInsertAnEmptyString"_test = []
@@ -69,6 +74,7 @@ ut::suite errors = []
     const std::string command{expected};
     auto result = RRCP::insertAfterFirstWord(command, "");
     expect(expected == result);
+    ut::log("{} == {}\n", result, expected);
   };
 
   "doNotInsertBeforeTrapCmd"_test = []
@@ -77,6 +83,7 @@ ut::suite errors = []
     const std::string command{expected};
     auto result = RRCP::insertAfterFirstWord(command, "");
     expect(expected == result);
+    ut::log("{} == {}\n", result, expected);
   };
 
   "doNotInsertAfterSingleWord"_test = []
@@ -85,19 +92,24 @@ ut::suite errors = []
     const std::string message{expected};
     auto result = RRCP::insertAfterFirstWord(message, "123456");
     expect(expected == result);
+    ut::log("{} == {}\n", result, expected);
   };
 
   // ============================================================
 
   "create_command_msg"_test = []
   {
-    constexpr std::string_view expected{"\nM:test 1 SGoState1\r"sv};
-    const std::string command{"M:test SGoState1"};
+    constexpr std::string_view expected{"\nM:RxTx 1 SPowerLevel\"Off\"\r"sv};
+    const std::string command{R"(M:RxTx SPowerLevel"Off")"};
     std::string msg_id_str;
     int counter{RRCP::INVALID_ID};
     auto result = RRCP::create_command_msg(command, msg_id_str, counter);
     expect(1 == counter);
     expect(expected == result);
+
+    std::ostringstream quoted;
+    quoted << std::quoted(result.substr(1, result.length() - 1)); // NOTE: w/o START STOP
+    ut::log("{} == {}\n", "RRCP MU", quoted.str());
   };
 
   // ============================================================
