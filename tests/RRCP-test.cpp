@@ -63,7 +63,7 @@ ut::suite errors = []
     expect(expected == result);
   };
 
-  "doNotInsertAnEmpty"_test = []
+  "doNotInsertAnEmptyString"_test = []
   {
     constexpr std::string_view expected{"M:test GGoState"sv};
     const std::string command{expected};
