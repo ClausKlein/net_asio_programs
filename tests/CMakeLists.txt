@@ -10,7 +10,7 @@ FetchContent_Declare(
     SYSTEM
 )
 
-# TODO(CK): we stil needs googletest too! But change it to Boost::ut
+# TODO(CK): We still use googletest too! But will be changed to Boost::ut
 FetchContent_Declare(
     googletest
     GIT_TAG v1.16.0

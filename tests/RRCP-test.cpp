@@ -23,6 +23,16 @@ ut::suite errors = []
     expect(expected == result);
   };
 
+  "doNotfind_error_response_msg"_test = []
+  {
+    constexpr std::string_view expected{"E:1"sv};
+    const std::string message{"E:1"};
+    std::string result{message};
+    auto found = RRCP::find_response_msg(result, "0815");
+    expect(found);
+    expect(expected == result);
+  };
+
   "find_error_response_msg"_test = []
   {
     constexpr std::string_view expected{"E:10"sv};
@@ -53,7 +63,7 @@ ut::suite errors = []
     expect(expected == result);
   };
 
-  "insertEmptyStringAfterFirstWord"_test = []
+  "doNotInsertAnEmpty"_test = []
   {
     constexpr std::string_view expected{"M:test GGoState"sv};
     const std::string command{expected};
@@ -74,6 +84,19 @@ ut::suite errors = []
     constexpr std::string_view expected{"E:10"sv};
     const std::string message{expected};
     auto result = RRCP::insertAfterFirstWord(message, "123456");
+    expect(expected == result);
+  };
+
+  // ============================================================
+
+  "create_command_msg"_test = []
+  {
+    constexpr std::string_view expected{"\nM:test 1 SGoState1\r"sv};
+    const std::string command{"M:test SGoState1"};
+    std::string msg_id_str;
+    int counter{RRCP::INVALID_ID};
+    auto result = RRCP::create_command_msg(command, msg_id_str, counter);
+    expect(1 == counter);
     expect(expected == result);
   };
 
@@ -126,7 +149,6 @@ ut::suite errors = []
     expect(binary.length() == 28);
     expect(quoted.length() == 33);
   };
-
 };
 
 int main() {}
