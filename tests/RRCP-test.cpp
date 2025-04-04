@@ -1,6 +1,8 @@
 #include <boost/ut.hpp>  // import boost.ut;
 #include <iomanip>  // use std::quoted
 #include <sstream>
+#include <string>
+#include <string_view>
 
 #include "rrcp_helper.hpp"
 
@@ -9,15 +11,91 @@ namespace ut = boost::ut;
 ut::suite errors = []
 {
   using namespace ut;
-  using namespace std::string_literals;
+  using namespace std::literals;
 
-  "throws"_test = [] { expect(throws([] { throw 0; })); };
+  "find_response_msg"_test = []
+  {
+    constexpr std::string_view expected{"gGoState"sv};
+    const std::string message{"123456 gGoState"};
+    std::string result{message};
+    auto found = RRCP::find_response_msg(result, "123456");
+    expect(found);
+    expect(expected == result);
+  };
 
-  "doesn't throw"_test = [] { expect(nothrow([] {})); };
+  "find_error_response_msg"_test = []
+  {
+    constexpr std::string_view expected{"E:10"sv};
+    const std::string message{"E:10 123456"};
+    std::string result{message};
+    auto found = RRCP::find_response_msg(result, "123456");
+    expect(found);
+    expect(expected == result);
+  };
+
+  "find_no_response_msg"_test = []
+  {
+    constexpr std::string_view expected{"d NoGo"sv};
+    const std::string message{"d NoGo"};
+    std::string result{message};
+    auto found = RRCP::find_response_msg(result, "123456");
+    expect(!found);
+    expect(expected == result);
+  };
+
+  "insertAfterFirstWord"_test = []
+  {
+    const std::string command{"M:test GGoState"};
+    constexpr std::string_view expected{"M:test 123456 GGoState"sv};
+    auto result = RRCP::insertAfterFirstWord(command, "123456");
+    expect(expected == result);
+  };
+
+  "insertEmptyStringAfterFirstWord"_test = []
+  {
+    constexpr std::string_view expected{"M:test GGoState"sv};
+    const std::string command{expected};
+    auto result = RRCP::insertAfterFirstWord(command, "");
+    expect(expected == result);
+  };
+
+  "insertAfterSingleWord"_test = []
+  {
+    constexpr std::string_view expected{"E:10"sv};
+    const std::string message{expected};
+    auto result = RRCP::insertAfterFirstWord(message, "123456");
+    expect(expected == result);
+  };
+
+  "wrong_quoted"_test = []
+  {
+    expect(throws(
+        []
+        {
+          constexpr std::string_view wrong_quoted{"\n\x1b\004\r"sv};
+          auto result = RRCP::esc2char(wrong_quoted);
+        }));
+  };
+
+  "empty_str"_test = []
+  {
+    expect(nothrow(
+        []
+        {
+          auto result = RRCP::esc2char("");
+          expect(result.empty());
+        }));
+  };
+
+  "single_esc_msg"_test = [] { expect(throws([] { auto result = RRCP::esc2char("\x1b\rSINGLE_ESC"); })); };
+
+  "esc_as_last_msg"_test = [] { expect(throws([] { auto result = RRCP::esc2char("ESC_AS_LAST\x1b"); })); };
+
+  "to_short_msg"_test = [] { expect(throws([] { auto result = RRCP::esc2char("\x1b\0"s); })); };
 
   "basic_quoteing"_test = []
   {
-    std::string binary{"\nAB_(\0\001\002\003\004\005\006\a\b\n\r\t\v\x1b\20\'\"\?)-CD\r"s};
+    constexpr std::string_view binary{"\nAB_(\0\001\002\003\004\005\006\a\b\n\r\t\v\x1b\20\'\"\?)-CD\r"sv};
     auto quoted = RRCP::char2esc(binary);
 
     // NOTE: std::quoted works only with std::stringstream
