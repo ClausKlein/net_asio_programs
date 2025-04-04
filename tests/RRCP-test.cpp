@@ -33,20 +33,22 @@ ut::suite errors = []
     expect(expected == result);
   };
 
-  "find_no_response_msg"_test = []
+  "doNotfind_response_msg"_test = []
   {
     constexpr std::string_view expected{"d NoGo"sv};
-    const std::string message{"d NoGo"};
+    const std::string message{expected};
     std::string result{message};
     auto found = RRCP::find_response_msg(result, "123456");
     expect(!found);
     expect(expected == result);
   };
 
+  // ============================================================
+
   "insertAfterFirstWord"_test = []
   {
-    const std::string command{"M:test GGoState"};
     constexpr std::string_view expected{"M:test 123456 GGoState"sv};
+    const std::string command{"M:test GGoState"};
     auto result = RRCP::insertAfterFirstWord(command, "123456");
     expect(expected == result);
   };
@@ -59,13 +61,23 @@ ut::suite errors = []
     expect(expected == result);
   };
 
-  "insertAfterSingleWord"_test = []
+  "doNotInsertBeforeTrapCmd"_test = []
+  {
+    constexpr std::string_view expected{"M:test TGoState1"sv};
+    const std::string command{expected};
+    auto result = RRCP::insertAfterFirstWord(command, "");
+    expect(expected == result);
+  };
+
+  "doNotInsertAfterSingleWord"_test = []
   {
     constexpr std::string_view expected{"E:10"sv};
     const std::string message{expected};
     auto result = RRCP::insertAfterFirstWord(message, "123456");
     expect(expected == result);
   };
+
+  // ============================================================
 
   "wrong_quoted"_test = []
   {
@@ -114,6 +126,7 @@ ut::suite errors = []
     expect(binary.length() == 28);
     expect(quoted.length() == 33);
   };
+
 };
 
 int main() {}
