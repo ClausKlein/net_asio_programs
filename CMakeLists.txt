@@ -99,14 +99,6 @@ if(APPLE AND BUILD_TESTING)
     add_executable(timer timer.cpp)
     target_link_libraries(timer PUBLIC Boost::headers fmt::fmt-header-only)
     add_test(NAME timer COMMAND timer)
-
-    # TODO(CK): rm this stupid example?
-    add_executable(async_client async_client.cpp)
-    target_link_libraries(
-        async_client
-        PUBLIC Boost::headers fmt::fmt-header-only
-    )
-    add_test(NAME async_client COMMAND async_client)
 endif()
 
 # ---- rrcp client class usage examples main  ----
