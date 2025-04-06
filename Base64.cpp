@@ -41,7 +41,7 @@ class base64
   static auto remove_whitespace(std::string_view input) -> std::string
   {
     auto filtered = input | std::views::filter([](unsigned char c) { return !std::isspace(c); });
-    return std::string(filtered.begin(), filtered.end());
+    return {filtered.begin(), filtered.end()};
   }
 #endif
 

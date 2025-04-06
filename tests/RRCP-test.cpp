@@ -5,6 +5,7 @@
 #include <string_view>
 
 #include "rrcp_helper.hpp"
+#include "rrcp_message.hpp"
 
 namespace ut = boost::ut;
 
@@ -108,7 +109,7 @@ ut::suite errors = []
     expect(expected == result);
 
     std::ostringstream quoted;
-    quoted << std::quoted(result.substr(1, result.length() - 1)); // NOTE: w/o START STOP
+    quoted << std::quoted(result.substr(1, result.length() - 1));  // NOTE: w/o START STOP
     ut::log("{} == {}\n", "RRCP MU", quoted.str());
   };
 
@@ -146,7 +147,7 @@ ut::suite errors = []
     auto quoted = RRCP::char2esc(binary);
 
     // NOTE: std::quoted works only with std::stringstream
-#if defined(BOOST_UT_HAS_FORMAT) && defined(FIXME)
+#if defined(BOOST_UT_HAS_FORMAT) && defined(FIXME)  // FIXME!
     std::ostringstream binary_bin;
     binary_bin << std::quoted(binary);
     ut::log("{} {}\n", binary.length(), binary_bin.str());
@@ -161,6 +162,34 @@ ut::suite errors = []
     expect(binary.length() == 28);
     expect(quoted.length() == 33);
   };
+
+  // ============================================================
+
+  "rrcp_message"_test = []
+  {
+    constexpr std::string_view command{"Hallo Server"};
+    constexpr std::string_view binary{"\nAB_(\0\001\002\003\004\005\006\a\b\n\r\t\v\x1b\20\'\"\?)-CD\r"sv};
+
+    rrcp_message msg;
+    msg.body_length(MAX_MU_LENGTH);
+    expect(msg.length() == MAX_MU_LENGTH + 4);
+    msg.encode_body();
+    expect(msg.body_length() == MAX_MU_LENGTH);
+
+    msg.encode_header();
+    expect(msg.length() == MAX_MU_LENGTH + 4);
+
+    expect(msg.set_msg(command));
+    // FIXME: expect(msg.body_length() == command.length());
+
+    expect(msg.set_msg(binary));
+    // FIXME: expect(msg.body_length() == 33);
+
+    // FIXME: auto result = msg.get_msg();
+    // FIXME: expect(command == result);
+  };
+
+  // ============================================================
 };
 
 int main() {}

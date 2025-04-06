@@ -135,7 +135,7 @@ auto RRCP::find_response_msg(std::string& response, const std::string& msg_id) -
   // NOTE: This is an Error response with or w/o a valid msg_id!
   if (boost::algorithm::starts_with(response, "E:"))
   {
-    return true; // return, this may be a response to an Trap command?
+    return true;  // return, this may be a response to an Trap command?
   }
 
   return false;

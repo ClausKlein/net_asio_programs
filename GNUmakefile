@@ -31,6 +31,7 @@ hicpp-member-init,\
 hicpp-named-parameter,\
 modernize-deprecated-headers,\
 modernize-loop-convert,\
+modernize-return-braced-init-list,\
 modernize-use-nodiscard,\
 modernize-use-std-print,\
 modernize-use-trailing-return-type,\
