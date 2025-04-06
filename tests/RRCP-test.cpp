@@ -4,6 +4,8 @@
 #include <string>
 #include <string_view>
 
+#define DEBUG
+
 #include "rrcp_helper.hpp"
 #include "rrcp_message.hpp"
 
@@ -180,13 +182,16 @@ ut::suite errors = []
     expect(msg.length() == MAX_MU_LENGTH + 4);
 
     expect(msg.set_msg(command));
-    // FIXME: expect(msg.body_length() == command.length());
+    expect(msg.is_valid());
+    expect(msg.body_length() == command.length());
+    auto result = msg.get_msg();
+    expect(command == result);
 
-    expect(msg.set_msg(binary));
-    // FIXME: expect(msg.body_length() == 33);
-
-    // FIXME: auto result = msg.get_msg();
-    // FIXME: expect(command == result);
+    rrcp_message msg2(binary);
+    expect(msg2.is_valid());
+    expect(msg2.body_length() == 33);
+    result = msg2.get_msg();
+    expect(binary == result);
   };
 
   // ============================================================

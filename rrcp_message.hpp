@@ -51,9 +51,9 @@ class rrcp_message
   explicit rrcp_message(std::string_view msg)
   {
     valid_ = set_msg(msg);
-    if (valid_)
+    if (!valid_)
     {
-      encode_header();
+      clear();
     }
   }
 
@@ -120,7 +120,7 @@ class rrcp_message
   /**
    * @brief Sets the message body using the input string, escaping it as needed.
    * @param msg The input message.
-   * @return True if header decoding is successful, false otherwise.
+   * @return True if header encoding is successful, false otherwise.
    */
   [[nodiscard]] auto set_msg(std::string_view msg) -> bool
   {
@@ -129,11 +129,16 @@ class rrcp_message
 
     if (msg_length_ > max_msg_length)
     {
+#ifdef DEBUG
+      fmt::print(stderr, "{}: {} to long!\n", __func__, msg_length_);
+#endif
+      clear();
       return false;
     }
 
     std::memcpy(body(), data.c_str(), msg_length_);
-    return decode_header();
+    encode_header();
+    return valid_;
   }
 
   /**
@@ -154,11 +159,12 @@ class rrcp_message
    */
   auto decode_body() -> bool
   {
+    // TODO(CK): only if (msg_length != 0 && not yet done)!
     const std::string result = esc2char(std::string(body(), msg_length_));
     if (result.length() != msg_length_)
     {
 #ifdef DEBUG
-      fmt::print(stderr, "{}\n", result);
+      fmt::print(stderr, "{}: {}\n", __func__, result);
 #endif
       body_length(result.length());
       std::memcpy(body(), result.c_str(), msg_length_);
@@ -173,13 +179,14 @@ class rrcp_message
    */
   auto decode_header() -> bool
   {
+    // TODO(CK): only if msg_length != 0
     const std::string header(data_.data(), header_length);
     msg_length_ = std::stoul(header, nullptr, 16);
 
     if (msg_length_ > max_msg_length)
     {
 #ifdef DEBUG
-      fmt::print(stderr, "Invalid msg_length!\n");
+      fmt::print(stderr, "{}: Invalid msg_length {}!\n", __func__, header);
 #endif
       msg_length_ = 0;
       return false;
@@ -193,6 +200,7 @@ class rrcp_message
    */
   void encode_body()
   {
+    // TODO(CK): only if (msg_length != 0 && not yet done)!
     std::string msg = char2esc(std::string(body(), msg_length_));
     if (msg.length() != msg_length_)
     {
@@ -206,8 +214,10 @@ class rrcp_message
    */
   void encode_header()
   {
+    // TODO(CK): only if msg_length != 0
     std::string header = fmt::format("{:04x}", static_cast< uint16_t >(msg_length_));
     std::memcpy(data_.data(), header.data(), header_length);
+    valid_ = true;
   }
 
   /**
