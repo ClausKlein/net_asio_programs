@@ -18,7 +18,7 @@ distclean: # XXX clean
 	rm -rf build coverage/* *~ ctags
 
 build: CMakeLists.txt
-	cmake -S . -B $@ -D CMAKE_BUILD_TYPE=Debug
+	cmake -S . -B $@ -G Ninja -D CMAKE_BUILD_TYPE=Debug # --fresh
 
 check: all
 	run-clang-tidy -p build *.cpp

@@ -24,7 +24,9 @@ ut::suite errors = []
     auto found = RRCP::find_response_msg(result, "123456");
     expect(found);
     expect(expected == result);
+#if defined(BOOST_UT_HAS_FORMAT)
     ut::log("{} == {}\n", result, expected);
+#endif
   };
 
   "doNotfind_error_response_msg"_test = []
@@ -35,7 +37,9 @@ ut::suite errors = []
     auto found = RRCP::find_response_msg(result, "0815");
     expect(found);
     expect(expected == result);
+#if defined(BOOST_UT_HAS_FORMAT)
     ut::log("{} == {}\n", result, expected);
+#endif
   };
 
   "find_error_response_msg"_test = []
@@ -46,7 +50,9 @@ ut::suite errors = []
     auto found = RRCP::find_response_msg(result, "123456");
     expect(found);
     expect(expected == result);
+#if defined(BOOST_UT_HAS_FORMAT)
     ut::log("{} == {}\n", result, expected);
+#endif
   };
 
   "doNotfind_response_msg"_test = []
@@ -57,7 +63,9 @@ ut::suite errors = []
     auto found = RRCP::find_response_msg(result, "123456");
     expect(!found);
     expect(expected == result);
+#if defined(BOOST_UT_HAS_FORMAT)
     ut::log("{} == {}\n", result, expected);
+#endif
   };
 
   // ============================================================
@@ -68,7 +76,9 @@ ut::suite errors = []
     const std::string command{"M:test GGoState"};
     auto result = RRCP::insertAfterFirstWord(command, "123456");
     expect(expected == result);
+#if defined(BOOST_UT_HAS_FORMAT)
     ut::log("{} == {}\n", result, expected);
+#endif
   };
 
   "doNotInsertAnEmptyString"_test = []
@@ -77,7 +87,9 @@ ut::suite errors = []
     const std::string command{expected};
     auto result = RRCP::insertAfterFirstWord(command, "");
     expect(expected == result);
+#if defined(BOOST_UT_HAS_FORMAT)
     ut::log("{} == {}\n", result, expected);
+#endif
   };
 
   "doNotInsertBeforeTrapCmd"_test = []
@@ -86,7 +98,9 @@ ut::suite errors = []
     const std::string command{expected};
     auto result = RRCP::insertAfterFirstWord(command, "");
     expect(expected == result);
+#if defined(BOOST_UT_HAS_FORMAT)
     ut::log("{} == {}\n", result, expected);
+#endif
   };
 
   "doNotInsertAfterSingleWord"_test = []
@@ -95,7 +109,9 @@ ut::suite errors = []
     const std::string message{expected};
     auto result = RRCP::insertAfterFirstWord(message, "123456");
     expect(expected == result);
+#if defined(BOOST_UT_HAS_FORMAT)
     ut::log("{} == {}\n", result, expected);
+#endif
   };
 
   // ============================================================
@@ -112,7 +128,9 @@ ut::suite errors = []
 
     std::ostringstream quoted;
     quoted << std::quoted(result.substr(1, result.length() - 1));  // NOTE: w/o START STOP
+#if defined(BOOST_UT_HAS_FORMAT)
     ut::log("{} == {}\n", "RRCP MU", quoted.str());
+#endif
   };
 
   // ============================================================

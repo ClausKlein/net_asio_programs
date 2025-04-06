@@ -4,13 +4,23 @@ project(RRCP-client VERSION 0.1.0 LANGUAGES CXX)
 
 # ---- add dependencies ----
 
+include(FetchContent)
+
 find_package(Threads)
 if(NOT TARGET Boost::headers)
     find_package(Boost 1.71 COMPONENTS headers REQUIRED HINTS $ENV{HOME}/.local)
 endif()
-if(NOT TARGET fmt::fmt-header-only)
-    find_package(fmt 11 REQUIRED HINTS $ENV{HOME}/.local)
-endif()
+
+FetchContent_Declare(
+    fmt
+    GIT_TAG 11.1.4
+    GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+    FIND_PACKAGE_ARGS 11.1.4 NAMES fmt
+    EXCLUDE_FROM_ALL
+    SYSTEM
+)
+
+FetchContent_MakeAvailable(fmt)
 
 # ---- default settings ----
 
@@ -69,7 +79,10 @@ endfunction()
 # ---- server needed for tests ----
 
 add_executable(async_tcp_echo_server examples/async_tcp_echo_server.cpp)
-target_link_libraries(async_tcp_echo_server PUBLIC Boost::headers)
+target_link_libraries(
+    async_tcp_echo_server
+    PUBLIC Threads::Threads Boost::headers
+)
 do_test(async_tcp_echo_server "" port)
 
 # ---- rrcp class sources and helpers as a library ----
@@ -80,7 +93,10 @@ target_sources(
     PRIVATE rrcp_helper.cpp
     PUBLIC FILE_SET HEADERS FILES async_rrcp_client.hpp rrcp_helper.hpp
 )
-target_link_libraries(rrcp_helper PUBLIC Boost::headers fmt::fmt-header-only)
+target_link_libraries(
+    rrcp_helper
+    PUBLIC Threads::Threads Boost::headers fmt::fmt-header-only
+)
 
 add_executable(async_tcp_echo_client examples/async_tcp_echo_client.cpp)
 target_link_libraries(async_tcp_echo_client PRIVATE rrcp_helper)
@@ -97,7 +113,10 @@ do_test(rrcp_client --help Usage)
 if(APPLE AND BUILD_TESTING)
     # TODO(CK): mv to examples too!
     add_executable(timer timer.cpp)
-    target_link_libraries(timer PUBLIC Boost::headers fmt::fmt-header-only)
+    target_link_libraries(
+        timer
+        PUBLIC Threads::Threads Boost::headers fmt::fmt-header-only
+    )
     add_test(NAME timer COMMAND timer)
 endif()
 

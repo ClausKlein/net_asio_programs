@@ -1,5 +1,14 @@
 include(FetchContent)
 
+FetchContent_Declare(
+    fmt
+    GIT_TAG 11.1.4
+    GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+    FIND_PACKAGE_ARGS 11.1.4 NAMES fmt
+    EXCLUDE_FROM_ALL
+    SYSTEM
+)
+
 # we use boost::ut
 FetchContent_Declare(
     ut
@@ -22,7 +31,7 @@ FetchContent_Declare(
 
 # For Windows: Prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest ut)
+FetchContent_MakeAvailable(fmt googletest ut)
 
 # add_library(base64c STATIC)
 # NO! target_sources(base64c PRIVATE base64.c
@@ -37,7 +46,10 @@ target_sources(
         FILES ${CMAKE_SOURCE_DIR}/Base64.hpp
 )
 target_link_libraries(
-    rrcp_helper # Not needed: PUBLIC Boost::beast
+    rrcp_helper
+    PUBLIC
+        fmt::fmt-header-only
+        Boost::headers # Not needed: PUBLIC Boost::beast
 )
 
 add_executable(RRCP-test RRCP-test.cpp)
