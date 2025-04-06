@@ -2,12 +2,9 @@
 // rrcp_message.hpp
 // ~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2024 Christopher M. Kohlhoff (chris at kohlhoff dot com)
-//
-// Distributed under the Boost Software License, Version 1.0. (See accompanying
-// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
-//
+// Copyright (c) 2003-2024 Christopher M. Kohlhoff
 // Moderniced from Claus Klein and ChatGPT
+//
 
 #ifndef RRCP_MESSAGE_HPP
 #define RRCP_MESSAGE_HPP
@@ -15,6 +12,7 @@
 #include <fmt/format.h>
 
 #include <algorithm>
+#include <array>
 #include <cstdlib>
 #include <cstring>
 #include <string>
@@ -26,106 +24,142 @@ using namespace RRCP;
 
 /**
  * @class rrcp_message
- * @brief A message class for handling RRCP protocol messages with a 4-byte header indicating message length.
+ * @brief Encapsulates an RRCP message with methods for encoding, decoding, and accessing message content.
+ *
+ * Each message consists of a 4-byte header (hex-encoded length) and an escaped string payload.
  */
 class rrcp_message
 {
  public:
-  static constexpr std::size_t header_length = 4;  ///< Fixed length of the message header.
-  static constexpr std::size_t max_msg_length = MAX_MU_LENGTH;  ///< Maximum allowed message body length.
+  /// Number of bytes used for the fixed-size header.
+  static constexpr std::size_t header_length = 4;
 
-  /// Default constructor.
+  /// Maximum message body length in bytes.
+  static constexpr std::size_t max_msg_length = MAX_MU_LENGTH;
+
+  /**
+   * @brief Default constructor.
+   */
   rrcp_message() = default;
 
   /**
-   * @brief Get a const pointer to the raw data buffer.
-   * @return Pointer to the beginning of the message data.
+   * @brief Construct a message from a string view.
+   * @param msg The message content.
+   *
+   * The message is encoded and the header is generated. Validity is tracked.
    */
-  [[nodiscard]] auto data() const -> const char* { return data(); }
+  explicit rrcp_message(std::string_view msg)
+  {
+    valid_ = set_msg(msg);
+    if (valid_)
+    {
+      encode_header();
+    }
+  }
 
   /**
-   * @brief Get a pointer to the raw data buffer.
-   * @return Pointer to the beginning of the message data.
+   * @brief Checks if the message is in a valid state.
+   * @return True if valid, false otherwise.
+   */
+  [[nodiscard]] auto is_valid() const -> bool { return valid_; }
+
+  /**
+   * @brief Returns a const pointer to the start of the raw message buffer.
+   * @return Pointer to buffer (includes header and body).
+   */
+  [[nodiscard]] auto data() const -> const char* { return data_.data(); }
+
+  /**
+   * @brief Returns a mutable pointer to the start of the raw message buffer.
+   * @return Pointer to buffer (includes header and body).
    */
   [[nodiscard]] auto data() -> char* { return data_.data(); }
 
   /**
-   * @brief Get the total length of the message (header + body).
-   * @return Message length in bytes.
+   * @brief Returns the total length of the message (header + body).
+   * @return Total length in bytes.
    */
   [[nodiscard]] auto length() const -> std::size_t { return header_length + msg_length_; }
 
   /**
-   * @brief Get a string view of the full message data.
-   * @return View of the message data.
+   * @brief Returns a view over the full message buffer.
+   * @return Message as a std::string_view.
    */
   [[nodiscard]] auto get_data() const -> std::string_view { return {data(), length()}; }
 
   /**
-   * @brief Get a const pointer to the message body.
-   * @return Pointer to the message body.
+   * @brief Returns a const pointer to the message body.
+   * @return Pointer to the body (excludes header).
    */
-  [[nodiscard]] auto body() const -> const char* { return body(); }
+  [[nodiscard]] auto body() const -> const char* { return data_.data() + header_length; }
 
   /**
-   * @brief Get a pointer to the message body.
-   * @return Pointer to the message body.
+   * @brief Returns a mutable pointer to the message body.
+   * @return Pointer to the body (excludes header).
    */
   [[nodiscard]] auto body() -> char* { return data_.data() + header_length; }
 
   /**
-   * @brief Get the length of the message body.
-   * @return Length of the body in bytes.
+   * @brief Returns the length of the message body in bytes.
+   * @return Length of the body.
    */
   [[nodiscard]] auto body_length() const -> std::size_t { return msg_length_; }
 
   /**
-   * @brief Get a string view of the message body.
-   * @return View of the message body.
+   * @brief Returns a view of the message body.
+   * @return Message body as a std::string_view.
    */
   [[nodiscard]] auto get_body() const -> std::string_view { return {body(), body_length()}; }
 
   /**
-   * @brief Get the decoded message as a string.
-   * @return Decoded string from the message body.
+   * @brief Returns the decoded message string (after escaping is removed).
+   * @return Decoded message.
    */
   [[nodiscard]] auto get_msg() const -> std::string { return esc2char(std::string(body(), body_length())); }
 
   /**
-   * @brief Set the message body from a string view. Encodes it and sets length.
-   * @param msg The message to store.
-   * @return True if header was successfully decoded after setting the message.
+   * @brief Sets the message body using the input string, escaping it as needed.
+   * @param msg The input message.
+   * @return True if header decoding is successful, false otherwise.
    */
   [[nodiscard]] auto set_msg(std::string_view msg) -> bool
   {
-    std::string data = char2esc(std::string(msg.data(), msg.length()));
+    std::string data = char2esc(std::string{msg});
     body_length(data.length());
-    std::memcpy(body(), data.c_str(), data.length());
+
+    if (msg_length_ > max_msg_length)
+    {
+      return false;
+    }
+
+    std::memcpy(body(), data.c_str(), msg_length_);
     return decode_header();
   }
 
   /**
-   * @brief Set the message body length, constrained by the max message length.
-   * @param new_length New length to assign.
+   * @brief Sets the body length, clamping it to the maximum allowed length.
+   * @param new_length Desired length of body.
    */
   void body_length(std::size_t new_length)
   {
-    msg_length_ = new_length;
-    msg_length_ = std::min(msg_length_, max_msg_length);
+    msg_length_ = std::min(new_length, max_msg_length);
+#ifdef DEBUG
     fmt::print(stderr, "body_length({})\n", msg_length_);
+#endif
   }
 
   /**
-   * @brief Decode the message body, converting escaped characters.
-   * @return True if decoding was successful and not empty.
+   * @brief Decodes the escaped content in the body.
+   * @return True if decoding succeeds, false if result is empty.
    */
   auto decode_body() -> bool
   {
     const std::string result = esc2char(std::string(body(), msg_length_));
     if (result.length() != msg_length_)
     {
+#ifdef DEBUG
       fmt::print(stderr, "{}\n", result);
-
+#endif
       body_length(result.length());
       std::memcpy(body(), result.c_str(), msg_length_);
     }
@@ -134,8 +168,8 @@ class rrcp_message
   }
 
   /**
-   * @brief Decode the message header to extract the body length.
-   * @return True if header is valid, false otherwise.
+   * @brief Parses the 4-byte header to determine body length.
+   * @return True if the header is valid, false if the length is out of bounds.
    */
   auto decode_header() -> bool
   {
@@ -144,8 +178,9 @@ class rrcp_message
 
     if (msg_length_ > max_msg_length)
     {
+#ifdef DEBUG
       fmt::print(stderr, "Invalid msg_length!\n");
-
+#endif
       msg_length_ = 0;
       return false;
     }
@@ -154,7 +189,7 @@ class rrcp_message
   }
 
   /**
-   * @brief Encode the message body by escaping special characters.
+   * @brief Encodes the body to escaped format and adjusts body length.
    */
   void encode_body()
   {
@@ -167,7 +202,7 @@ class rrcp_message
   }
 
   /**
-   * @brief Encode the message header with the body length in hexadecimal.
+   * @brief Encodes the message header from the current body length.
    */
   void encode_header()
   {
@@ -175,9 +210,20 @@ class rrcp_message
     std::memcpy(data_.data(), header.data(), header_length);
   }
 
+  /**
+   * @brief Clears the message buffer and resets internal state.
+   */
+  void clear()
+  {
+    msg_length_ = 0;
+    valid_ = false;
+    data_.fill('\0');
+  }
+
  private:
-  std::array< char, header_length + max_msg_length > data_{};  ///< Internal buffer for message data.
-  std::size_t msg_length_{0};  ///< Length of the message body.
+  std::array< char, header_length + max_msg_length > data_{};  ///< Internal buffer for message (header + body).
+  std::size_t msg_length_{0};  ///< Length of message body.
+  bool valid_{false};  ///< Flag indicating whether the message is valid.
 };
 
 #endif  // RRCP_MESSAGE_HPP
