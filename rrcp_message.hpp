@@ -127,7 +127,7 @@ class rrcp_message
     std::string data = char2esc(std::string{msg});
     body_length(data.length());
 
-    if (msg_length_ > max_msg_length)
+    if (data.length() > max_msg_length)
     {
 #ifdef DEBUG
       fmt::print(stderr, "{}: {} to long!\n", __func__, msg_length_);

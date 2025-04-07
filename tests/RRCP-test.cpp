@@ -187,28 +187,64 @@ ut::suite errors = []
 
   "rrcp_message"_test = []
   {
-    constexpr std::string_view command{"Hallo Server"};
-    constexpr std::string_view binary{"\nAB_(\0\001\002\003\004\005\006\a\b\n\r\t\v\x1b\20\'\"\?)-CD\r"sv};
-
     rrcp_message msg;
     msg.body_length(MAX_MU_LENGTH);
     expect(msg.length() == MAX_MU_LENGTH + 4);
     msg.encode_body();
     expect(msg.body_length() == MAX_MU_LENGTH);
+    // XXX expect(msg.is_valid());
+    expect(msg.decode_body());
 
     msg.encode_header();
     expect(msg.length() == MAX_MU_LENGTH + 4);
+    expect(msg.decode_header());
 
+    msg.clear();
+    expect(!msg.is_valid());
+    expect(msg.get_body().empty());
+    expect(msg.get_data().length() == 4);
+  };
+
+  "rrcp_message_empty"_test = []
+  {
+    rrcp_message msg;
+    msg.body_length(0);
+    expect(msg.length() == 4);
+    msg.encode_body();
+    expect(msg.body_length() == 0);
+    expect(!msg.is_valid());
+    expect(!msg.decode_body());
+
+    // FIXME: expect(nothrow([&] {msg.decode_header();} ));
+  };
+
+  "rrcp_message_to_long"_test = []
+  {
+    const std::string invalid(MAX_MU_LENGTH, '\n');
+    rrcp_message msg(invalid);
+    expect(!msg.is_valid());
+    expect(!msg.set_msg(invalid));
+  };
+
+  "rrcp_message_text"_test = []
+  {
+    constexpr std::string_view command{"Hallo Server"};
+    rrcp_message msg;
     expect(msg.set_msg(command));
     expect(msg.is_valid());
     expect(msg.body_length() == command.length());
+    expect(msg.body() == command);
     auto result = msg.get_msg();
     expect(command == result);
+  };
 
-    rrcp_message msg2(binary);
-    expect(msg2.is_valid());
-    expect(msg2.body_length() == 33);
-    result = msg2.get_msg();
+  "rrcp_message_binary"_test = []
+  {
+    constexpr std::string_view binary{"\nAB_(\0\001\002\003\004\005\006\a\b\n\r\t\v\x1b\20\'\"\?)-CD\r"sv};
+    rrcp_message msg(binary);
+    expect(msg.is_valid());
+    expect(msg.body_length() == 33);
+    auto result = msg.get_msg();
     expect(binary == result);
   };
 
