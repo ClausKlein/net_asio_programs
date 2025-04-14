@@ -25,9 +25,11 @@
 #include <boost/asio/read_until.hpp>
 #include <boost/asio/steady_timer.hpp>
 #include <boost/asio/write.hpp>
+#include <boost/signals2/signal.hpp>
 #include <boost/system/error_code.hpp>
 #include <chrono>
 #include <deque>
+#include <functional>
 #include <memory>
 #include <string>
 #include <thread>
@@ -75,6 +77,9 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
           }
         });
   }
+
+  using signal_string_type = boost::signals2::signal< void(std::string) >;
+  void register_trap_hander(std::function< void(std::string) > handler) { trap_handler_.connect(handler); }
 
   [[nodiscard]] auto connected() const -> bool { return connected_; }
 
@@ -164,7 +169,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
           if (!ec)
           {
             //========================== RRCP ============================
-            std::string const line = esc2char(self->input_buffer_.substr(1, length - 1));  // w/o START, STOP
+            std::string line = esc2char(self->input_buffer_.substr(1, length - 1));  // w/o START, STOP
             self->input_buffer_.erase(0, length);
             //========================== END ============================
 
@@ -173,8 +178,8 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
             if (boost::algorithm::starts_with(line, "d"))  // Trap data message
             {
               // Handle trap data messages
-              fmt::print(stderr, "Ignored trap data: {}\n", line);  // WARNING
-              fmt::print("{}\n", line);
+              fmt::print(stderr, "trap data: {}\n", line);  // TRACE
+              self->trap_handler_(line);
             }
             else if (!boost::algorithm::starts_with(line, "gPing"))
             {
@@ -272,6 +277,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
   int msg_id_{10000};
   bool connected_{false};
   bool stopped_{false};
+  signal_string_type trap_handler_;
 };
 
 }  // namespace RRCP

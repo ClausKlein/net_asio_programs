@@ -23,6 +23,13 @@
 
 #include "async_rrcp_client.hpp"
 
+namespace
+{
+
+void print(std::string msg) { fmt::print("{}\n", msg); }
+
+}  // namespace
+
 auto main(int argc, char* argv[]) -> int
 {
   if (argc != 3)
@@ -39,6 +46,7 @@ auto main(int argc, char* argv[]) -> int
     tcp::resolver resolver(io_context);
 
     auto c = std::make_shared< async_rrcp_client >(io_context);
+    c->register_trap_hander(&print);
     c->start(resolver.resolve(argv[1], argv[2]));
 
     std::thread io_thread([&io_context]() { io_context.run(); });
