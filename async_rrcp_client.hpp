@@ -41,7 +41,6 @@ namespace RRCP
 
 using boost::asio::ip::tcp;
 using namespace std::chrono_literals;
-using message_queue = std::deque< std::string >;
 
 constexpr size_t max_length = 65432;
 constexpr auto timeout_duration = 3s;
@@ -49,6 +48,9 @@ constexpr auto heartbeat_interval = 10s;
 
 class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client >
 {
+ using message_queue = std::deque< std::string >;
+ using signal_string_type = boost::signals2::signal< void(std::string) >;
+
  public:
   explicit async_rrcp_client(boost::asio::io_context& io_context)
   : io_context_(io_context), socket_(io_context), deadline_(io_context), heartbeat_timer_(io_context)
@@ -78,8 +80,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
         });
   }
 
-  using signal_string_type = boost::signals2::signal< void(std::string) >;
-  void register_trap_hander(std::function< void(std::string) > handler) { trap_handler_.connect(handler); }
+  void register_trap_handler(const std::function< void(std::string) >& handler) { trap_handler_.connect(handler); }
 
   [[nodiscard]] auto connected() const -> bool { return connected_; }
 

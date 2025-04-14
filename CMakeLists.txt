@@ -8,7 +8,7 @@ include(FetchContent)
 
 find_package(Threads)
 if(NOT TARGET Boost::headers)
-    find_package(Boost 1.71 COMPONENTS headers REQUIRED HINTS $ENV{HOME}/.local)
+    find_package(Boost 1.71 COMPONENTS headers signals2 REQUIRED HINTS $ENV{HOME}/.local)
 endif()
 
 FetchContent_Declare(
