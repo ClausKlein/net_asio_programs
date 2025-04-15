@@ -20,7 +20,7 @@
 
 #include "rrcp_helper.hpp"
 
-using namespace RRCP;
+using namespace rrcp;
 
 /**
  * @class rrcp_message
@@ -32,10 +32,10 @@ class rrcp_message
 {
  public:
   /// Number of bytes used for the fixed-size header.
-  static constexpr std::size_t header_length = 4;
+  static constexpr std::size_t HEADER_LENGTH = 4;
 
   /// Maximum message body length in bytes.
-  static constexpr std::size_t max_msg_length = MAX_MU_LENGTH;
+  static constexpr std::size_t MAX_MSG_LENGTH = MAX_MU_LENGTH;
 
   /**
    * @brief Default constructor.
@@ -79,7 +79,7 @@ class rrcp_message
    * @brief Returns the total length of the message (header + body).
    * @return Total length in bytes.
    */
-  [[nodiscard]] auto length() const -> std::size_t { return header_length + msg_length_; }
+  [[nodiscard]] auto length() const -> std::size_t { return HEADER_LENGTH + msg_length_; }
 
   /**
    * @brief Returns a view over the full message buffer.
@@ -91,13 +91,13 @@ class rrcp_message
    * @brief Returns a const pointer to the message body.
    * @return Pointer to the body (excludes header).
    */
-  [[nodiscard]] auto body() const -> const char* { return data_.data() + header_length; }
+  [[nodiscard]] auto body() const -> const char* { return data_.data() + HEADER_LENGTH; }
 
   /**
    * @brief Returns a mutable pointer to the message body.
    * @return Pointer to the body (excludes header).
    */
-  [[nodiscard]] auto body() -> char* { return data_.data() + header_length; }
+  [[nodiscard]] auto body() -> char* { return data_.data() + HEADER_LENGTH; }
 
   /**
    * @brief Returns the length of the message body in bytes.
@@ -127,7 +127,7 @@ class rrcp_message
     std::string data = char2esc(std::string{msg});
     body_length(data.length());
 
-    if (data.length() > max_msg_length)
+    if (data.length() > MAX_MSG_LENGTH)
     {
 #ifdef DEBUG
       fmt::print(stderr, "{}: {} to long!\n", __func__, msg_length_);
@@ -147,7 +147,7 @@ class rrcp_message
    */
   void body_length(std::size_t new_length)
   {
-    msg_length_ = std::min(new_length, max_msg_length);
+    msg_length_ = std::min(new_length, MAX_MSG_LENGTH);
 #ifdef DEBUG
     fmt::print(stderr, "body_length({})\n", msg_length_);
 #endif
@@ -180,10 +180,10 @@ class rrcp_message
   auto decode_header() -> bool
   {
     // TODO(CK): only if msg_length != 0
-    const std::string header(data_.data(), header_length);
+    const std::string header(data_.data(), HEADER_LENGTH);
     msg_length_ = std::stoul(header, nullptr, 16);
 
-    if (msg_length_ > max_msg_length)
+    if (msg_length_ > MAX_MSG_LENGTH)
     {
 #ifdef DEBUG
       fmt::print(stderr, "{}: Invalid msg_length {}!\n", __func__, header);
@@ -216,7 +216,7 @@ class rrcp_message
   {
     // TODO(CK): only if msg_length != 0
     std::string header = fmt::format("{:04x}", static_cast< uint16_t >(msg_length_));
-    std::memcpy(data_.data(), header.data(), header_length);
+    std::memcpy(data_.data(), header.data(), HEADER_LENGTH);
     valid_ = true;
   }
 
@@ -231,7 +231,7 @@ class rrcp_message
   }
 
  private:
-  std::array< char, header_length + max_msg_length > data_{};  ///< Internal buffer for message (header + body).
+  std::array< char, HEADER_LENGTH + MAX_MSG_LENGTH > data_{};  ///< Internal buffer for message (header + body).
   std::size_t msg_length_{0};  ///< Length of message body.
   bool valid_{false};  ///< Flag indicating whether the message is valid.
 };

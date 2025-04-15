@@ -32,7 +32,7 @@ auto main(int argc, char* argv[]) -> int
 {
   try
   {
-    using namespace RRCP;
+    using namespace rrcp;
 
     if (argc != 3)
     {

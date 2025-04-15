@@ -14,7 +14,7 @@ constexpr char REPLACE_LF = 0x01;
 constexpr char REPLACE_CR = 0x02;
 constexpr char REPLACE_ESC = 0x03;
 
-auto RRCP::esc2char(std::string_view data) -> std::string
+auto rrcp::esc2char(std::string_view data) -> std::string
 {
   std::string message;
   auto len = data.size();
@@ -56,7 +56,7 @@ auto RRCP::esc2char(std::string_view data) -> std::string
   return message;
 }
 
-auto RRCP::char2esc(std::string_view data) -> std::string
+auto rrcp::char2esc(std::string_view data) -> std::string
 {
   std::string message;
   for (char const c : data)
@@ -83,7 +83,7 @@ auto RRCP::char2esc(std::string_view data) -> std::string
   return message;
 }
 
-auto RRCP::insertAfterFirstWord(const std::string& input, const std::string& toInsert) -> std::string
+auto rrcp::insertAfterFirstWord(const std::string& input, const std::string& toInsert) -> std::string
 {
   if (toInsert.empty())
   {
@@ -109,7 +109,7 @@ auto RRCP::insertAfterFirstWord(const std::string& input, const std::string& toI
   return input.substr(0, firstSpace + 1) + toInsert + " " + input.substr(nextNonSpace);
 }
 
-auto RRCP::find_response_msg(std::string& response, const std::string& msg_id) -> bool
+auto rrcp::find_response_msg(std::string& response, const std::string& msg_id) -> bool
 {
   // DEBUG: fmt::print("RRCP MU received({})\n", response);
   // NOTE: different order for error responses like this: "E:2 10001"
@@ -141,7 +141,7 @@ auto RRCP::find_response_msg(std::string& response, const std::string& msg_id) -
   return false;
 }
 
-extern auto RRCP::create_command_msg(const std::string& message, std::string& msg_id_str, int& msg_id) -> std::string
+extern auto rrcp::create_command_msg(const std::string& message, std::string& msg_id_str, int& msg_id) -> std::string
 {
   // Insert the next message number for Set/Get request.
   // But prevent to insert the msg_id for Trap commands!

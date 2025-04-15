@@ -36,20 +36,20 @@
 
 #include "rrcp_helper.hpp"
 
-namespace RRCP
+namespace rrcp
 {
 
 using boost::asio::ip::tcp;
 using namespace std::chrono_literals;
 
-constexpr size_t max_length = 65432;
-constexpr auto timeout_duration = 3s;
-constexpr auto heartbeat_interval = 10s;
+constexpr size_t MAX_LENGTH = 65432;
+constexpr auto TIMEOUT_DURATION = 3s;
+constexpr auto HEARTBEAT_INTERVAL = 10s;
 
 class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client >
 {
- using message_queue = std::deque< std::string >;
- using signal_string_type = boost::signals2::signal< void(std::string) >;
+  using message_queue = std::deque< std::string >;
+  using signal_string_type = boost::signals2::signal< void(std::string) >;
 
  public:
   explicit async_rrcp_client(boost::asio::io_context& io_context)
@@ -60,7 +60,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
 
   void start(const tcp::resolver::results_type& endpoints)
   {
-    deadline_.expires_after(timeout_duration);
+    deadline_.expires_after(TIMEOUT_DURATION);
     check_deadline();
 
     boost::asio::async_connect(socket_, endpoints,
@@ -98,11 +98,11 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
         return {};
       }
       fmt::print(stderr, "Client is not connected yet.\n");  // TRACE
-      std::this_thread::sleep_for(timeout_duration);
+      std::this_thread::sleep_for(TIMEOUT_DURATION);
     }
 
     std::string msg_id_str;
-    auto command = RRCP::create_command_msg(message, msg_id_str, msg_id_);
+    auto command = rrcp::create_command_msg(message, msg_id_str, msg_id_);
 
     boost::asio::post(io_context_,
         [this, command]()
@@ -111,7 +111,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
           write_msgs_.push_back(command);
           if (!write_in_progress)
           {
-            deadline_.expires_after(timeout_duration);
+            deadline_.expires_after(TIMEOUT_DURATION);
             do_write();
           }
         });
@@ -139,7 +139,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
       if (!response.empty())
       {
         // helper which returns true if the msg with matching msg_id was found
-        if (RRCP::find_response_msg(response, msg_id))
+        if (rrcp::find_response_msg(response, msg_id))
         {
           break;
         }
@@ -190,7 +190,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
             }
             //========================== END ============================
 
-            self->deadline_.expires_after(heartbeat_interval + timeout_duration);
+            self->deadline_.expires_after(HEARTBEAT_INTERVAL + TIMEOUT_DURATION);
             self->do_read();
           }
           else
@@ -240,7 +240,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
         {
           if (!ec)
           {
-            self->heartbeat_timer_.expires_after(heartbeat_interval);
+            self->heartbeat_timer_.expires_after(HEARTBEAT_INTERVAL);
             self->heartbeat_timer_.async_wait([self](const boost::system::error_code&) { self->send_heartbeat(); });
           }
           else
@@ -281,4 +281,4 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
   signal_string_type trap_handler_;
 };
 
-}  // namespace RRCP
+}  // namespace rrcp

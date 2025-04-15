@@ -8,16 +8,22 @@ include(FetchContent)
 
 find_package(Threads)
 if(NOT TARGET Boost::headers)
-    find_package(Boost 1.71 COMPONENTS headers signals2 REQUIRED HINTS $ENV{HOME}/.local)
+    find_package(
+        Boost
+        1.71
+        COMPONENTS headers signals2
+        REQUIRED
+        HINTS $ENV{HOME}/.local
+    )
 endif()
 
 FetchContent_Declare(
     fmt
     GIT_TAG 11.1.4
     GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-    FIND_PACKAGE_ARGS 11.1.4 NAMES fmt
     EXCLUDE_FROM_ALL
     SYSTEM
+    FIND_PACKAGE_ARGS 11.1.4 NAMES fmt HINTS $ENV{HOME}/.local
 )
 
 FetchContent_MakeAvailable(fmt)

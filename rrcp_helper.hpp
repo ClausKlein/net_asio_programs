@@ -3,7 +3,7 @@
 #include <string>
 #include <string_view>
 
-namespace RRCP
+namespace rrcp
 {
 
 constexpr const char START{0x0A};  // \n
@@ -41,4 +41,4 @@ extern auto find_response_msg(std::string& response, const std::string& msg_id) 
 // helper which returns the command msg with next valid msg_id inserted if needed
 extern auto create_command_msg(const std::string& message, std::string& msg_id_str, int& msg_id) -> std::string;
 
-}  // namespace RRCP
+}  // namespace rrcp

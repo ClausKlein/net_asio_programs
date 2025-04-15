@@ -18,53 +18,53 @@ ut::suite errors = []
 
   "find_response_msg"_test = []
   {
-    constexpr std::string_view expected{"gGoState"sv};
+    constexpr std::string_view EXPECTED{"gGoState"sv};
     const std::string message{"123456 gGoState"};
     std::string result{message};
-    auto found = RRCP::find_response_msg(result, "123456");
+    auto found = rrcp::find_response_msg(result, "123456");
     expect(found);
-    expect(expected == result);
+    expect(EXPECTED == result);
 #if defined(BOOST_UT_HAS_FORMAT)
-    ut::log("{} == {}\n", result, expected);
+    ut::log("{} == {}\n", result, EXPECTED);
 #endif
   };
 
   "doNotfind_error_response_msg"_test = []
   {
-    constexpr std::string_view expected{"E:1"sv};
+    constexpr std::string_view EXPECTED{"E:1"sv};
     const std::string message{"E:1"};
     std::string result{message};
-    auto found = RRCP::find_response_msg(result, "0815");
+    auto found = rrcp::find_response_msg(result, "0815");
     expect(found);
-    expect(expected == result);
+    expect(EXPECTED == result);
 #if defined(BOOST_UT_HAS_FORMAT)
-    ut::log("{} == {}\n", result, expected);
+    ut::log("{} == {}\n", result, EXPECTED);
 #endif
   };
 
   "find_error_response_msg"_test = []
   {
-    constexpr std::string_view expected{"E:10"sv};
+    constexpr std::string_view EXPECTED{"E:10"sv};
     const std::string message{"E:10 123456"};
     std::string result{message};
-    auto found = RRCP::find_response_msg(result, "123456");
+    auto found = rrcp::find_response_msg(result, "123456");
     expect(found);
-    expect(expected == result);
+    expect(EXPECTED == result);
 #if defined(BOOST_UT_HAS_FORMAT)
-    ut::log("{} == {}\n", result, expected);
+    ut::log("{} == {}\n", result, EXPECTED);
 #endif
   };
 
   "doNotfind_response_msg"_test = []
   {
-    constexpr std::string_view expected{"d NoGo"sv};
-    const std::string message{expected};
+    constexpr std::string_view EXPECTED{"d NoGo"sv};
+    const std::string message{EXPECTED};
     std::string result{message};
-    auto found = RRCP::find_response_msg(result, "123456");
+    auto found = rrcp::find_response_msg(result, "123456");
     expect(!found);
-    expect(expected == result);
+    expect(EXPECTED == result);
 #if defined(BOOST_UT_HAS_FORMAT)
-    ut::log("{} == {}\n", result, expected);
+    ut::log("{} == {}\n", result, EXPECTED);
 #endif
   };
 
@@ -72,45 +72,45 @@ ut::suite errors = []
 
   "insertAfterFirstWord"_test = []
   {
-    constexpr std::string_view expected{"M:test 123456 GGoState"sv};
+    constexpr std::string_view EXPECTED{"M:test 123456 GGoState"sv};
     const std::string command{"M:test GGoState"};
-    auto result = RRCP::insertAfterFirstWord(command, "123456");
-    expect(expected == result);
+    auto result = rrcp::insertAfterFirstWord(command, "123456");
+    expect(EXPECTED == result);
 #if defined(BOOST_UT_HAS_FORMAT)
-    ut::log("{} == {}\n", result, expected);
+    ut::log("{} == {}\n", result, EXPECTED);
 #endif
   };
 
   "doNotInsertAnEmptyString"_test = []
   {
-    constexpr std::string_view expected{"M:test GGoState"sv};
-    const std::string command{expected};
-    auto result = RRCP::insertAfterFirstWord(command, "");
-    expect(expected == result);
+    constexpr std::string_view EXPECTED{"M:test GGoState"sv};
+    const std::string command{EXPECTED};
+    auto result = rrcp::insertAfterFirstWord(command, "");
+    expect(EXPECTED == result);
 #if defined(BOOST_UT_HAS_FORMAT)
-    ut::log("{} == {}\n", result, expected);
+    ut::log("{} == {}\n", result, EXPECTED);
 #endif
   };
 
   "doNotInsertBeforeTrapCmd"_test = []
   {
-    constexpr std::string_view expected{"M:test TGoState1"sv};
-    const std::string command{expected};
-    auto result = RRCP::insertAfterFirstWord(command, "");
-    expect(expected == result);
+    constexpr std::string_view EXPECTED{"M:test TGoState1"sv};
+    const std::string command{EXPECTED};
+    auto result = rrcp::insertAfterFirstWord(command, "");
+    expect(EXPECTED == result);
 #if defined(BOOST_UT_HAS_FORMAT)
-    ut::log("{} == {}\n", result, expected);
+    ut::log("{} == {}\n", result, EXPECTED);
 #endif
   };
 
   "doNotInsertAfterSingleWord"_test = []
   {
-    constexpr std::string_view expected{"E:10"sv};
-    const std::string message{expected};
-    auto result = RRCP::insertAfterFirstWord(message, "123456");
-    expect(expected == result);
+    constexpr std::string_view EXPECTED{"E:10"sv};
+    const std::string message{EXPECTED};
+    auto result = rrcp::insertAfterFirstWord(message, "123456");
+    expect(EXPECTED == result);
 #if defined(BOOST_UT_HAS_FORMAT)
-    ut::log("{} == {}\n", result, expected);
+    ut::log("{} == {}\n", result, EXPECTED);
 #endif
   };
 
@@ -118,13 +118,13 @@ ut::suite errors = []
 
   "create_command_msg"_test = []
   {
-    constexpr std::string_view expected{"\nM:RxTx 1 SPowerLevel\"Off\"\r"sv};
+    constexpr std::string_view EXPECTED{"\nM:RxTx 1 SPowerLevel\"Off\"\r"sv};
     const std::string command{R"(M:RxTx SPowerLevel"Off")"};
     std::string msg_id_str;
-    int counter{RRCP::INVALID_ID};
-    auto result = RRCP::create_command_msg(command, msg_id_str, counter);
+    int counter{rrcp::INVALID_ID};
+    auto result = rrcp::create_command_msg(command, msg_id_str, counter);
     expect(1 == counter);
-    expect(expected == result);
+    expect(EXPECTED == result);
 
     std::ostringstream quoted;
     quoted << std::quoted(result.substr(1, result.length() - 1));  // NOTE: w/o START STOP
@@ -140,8 +140,8 @@ ut::suite errors = []
     expect(throws(
         []
         {
-          constexpr std::string_view wrong_quoted{"\n\x1b\004\r"sv};
-          auto result = RRCP::esc2char(wrong_quoted);
+          constexpr std::string_view WRONG_QUOTED{"\n\x1b\004\r"sv};
+          auto result = rrcp::esc2char(WRONG_QUOTED);
         }));
   };
 
@@ -150,21 +150,21 @@ ut::suite errors = []
     expect(nothrow(
         []
         {
-          auto result = RRCP::esc2char("");
+          auto result = rrcp::esc2char("");
           expect(result.empty());
         }));
   };
 
-  "single_esc_msg"_test = [] { expect(throws([] { auto result = RRCP::esc2char("\x1b\rSINGLE_ESC"); })); };
+  "single_esc_msg"_test = [] { expect(throws([] { auto result = rrcp::esc2char("\x1b\rSINGLE_ESC"); })); };
 
-  "esc_as_last_msg"_test = [] { expect(throws([] { auto result = RRCP::esc2char("ESC_AS_LAST\x1b"); })); };
+  "esc_as_last_msg"_test = [] { expect(throws([] { auto result = rrcp::esc2char("ESC_AS_LAST\x1b"); })); };
 
-  "to_short_msg"_test = [] { expect(throws([] { auto result = RRCP::esc2char("\x1b\0"s); })); };
+  "to_short_msg"_test = [] { expect(throws([] { auto result = rrcp::esc2char("\x1b\0"s); })); };
 
   "basic_quoteing"_test = []
   {
-    constexpr std::string_view binary{"\nAB_(\0\001\002\003\004\005\006\a\b\n\r\t\v\x1b\20\'\"\?)-CD\r"sv};
-    auto quoted = RRCP::char2esc(binary);
+    constexpr std::string_view BINARY{"\nAB_(\0\001\002\003\004\005\006\a\b\n\r\t\v\x1b\20\'\"\?)-CD\r"sv};
+    auto quoted = rrcp::char2esc(BINARY);
 
     // NOTE: std::quoted works only with std::stringstream
 #if defined(BOOST_UT_HAS_FORMAT) && defined(FIXME)  // FIXME!
@@ -177,9 +177,9 @@ ut::suite errors = []
     ut::log("{} {}\n", quoted.length(), quoted_bin.str());
 #endif
 
-    expect(binary == RRCP::esc2char(quoted));
-    expect(binary.length() < quoted.length());
-    expect(binary.length() == 28);
+    expect(BINARY == rrcp::esc2char(quoted));
+    expect(BINARY.length() < quoted.length());
+    expect(BINARY.length() == 28);
     expect(quoted.length() == 33);
   };
 
@@ -228,24 +228,24 @@ ut::suite errors = []
 
   "rrcp_message_text"_test = []
   {
-    constexpr std::string_view command{"Hallo Server"};
+    constexpr std::string_view COMMAND{"Hallo Server"};
     rrcp_message msg;
-    expect(msg.set_msg(command));
+    expect(msg.set_msg(COMMAND));
     expect(msg.is_valid());
-    expect(msg.body_length() == command.length());
-    expect(msg.body() == command);
+    expect(msg.body_length() == COMMAND.length());
+    expect(msg.body() == COMMAND);
     auto result = msg.get_msg();
-    expect(command == result);
+    expect(COMMAND == result);
   };
 
   "rrcp_message_binary"_test = []
   {
-    constexpr std::string_view binary{"\nAB_(\0\001\002\003\004\005\006\a\b\n\r\t\v\x1b\20\'\"\?)-CD\r"sv};
-    rrcp_message msg(binary);
+    constexpr std::string_view BINARY{"\nAB_(\0\001\002\003\004\005\006\a\b\n\r\t\v\x1b\20\'\"\?)-CD\r"sv};
+    rrcp_message msg(BINARY);
     expect(msg.is_valid());
     expect(msg.body_length() == 33);
     auto result = msg.get_msg();
-    expect(binary == result);
+    expect(BINARY == result);
   };
 
   // ============================================================
