@@ -41,7 +41,7 @@ class base64
   static auto remove_whitespace(std::string_view input) -> std::string
   {
     auto filtered = input | std::views::filter([](unsigned char c) { return !std::isspace(c); });
-    return std::string(filtered.begin(), filtered.end());
+    return {filtered.begin(), filtered.end()};
   }
 #endif
 
@@ -81,10 +81,10 @@ class base64
 
 #endif
 
-namespace RRCP::Common
+namespace rrcp::common
 {
 
-auto Base64::encode(std::string_view data) const -> std::string
+auto base64::encode(std::string_view data) -> std::string
 {
   if (data.empty())
   {
@@ -93,7 +93,7 @@ auto Base64::encode(std::string_view data) const -> std::string
 
 #ifdef USE_BOOST_BEAST
 
-  return base64::base64_encode(data);
+  return ::base64::base64_encode(data);
 
 #else
 
@@ -156,11 +156,11 @@ auto Base64::encode(std::string_view data) const -> std::string
 #endif
 }
 
-auto Base64::decode(std::string_view in) -> std::string
+auto base64::decode(std::string_view in) -> std::string
 {
 #ifdef USE_BOOST_BEAST
 
-  return base64::base64_decode(in);
+  return ::base64::base64_decode(in);
 
 #else
 
@@ -246,4 +246,4 @@ auto Base64::base64CharValue(char c) const -> std::uint8_t
 }
 #endif
 
-}  // namespace RRCP::Common
+}  // namespace rrcp::common

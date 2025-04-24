@@ -23,6 +23,13 @@
 
 #include "async_rrcp_client.hpp"
 
+namespace
+{
+
+void print(std::string msg) { fmt::print("{}\n", msg); }
+
+}  // namespace
+
 auto main(int argc, char* argv[]) -> int
 {
   if (argc != 3)
@@ -33,17 +40,18 @@ auto main(int argc, char* argv[]) -> int
 
   try
   {
-    using namespace RRCP;
+    using namespace rrcp;
 
     boost::asio::io_context io_context;
     tcp::resolver resolver(io_context);
 
     auto c = std::make_shared< async_rrcp_client >(io_context);
+    c->register_trap_handler(&print);
     c->start(resolver.resolve(argv[1], argv[2]));
 
     std::thread io_thread([&io_context]() { io_context.run(); });
 
-    std::this_thread::sleep_for(timeout_duration);  // NOTE: only for gcov results! CK
+    std::this_thread::sleep_for(TIMEOUT_DURATION);  // NOTE: only for gcov results! CK
     for (std::string line; c->connected() && std::getline(std::cin, line); fmt::print(stderr, "Enter command: "))
     {
       const std::string::size_type sz = line.find("//");
@@ -66,7 +74,7 @@ auto main(int argc, char* argv[]) -> int
       const auto response = c->write(line);
       fmt::print("{}\n", response);
     }
-    std::this_thread::sleep_for(heartbeat_interval);  // NOTE: only for gcov results! CK
+    std::this_thread::sleep_for(HEARTBEAT_INTERVAL);  // NOTE: only for gcov results! CK
 
     c->stop();
     io_thread.join();

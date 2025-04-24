@@ -80,7 +80,7 @@ class rrcp_client
 
   void do_read_header()
   {
-    boost::asio::async_read(socket_, boost::asio::buffer(read_msg_.data(), rrcp_message::header_length),
+    boost::asio::async_read(socket_, boost::asio::buffer(read_msg_.data(), rrcp_message::HEADER_LENGTH),
         [this](boost::system::error_code ec, std::size_t /*length*/)
         {
           if (!ec && read_msg_.decode_header())
