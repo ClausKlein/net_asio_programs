@@ -19,11 +19,11 @@ endif()
 
 FetchContent_Declare(
     fmt
-    GIT_TAG 11.1.4
+    GIT_TAG 11.2.0
     GIT_REPOSITORY https://github.com/fmtlib/fmt.git
     EXCLUDE_FROM_ALL
     SYSTEM
-    FIND_PACKAGE_ARGS 11.1.4 NAMES fmt HINTS $ENV{HOME}/.local
+    FIND_PACKAGE_ARGS 11.2.0 NAMES fmt HINTS $ENV{HOME}/.local
 )
 
 FetchContent_MakeAvailable(fmt)
@@ -34,7 +34,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     if(APPLE)
         execute_process(
             OUTPUT_VARIABLE LLVM_PREFIX
-            COMMAND brew --prefix llvm@19
+            COMMAND brew --prefix llvm@20
             COMMAND_ECHO STDOUT
         )
         string(STRIP ${LLVM_PREFIX} LLVM_PREFIX)
