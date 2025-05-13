@@ -1,6 +1,10 @@
 PYTHONPATH:=$(CURDIR):${PYTHONPATH}
 export PYTHONPATH
 
+ANTLR_HOME?=$(CURDIR)
+CLASSPATH:="${ANTLR_HOME}/antlr-4.13.0-complete.jar:${CLASSPATH}"
+export CLASSPATH
+
 ANTLR4:=java -jar ${ANTLR_HOME}/antlr-4.13.2-complete.jar
 
 .PHONY: all test format clean

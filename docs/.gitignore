@@ -1,3 +1,4 @@
+*.jar
 *.interp
 *.tokens
 *Parser.*

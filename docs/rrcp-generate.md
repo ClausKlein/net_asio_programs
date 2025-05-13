@@ -9,6 +9,8 @@ and lexer, and then write a Python script to test the grammar. Below are the det
 
 Download the ANTLR jar file from the [ANTLR](https://www.antlr.org/download.html) website.
 
+    wget https://www.antlr.org/download/antlr-4.13.2-complete.jar
+
 ### Set Up ANTLR in Your Environment:
 
 You can place the ANTLR jar file in a directory of your choice.
