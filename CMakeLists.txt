@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.25...4.0)
 
-project(RRCP-client VERSION 0.1.0 LANGUAGES CXX)
+project(RRCP-client VERSION 0.1.1 LANGUAGES CXX)
 
 # ---- add dependencies ----
 
@@ -21,9 +21,9 @@ FetchContent_Declare(
     fmt
     GIT_TAG 11.2.0
     GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+    FIND_PACKAGE_ARGS 11.2.0 NAMES fmt HINTS $ENV{HOME}/.local
     EXCLUDE_FROM_ALL
     SYSTEM
-    FIND_PACKAGE_ARGS 11.2.0 NAMES fmt HINTS $ENV{HOME}/.local
 )
 
 FetchContent_MakeAvailable(fmt)
