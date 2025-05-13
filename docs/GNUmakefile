@@ -14,7 +14,7 @@ format: all
 
 test: format
 	pygrun --trace rrcp rrcp rrcp.txt
-	# pygrun --trace rrcp rrcp TestSamples.txt
+	pygrun --trace rrcp rrcp ../rrcp.txt
 
 clean:
 	$(RM) -r *.interp *.tokens *Parser.* *Lexer.* *Listener.* *.class *~ __pycache__
