@@ -38,7 +38,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
             COMMAND_ECHO STDOUT
         )
         string(STRIP ${LLVM_PREFIX} LLVM_PREFIX)
-        set(CMAKE_CXX_STANDARD 23)
+        set(CMAKE_CXX_STANDARD 20)
     elseif(LINUX)
         set(LLVM_PREFIX $ENV{LLVM_ROOT})
     endif()
@@ -55,7 +55,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # ---- code coverage ----
 
 option(BUILD_TESTING "Build ctest" ${PROJECT_IS_TOP_LEVEL})
-option(BUILD_EXAMPLES "Compile examples too" ${PROJECT_IS_TOP_LEVEL})
+option(BUILD_EXAMPLES "Compile examples too" NO)
 option(
     ENABLE_TEST_COVERAGE
     "Compile with test-coverage flags"
@@ -116,7 +116,7 @@ add_executable(rrcp_client rrcp_client.cpp rrcp_message.hpp)
 target_link_libraries(rrcp_client PRIVATE rrcp_helper)
 do_test(rrcp_client --help Usage)
 
-if(APPLE AND BUILD_TESTING)
+if(APPLE AND BUILD_EXAMPLES)
     # TODO(CK): mv to examples too!
     add_executable(timer timer.cpp)
     target_link_libraries(

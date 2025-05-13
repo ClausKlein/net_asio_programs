@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.25...4.0)
 
-project(Base64-examples VERSION 0.1.0 LANGUAGES CXX)
+project(Base64-examples VERSION 0.1.1 LANGUAGES CXX)
 
 find_package(Poco 1.14 COMPONENTS Foundation REQUIRED)
 find_package(Threads)

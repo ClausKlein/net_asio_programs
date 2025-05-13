@@ -5,7 +5,7 @@ bugprone-reserved-identifier,\
 boost-*,\
 cert-*,\
 clang-analyzer-*,\
-clang-analyzer-unix.BlockInCriticalSection,\
+-clang-analyzer-unix.BlockInCriticalSection,\
 cppcoreguidelines-*,\
 -cppcoreguidelines-avoid-*,\
 -cppcoreguidelines-init-variables,\

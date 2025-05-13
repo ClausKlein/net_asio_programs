@@ -1,22 +1,13 @@
 include(FetchContent)
 
-FetchContent_Declare(
-    fmt
-    GIT_TAG 11.1.4
-    GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-    FIND_PACKAGE_ARGS 11.1.4 NAMES fmt
-    EXCLUDE_FROM_ALL
-    SYSTEM
-)
-
 # we use boost::ut
 FetchContent_Declare(
     ut
     GIT_TAG v2.3.1
     GIT_REPOSITORY https://github.com/boost-ext/ut.git
-    FIND_PACKAGE_ARGS 2.3.1 NAMES ut
     EXCLUDE_FROM_ALL
     SYSTEM
+    FIND_PACKAGE_ARGS 2.3.1 NAMES ut
 )
 
 # TODO(CK): We still use googletest too! But will be changed to Boost::ut
@@ -24,9 +15,9 @@ FetchContent_Declare(
     googletest
     GIT_TAG v1.16.0
     GIT_REPOSITORY https://github.com/google/googletest.git
-    FIND_PACKAGE_ARGS 1.16.0 NAMES GTest COMPONENTS gmain_main
     EXCLUDE_FROM_ALL
     SYSTEM
+    FIND_PACKAGE_ARGS 1.16.0 NAMES GTest COMPONENTS gmain_main
 )
 
 # For Windows: Prevent overriding the parent project's compiler/linker settings
@@ -45,12 +36,11 @@ target_sources(
         BASE_DIRS ${CMAKE_SOURCE_DIR}
         FILES ${CMAKE_SOURCE_DIR}/Base64.hpp
 )
-target_link_libraries(
-    rrcp_helper
-    PUBLIC
-        fmt::fmt-header-only
-        Boost::headers # Not needed: PUBLIC Boost::beast
-)
+# target_link_libraries(
+#     rrcp_helper
+#     PUBLIC
+#         Boost::headers # Not needed: PUBLIC Boost::beast
+# )
 
 add_executable(RRCP-test RRCP-test.cpp)
 target_link_libraries(RRCP-test PRIVATE rrcp_helper Boost::ut)
