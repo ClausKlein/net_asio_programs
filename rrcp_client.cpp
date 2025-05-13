@@ -139,6 +139,7 @@ class rrcp_client
   rrcp_message_queue write_msgs_;
 };
 
+// NOLINTNEXTLINE(bugprone-exception-escape)
 auto main(int argc, char* argv[]) -> int
 {
   using namespace std::chrono_literals;
@@ -156,9 +157,9 @@ auto main(int argc, char* argv[]) -> int
 
     tcp::resolver resolver(io_context);
     auto endpoints = resolver.resolve(argv[1], argv[2]);
-    rrcp_client c(io_context, endpoints);
+    rrcp_client client(io_context, endpoints);
 
-    std::thread t([&io_context]() { io_context.run(); });
+    std::thread runner([&io_context]() { io_context.run(); });
 
     //================================================================
     std::string binary{"\nAB_(\0\001\002\003\004\005\006\a\b\n\r\t\v\x1b\20\'\"\?)-CD\r"s};
@@ -172,7 +173,7 @@ auto main(int argc, char* argv[]) -> int
     assert(quoted.length() == 33);
     //================================================================
 
-    int i{};
+    int count{};
     std::this_thread::sleep_for(100ms);  // NOLINT(misc-include-cleaner)
     for (std::string line; std::getline(std::cin, line);)
     {
@@ -188,18 +189,18 @@ auto main(int argc, char* argv[]) -> int
         continue;
       }
 
-      std::cerr << ++i << '\t' << line << '\n';
+      std::cerr << ++count << '\t' << line << '\n';
       rrcp_message msg;
       msg.body_length(line.length());
       std::memcpy(msg.body(), line.c_str(), msg.body_length());
       msg.encode_body();
       msg.encode_header();
-      c.write(msg);
+      client.write(msg);
     }
     std::this_thread::sleep_for(100ms);  // NOLINT(misc-include-cleaner)
 
-    c.close();
-    t.join();
+    client.close();
+    runner.join();
   }
   catch (std::exception& e)
   {

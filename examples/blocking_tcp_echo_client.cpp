@@ -26,7 +26,7 @@
 
 using boost::asio::ip::tcp;
 
-static constexpr int max_length{1024};
+static constexpr int MAX_LENGTH{1024};
 
 auto main(int argc, char* argv[]) -> int
 {
@@ -42,9 +42,9 @@ auto main(int argc, char* argv[]) -> int
 
     boost::asio::io_context io_context;
 
-    tcp::socket s(io_context);
+    tcp::socket socket(io_context);
     tcp::resolver resolver(io_context);
-    boost::asio::connect(s, resolver.resolve(argv[1], argv[2]));
+    boost::asio::connect(socket, resolver.resolve(argv[1], argv[2]));
 
     for (std::string line; std::getline(std::cin, line); std::cerr << "Enter command: ")
     {
@@ -64,16 +64,17 @@ auto main(int argc, char* argv[]) -> int
       std::string command = char2esc(line);
       command.insert(0, 1, START);
       command += STOP;
-      boost::asio::write(s, boost::asio::buffer(command.c_str(), command.length()));
+      boost::asio::write(socket, boost::asio::buffer(command.c_str(), command.length()));
 
       // TODO(CK): wait for endchar with timeout!
       std::string data;
       boost::asio::dynamic_string_buffer< char, std::string::traits_type, std::string::allocator_type > const sb2 =
-          boost::asio::dynamic_buffer(data, max_length);
+          boost::asio::dynamic_buffer(data, MAX_LENGTH);
 
       do
       {
-        size_t const reply_length = boost::asio::read_until(s, sb2, STOP);  // NOLINT(clang-analyzer-deadcode.DeadStores)
+        // NOLINTNEXTLINE(clang-analyzer-deadcode.DeadStores)
+        size_t const reply_length = boost::asio::read_until(socket, sb2, STOP);
         std::string const response = esc2char(data);
         if (response.empty())
         {

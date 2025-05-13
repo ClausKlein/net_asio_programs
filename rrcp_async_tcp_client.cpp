@@ -30,11 +30,12 @@ void print(std::string msg) { fmt::print("{}\n", msg); }
 
 }  // namespace
 
+// NOLINTNEXTLINE(bugprone-exception-escape)
 auto main(int argc, char* argv[]) -> int
 {
   if (argc != 3)
   {
-    fmt::print(stderr, "Usage: {} <host> <port>\n", argv[0]);
+    fmt::print(stderr, "Usage: {} <host> <port>\n", argv[0]);  // NOLINT
     return EXIT_FAILURE;
   }
 
@@ -45,14 +46,14 @@ auto main(int argc, char* argv[]) -> int
     boost::asio::io_context io_context;
     tcp::resolver resolver(io_context);
 
-    auto c = std::make_shared< async_rrcp_client >(io_context);
-    c->register_trap_handler(&print);
-    c->start(resolver.resolve(argv[1], argv[2]));
+    auto client = std::make_shared< async_rrcp_client >(io_context);
+    client->register_trap_handler(&print);
+    client->start(resolver.resolve(argv[1], argv[2]));
 
     std::thread io_thread([&io_context]() { io_context.run(); });
 
     std::this_thread::sleep_for(TIMEOUT_DURATION);  // NOTE: only for gcov results! CK
-    for (std::string line; c->connected() && std::getline(std::cin, line); fmt::print(stderr, "Enter command: "))
+    for (std::string line; client->connected() && std::getline(std::cin, line); fmt::print(stderr, "Enter command: "))
     {
       const std::string::size_type sz = line.find("//");
       if ((sz != std::string::npos))
@@ -71,17 +72,17 @@ auto main(int argc, char* argv[]) -> int
         continue;
       }
 
-      const auto response = c->write(line);
+      const auto response = client->write(line);
       fmt::print("{}\n", response);
     }
     std::this_thread::sleep_for(HEARTBEAT_INTERVAL);  // NOTE: only for gcov results! CK
 
-    c->stop();
+    client->stop();
     io_thread.join();
   }
-  catch (std::exception& e)
+  catch (const std::exception& e)
   {
-    fmt::print(stderr, "Exception: {}\n", e.what());
+    fmt::print(stderr, "Exception: {}\n", e.what());  // NOLINT
     return EXIT_FAILURE;
   }
 

@@ -1,11 +1,11 @@
 ---
 Checks: "-*,\
 bugprone-*,\
--bugprone-reserved-identifier,\
+bugprone-reserved-identifier,\
 boost-*,\
 cert-*,\
 clang-analyzer-*,\
--clang-analyzer-unix.BlockInCriticalSection,\
+clang-analyzer-unix.BlockInCriticalSection,\
 cppcoreguidelines-*,\
 -cppcoreguidelines-avoid-*,\
 -cppcoreguidelines-init-variables,\
@@ -19,8 +19,8 @@ misc-*,\
 -misc-include-cleaner,\
 -misc-no-recursion,\
 modernize-*,\
--modernize-avoid-bind,\
 -modernize-macro-to-enum,\
+-modernize-use-designated-initializers,\
 performance-*,\
 -performance-enum-size,\
 portability-*,\

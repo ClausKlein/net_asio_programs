@@ -5,14 +5,16 @@
 MAKEFLAGS+= --no-builtin-rules
 MAKEFLAGS+= --warn-undefined-variables
 
+CPPFILES:= $(shell git ls-files ::*.cpp)
+
 .PHONY: all format test check distclean
 
 all: build
 	ninja -C build
 
 clean: build
-	- ninja -C $< $@
-	- find $< -name '*.gcda' -delete
+	-ninja -C $< $@
+	-find $< -name '*.gcda' -delete
 
 distclean: # XXX clean
 	rm -rf build coverage/* *~ ctags
@@ -21,11 +23,10 @@ build: CMakeLists.txt
 	cmake -S . -B $@ -G Ninja -D CMAKE_BUILD_TYPE=Debug # --fresh
 
 check: all
-	run-clang-tidy -p build *.cpp
+	run-clang-tidy -p build *.cpp examples/*.cpp  # $(CPPFILES)
 
 fix: all
-	run-clang-tidy -p build -fix \
-	-checks='-*,\
+	run-clang-tidy -p build -fix -checks='-*,\
 hicpp-explicit-conversions,\
 hicpp-member-init,\
 hicpp-named-parameter,\
@@ -43,13 +44,14 @@ readability-container-data-pointer,\
 readability-container-size-empty,\
 readability-convert-member-functions-to-static,\
 readability-else-after-return,\
+readability-identifier-naming,\
 readability-implicit-bool-conversion,\
 readability-make-member-function-const,\
 readability-redundant-member-init,\
 readability-simplify-boolean-expr,\
 readability-use-std-min-max,\
 ' \
-	 *.cpp
+	 *.cpp examples/*.cpp  # $(CPPFILES)
 
 test: all
 	-killall async_tcp_echo_server
@@ -71,7 +73,7 @@ test: all
 
 format: .clang-format
 	git ls-files ::*.cpp ::*.hpp | xargs clang-format -i
-	git ls-files ::*CMakeLists.txt | xargs gersemi -i
+	git ls-files ::*CMakeLists.txt | xargs gersemi -i --no-warn-about-unknown-commands
 
 # These rules keep make from trying to use the match-anything rule below
 # to rebuild the makefiles--ouch!

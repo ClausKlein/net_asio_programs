@@ -30,7 +30,7 @@ using boost::asio::ip::tcp;
 
 class session : public std::enable_shared_from_this< session >
 {
-  static constexpr size_t max_length{1024};
+  static constexpr size_t MAX_LENGTH{1024};
 
  public:
   explicit session(tcp::socket socket) : socket_(std::move(socket)) {}
@@ -41,7 +41,7 @@ class session : public std::enable_shared_from_this< session >
   void do_read()
   {
     auto self(shared_from_this());
-    socket_.async_read_some(boost::asio::buffer(data_.data(), max_length),
+    socket_.async_read_some(boost::asio::buffer(data_.data(), MAX_LENGTH),
         [this, self](boost::system::error_code ec, std::size_t length)
         {
           if (!ec)
@@ -73,7 +73,7 @@ class session : public std::enable_shared_from_this< session >
   }
 
   tcp::socket socket_;
-  std::array< char, max_length > data_{};
+  std::array< char, MAX_LENGTH > data_{};
 };
 
 class server
@@ -162,7 +162,7 @@ auto main(int argc, char* argv[]) -> int
 
     boost::asio::io_context io_context;
 
-    server const s(io_context, std::strtol(argv[1], nullptr, 10));
+    server const serv(io_context, std::strtol(argv[1], nullptr, 10));
 
     io_context.run();
     std::cout << "io_service.run complete, shutdown successful\n";
