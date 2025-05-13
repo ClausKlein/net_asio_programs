@@ -1,0 +1,7 @@
+*.interp
+*.tokens
+*Parser.*
+*Lexer.*
+*Listener.*
+*.class
+__pycache__
