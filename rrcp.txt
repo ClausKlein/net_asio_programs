@@ -28,15 +28,18 @@ M:Audio GAudioVolume
 M:Audio TAudioVolume1
 M:Audio SAudioVolume"Level 0"
 M:Audio TAudioVolume0
-M:Control SActPreset0
+M:Control GPresetID
+M:Control GCurrWF
+M:Control TPresetID1
+M:Control TCurrWF1
 M:Control GCurrMission
 M:Control TCurrMission1
+// change preset
 M:Control SCurrMission"testString"
+M:Control SActPreset0
 M:Control TCurrMission0
-M:Control GCurrWF
-M:Control TCurrWF1
-M:Control GPresetID
-M:Control TPresetID1
+M:Control TCurrWF0
+M:Control TPresetID0
 M:Control GTxInhibit
 M:Control TTxInhibit1
 M:Control STxInhibit"Disabled"
@@ -56,6 +59,8 @@ M:OBIT TGOState1
 M:OBIT GTestErrors
 M:OBIT GTestIDs
 M:OBIT TErrorEvent1
+M:OBIT TGOState0
+M:OBIT TErrorEvent0
 M:RxTx GPowerLevel
 M:RxTx TPowerLevel1
 M:RxTx SPowerLevel"Off"
@@ -63,11 +68,14 @@ M:RxTx TPowerLevel0
 M:RxTx GVswr
 M:RxTx TVswr1
 M:RxTx GVswrThres
+M:RxTx TVswr0
 M:RxTx TVswrThres1
 M:RxTx GVswrThresLev
 M:RxTx SVswrThresLev10
-M:Utility GBattStatus
+M:RxTx TVswrThres0
 M:Utility TBattStatus1
+M:Utility GBattStatus
+M:Utility TBattStatus0
 M:Utility GErrorText0,"English"
 M:Utility GInitialInfo"VersionStr","IdString",0
 M:Utility GPing"message"
