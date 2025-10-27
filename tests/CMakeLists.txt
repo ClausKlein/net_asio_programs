@@ -33,8 +33,8 @@ target_sources(
     PRIVATE ${CMAKE_SOURCE_DIR}/Base64.cpp
     PUBLIC
         FILE_SET HEADERS
-        BASE_DIRS ${CMAKE_SOURCE_DIR}
-        FILES ${CMAKE_SOURCE_DIR}/Base64.hpp
+            BASE_DIRS ${CMAKE_SOURCE_DIR}
+            FILES ${CMAKE_SOURCE_DIR}/Base64.hpp
 )
 # target_link_libraries(
 #     rrcp_helper

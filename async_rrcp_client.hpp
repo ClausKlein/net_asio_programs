@@ -72,13 +72,13 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
   void start(const tcp::resolver::results_type& endpoints)
   {
     boost::asio::post(strand_,
-        [this, endpoints, self = shared_from_this()]()
+        [this, endpoints, self = shared_from_this()]() -> void
         {
           deadline_.expires_after(TIMEOUT_DURATION);
           check_deadline();
 
           boost::asio::async_connect(socket_, endpoints,
-              [self](const boost::system::error_code& ec, const tcp::endpoint&)
+              [self](const boost::system::error_code& ec, const tcp::endpoint&) -> void
               {
                 if (!ec)
                 {
@@ -99,7 +99,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
 
   void register_trap_handler(const std::function< void(std::string) >& handler)
   {
-    boost::asio::post(strand_, [this, handler, self = shared_from_this()]() { trap_handler_.connect(handler); });
+    boost::asio::post(strand_, [this, handler, self = shared_from_this()]() -> void { trap_handler_.connect(handler); });
   }
 
   [[nodiscard]] auto connected() const -> bool { return connected_.load(); }
@@ -111,7 +111,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
     auto future = promise->get_future();
 
     boost::asio::post(strand_,
-        [this, message, promise, self = shared_from_this()]()
+        [this, message, promise, self = shared_from_this()]() -> void
         {
           if (!connected_.load())
           {
@@ -144,7 +144,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
   void stop()
   {
     boost::asio::post(strand_,
-        [this, self = shared_from_this()]()
+        [this, self = shared_from_this()]() -> void
         {
           fmt::print(stderr, "Stopped, disconnecting ...\n");
           stopped_.store(true);
@@ -283,7 +283,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
   void do_read()
   {
     boost::asio::async_read_until(socket_, boost::asio::dynamic_buffer(input_buffer_), STOP,
-        [self = shared_from_this()](const boost::system::error_code& ec, std::size_t length)
+        [self = shared_from_this()](const boost::system::error_code& ec, std::size_t length) -> void
         {
           if (!ec)
           {
@@ -365,7 +365,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
   void do_write()
   {
     boost::asio::async_write(socket_, boost::asio::buffer(write_msgs_.front()),
-        [self = shared_from_this()](boost::system::error_code ec, std::size_t /*length*/)
+        [self = shared_from_this()](boost::system::error_code ec, std::size_t /*length*/) -> void
         {
           if (!ec)
           {
@@ -394,7 +394,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
 
     fmt::print(stderr, "Send heartbeat: {}\n", heartbeat_message);
     boost::asio::async_write(socket_, boost::asio::buffer(heartbeat_message),
-        [self = shared_from_this()](const boost::system::error_code& ec, std::size_t)
+        [self = shared_from_this()](const boost::system::error_code& ec, std::size_t) -> void
         {
           if (!ec)
           {
@@ -423,19 +423,20 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
       return;
     }
 
-    deadline_.async_wait([self = shared_from_this()](const boost::system::error_code&) { self->check_deadline(); });
+    deadline_.async_wait(
+        [self = shared_from_this()](const boost::system::error_code&) -> void { self->check_deadline(); });
   }
 
   // Core networking components
   boost::asio::io_context& io_context_;
-  boost::asio::strand< boost::asio::io_context::executor_type > strand_;
+  boost::asio::strand< boost::asio::io_context::executor_type > strand_{};
   tcp::socket socket_;
   boost::asio::steady_timer deadline_;
   boost::asio::steady_timer heartbeat_timer_;
 
   // I/O buffers (protected by strand)
-  std::string input_buffer_;
-  message_queue write_msgs_;
+  std::string input_buffer_{};
+  message_queue write_msgs_{};
 
   // Thread-safe state
   std::atomic< bool > connected_{false};
@@ -447,7 +448,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
   std::vector< std::pair< std::string, std::shared_ptr< response_promise_type > > > pending_writes_;
 
   // Signal handling
-  signal_string_type trap_handler_;
+  signal_string_type trap_handler_{};
 };
 
 }  // namespace rrcp

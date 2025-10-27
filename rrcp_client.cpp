@@ -48,7 +48,7 @@ class rrcp_client
   void write(const rrcp_message& msg)
   {
     boost::asio::post(io_context_,
-        [this, msg]()
+        [this, msg]() -> void
         {
           bool const write_in_progress{!write_msgs_.empty()};
           write_msgs_.push_back(msg);
@@ -61,15 +61,15 @@ class rrcp_client
 
   void close()
   {
-    boost::asio::post(io_context_, [this]() { write_msgs_.clear(); });
-    boost::asio::post(io_context_, [this]() { socket_.close(); });
+    boost::asio::post(io_context_, [this]() -> void { write_msgs_.clear(); });
+    boost::asio::post(io_context_, [this]() -> void { socket_.close(); });
   }
 
  private:
   void do_connect(const tcp::resolver::results_type& endpoints)
   {
     boost::asio::async_connect(socket_, endpoints,
-        [this](boost::system::error_code ec, const tcp::endpoint&)
+        [this](boost::system::error_code ec, const tcp::endpoint&) -> void
         {
           if (!ec)
           {
@@ -81,7 +81,7 @@ class rrcp_client
   void do_read_header()
   {
     boost::asio::async_read(socket_, boost::asio::buffer(read_msg_.data(), rrcp_message::HEADER_LENGTH),
-        [this](boost::system::error_code ec, std::size_t /*length*/)
+        [this](boost::system::error_code ec, std::size_t /*length*/) -> void
         {
           if (!ec && read_msg_.decode_header())
           {
@@ -97,7 +97,7 @@ class rrcp_client
   void do_read_body()
   {
     boost::asio::async_read(socket_, boost::asio::buffer(read_msg_.body(), read_msg_.body_length()),
-        [this](boost::system::error_code ec, std::size_t /*length*/)
+        [this](boost::system::error_code ec, std::size_t /*length*/) -> void
         {
           if (!ec && read_msg_.decode_body())
           {
@@ -116,7 +116,7 @@ class rrcp_client
   void do_write()
   {
     boost::asio::async_write(socket_, boost::asio::buffer(write_msgs_.front().data(), write_msgs_.front().length()),
-        [this](boost::system::error_code ec, std::size_t /*length*/)
+        [this](boost::system::error_code ec, std::size_t /*length*/) -> void
         {
           if (!ec)
           {
@@ -136,7 +136,7 @@ class rrcp_client
   boost::asio::io_context& io_context_;
   tcp::socket socket_;
   rrcp_message read_msg_;
-  rrcp_message_queue write_msgs_;
+  rrcp_message_queue write_msgs_{};
 };
 
 // NOLINTNEXTLINE(bugprone-exception-escape)

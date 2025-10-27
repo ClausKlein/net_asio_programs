@@ -11,7 +11,8 @@ if(NOT TARGET Boost::headers)
     find_package(
         Boost
         1.71
-        COMPONENTS headers signals2
+        COMPONENTS
+            headers # XXX signals2
         REQUIRED
         HINTS $ENV{HOME}/.local
     )
