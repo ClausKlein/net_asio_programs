@@ -82,7 +82,7 @@ auto main(int argc, char* argv[]) -> int
 
     boost::asio::io_context io_context;
 
-    server(io_context, std::strtol(argv[1], nullptr, 10));
+    server(io_context, static_cast< short >(std::strtol(argv[1], nullptr, 10)));
   }
   catch (std::exception& e)
   {

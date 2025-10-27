@@ -3,6 +3,7 @@ Checks: "-*,\
 bugprone-*,\
 bugprone-reserved-identifier,\
 boost-*,\
+-boost-use-ranges,\
 cert-*,\
 clang-analyzer-*,\
 -clang-analyzer-unix.BlockInCriticalSection,\
@@ -10,9 +11,11 @@ cppcoreguidelines-*,\
 -cppcoreguidelines-avoid-*,\
 -cppcoreguidelines-init-variables,\
 -cppcoreguidelines-macro-*,\
+-cppcoreguidelines-narrowing-conversions,\
 -cppcoreguidelines-owning-memory,\
 -cppcoreguidelines-prefer-member-initializer,\
 -cppcoreguidelines-pro-bounds-pointer-arithmetic,\
+-cppcoreguidelines-pro-type-reinterpret-cast,\
 hicpp-*,\
 misc-*,\
 -misc-const-correctness,\

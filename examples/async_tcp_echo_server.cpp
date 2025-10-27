@@ -162,7 +162,7 @@ auto main(int argc, char* argv[]) -> int
 
     boost::asio::io_context io_context;
 
-    server const serv(io_context, std::strtol(argv[1], nullptr, 10));
+    server const serv(io_context, static_cast< short >(std::strtol(argv[1], nullptr, 10)));
 
     io_context.run();
     std::cout << "io_service.run complete, shutdown successful\n";

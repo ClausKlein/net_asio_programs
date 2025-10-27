@@ -49,6 +49,7 @@ readability-implicit-bool-conversion,\
 readability-make-member-function-const,\
 readability-redundant-member-init,\
 readability-simplify-boolean-expr,\
+readability-static-accessed-through-instance,\
 readability-use-std-min-max,\
 ' \
 	 *.cpp examples/*.cpp  # $(CPPFILES)

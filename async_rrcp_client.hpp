@@ -38,6 +38,7 @@
 #include <mutex>
 #include <string>
 #include <unordered_map>
+#include <utility>
 
 #include "rrcp_helper.hpp"
 
@@ -162,7 +163,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
 
  private:
   // Helper method to safely parse RRCP message with bounds checking
-  bool parse_rrcp_message(const std::string& buffer, std::size_t length, std::string& parsed_line)
+  static auto parse_rrcp_message(const std::string& buffer, std::size_t length, std::string& parsed_line) -> bool
   {
     // Minimum RRCP message: START + at least 1 char + STOP = 3 bytes
     if (length < 3)
@@ -210,7 +211,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
     auto command = rrcp::create_command_msg(message, msg_id_str, current_id);
 
     // Store promise for response correlation
-    pending_responses_[msg_id_str] = promise;
+    pending_responses_[msg_id_str] = std::move(promise);
 
     bool const write_in_progress{!write_msgs_.empty()};
     write_msgs_.push_back(command);
@@ -289,7 +290,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
             std::string parsed_line;
 
             // Use safe parsing helper with comprehensive bounds checking
-            if (!self->parse_rrcp_message(self->input_buffer_, length, parsed_line))
+            if (!rrcp::async_rrcp_client::parse_rrcp_message(self->input_buffer_, length, parsed_line))
             {
               // Parsing failed - message was malformed, skip it
               self->input_buffer_.erase(0, length);
