@@ -1,0 +1,6 @@
+[codespell]
+builtin = clear,rare,en-GB_to_en-US,names,informal,code
+check-hidden =
+skip = ./.git,./.direnv,./build/*,./prefix/*,./coverage/*,./stagedir/*,*.html,*.xsd,*.xsl,*.pdf,*.log,.*.swp,*~,*.bak,./.cache/*
+quiet-level = 2
+ignore-words-list = claus,cancelled,cancelling,stoll,QUE,WS,fo,deque

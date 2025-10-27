@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.25...4.0)
+cmake_minimum_required(VERSION 3.25...4.2)
 
 project(Base64-examples VERSION 0.1.1 LANGUAGES CXX)
 
@@ -9,7 +9,7 @@ if(NOT TARGET Boost::headers)
     find_package(Boost 1.71 COMPONENTS headers REQUIRED HINTS $ENV{HOME}/.local)
 endif()
 if(NOT TARGET fmt::fmt-header-only)
-    find_package(fmt 11 REQUIRED HINTS $ENV{HOME}/.local)
+    find_package(fmt 12 REQUIRED HINTS $ENV{HOME}/.local)
 endif()
 
 enable_testing()

@@ -73,8 +73,10 @@ test: all
 	gcovr
 
 format: .clang-format
-	git ls-files ::*.cpp ::*.hpp | xargs clang-format -i
+	-codespell
+	git ls-files ::*.cpp ::*.hpp ::*.json | xargs clang-format -i
 	git ls-files ::*CMakeLists.txt | xargs gersemi -i --no-warn-about-unknown-commands
+	git ls-files ::*.py | xargs black
 
 # These rules keep make from trying to use the match-anything rule below
 # to rebuild the makefiles--ouch!
