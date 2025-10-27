@@ -239,6 +239,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
         {
           promise->set_value("");
         }
+        // NOLINTNEXTLINE(bugprone-empty-catch)
         catch (const std::exception&)
         {
           // Promise already fulfilled - ignore
@@ -257,6 +258,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
       {
         promise->set_value("");
       }
+      // NOLINTNEXTLINE(bugprone-empty-catch)
       catch (const std::exception&)
       {
         // Promise already fulfilled - ignore
@@ -270,6 +272,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
       {
         promise->set_value("");
       }
+      // NOLINTNEXTLINE(bugprone-empty-catch)
       catch (const std::exception&)
       {
         // Promise already fulfilled - ignore
@@ -353,6 +356,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
         {
           promise->set_value(clean_response);
         }
+        // NOLINTNEXTLINE(bugprone-empty-catch)
         catch (const std::exception&)
         {
           // Promise already fulfilled - ignore
@@ -399,7 +403,8 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
           if (!ec)
           {
             self->heartbeat_timer_.expires_after(HEARTBEAT_INTERVAL);
-            self->heartbeat_timer_.async_wait([self](const boost::system::error_code&) { self->send_heartbeat(); });
+            self->heartbeat_timer_.async_wait(
+                [self](const boost::system::error_code&) -> void { self->send_heartbeat(); });
           }
           else
           {
@@ -429,14 +434,14 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
 
   // Core networking components
   boost::asio::io_context& io_context_;
-  boost::asio::strand< boost::asio::io_context::executor_type > strand_{};
+  boost::asio::strand< boost::asio::io_context::executor_type > strand_;
   tcp::socket socket_;
   boost::asio::steady_timer deadline_;
   boost::asio::steady_timer heartbeat_timer_;
 
   // I/O buffers (protected by strand)
-  std::string input_buffer_{};
-  message_queue write_msgs_{};
+  std::string input_buffer_;
+  message_queue write_msgs_;
 
   // Thread-safe state
   std::atomic< bool > connected_{false};
@@ -448,7 +453,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
   std::vector< std::pair< std::string, std::shared_ptr< response_promise_type > > > pending_writes_;
 
   // Signal handling
-  signal_string_type trap_handler_{};
+  signal_string_type trap_handler_;
 };
 
 }  // namespace rrcp

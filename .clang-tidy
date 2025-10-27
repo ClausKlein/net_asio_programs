@@ -27,6 +27,7 @@ modernize-*,\
 performance-*,\
 -performance-enum-size,\
 portability-*,\
+-portability-avoid-pragma-once,\
 readability-*,\
 readability-identifier-length,\
 readability-identifier-naming,\

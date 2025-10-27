@@ -50,6 +50,7 @@ readability-make-member-function-const,\
 readability-redundant-member-init,\
 readability-simplify-boolean-expr,\
 readability-static-accessed-through-instance,\
+readability-use-concise-preprocessor-directives,\
 readability-use-std-min-max,\
 ' \
 	 *.cpp examples/*.cpp  # $(CPPFILES)

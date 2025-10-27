@@ -136,7 +136,7 @@ class rrcp_client
   boost::asio::io_context& io_context_;
   tcp::socket socket_;
   rrcp_message read_msg_;
-  rrcp_message_queue write_msgs_{};
+  rrcp_message_queue write_msgs_;
 };
 
 // NOLINTNEXTLINE(bugprone-exception-escape)
@@ -159,7 +159,7 @@ auto main(int argc, char* argv[]) -> int
     auto endpoints = resolver.resolve(argv[1], argv[2]);
     rrcp_client client(io_context, endpoints);
 
-    std::thread runner([&io_context]() { io_context.run(); });
+    std::thread runner([&io_context]() -> void { io_context.run(); });
 
     //================================================================
     std::string binary{"\nAB_(\0\001\002\003\004\005\006\a\b\n\r\t\v\x1b\20\'\"\?)-CD\r"s};

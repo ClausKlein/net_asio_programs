@@ -186,8 +186,8 @@ class asynchronous_tcp_client : public std::enable_shared_from_this< asynchronou
   tcp::resolver resolver_;
   tcp::socket socket_;
   boost::asio::steady_timer timer_;
-  std::string data_{};
-  message_queue write_msgs_{};
+  std::string data_;
+  message_queue write_msgs_;
   bool connected_{false};
   bool stopped_{false};
 };
@@ -207,7 +207,7 @@ auto main(int argc, char* argv[]) -> int
 
     auto client = std::make_shared< asynchronous_tcp_client >(io_context, argv[1], argv[2]);
 
-    std::thread io_thread([&io_context]() { io_context.run(); });
+    std::thread io_thread([&io_context]() -> void { io_context.run(); });
 
     for (std::string line; std::getline(std::cin, line); fmt::print(stderr, "Enter command: "))
     {

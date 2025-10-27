@@ -50,7 +50,7 @@ auto main(int argc, char* argv[]) -> int
     client->register_trap_handler(&print);
     client->start(resolver.resolve(argv[1], argv[2]));
 
-    std::thread io_thread([&io_context]() { io_context.run(); });
+    std::thread io_thread([&io_context]() -> void { io_context.run(); });
 
     std::this_thread::sleep_for(TIMEOUT_DURATION);  // NOTE: only for gcov results! CK
     for (std::string line; client->connected() && std::getline(std::cin, line); fmt::print(stderr, "Enter command: "))

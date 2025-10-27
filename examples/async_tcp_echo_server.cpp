@@ -88,7 +88,7 @@ class server
     signals_.add(SIGINT);
     signals_.add(SIGTERM);
 
-#if defined(SIGQUIT)
+#ifdef SIGQUIT
     signals_.add(SIGQUIT);
 #endif  // defined(SIGQUIT)
 
