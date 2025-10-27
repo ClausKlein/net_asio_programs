@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.25...4.0)
+cmake_minimum_required(VERSION 3.25...4.2)
 
 project(RRCP-client VERSION 0.1.1 LANGUAGES CXX)
 
@@ -11,7 +11,8 @@ if(NOT TARGET Boost::headers)
     find_package(
         Boost
         1.71
-        COMPONENTS headers signals2
+        COMPONENTS
+            headers # XXX signals2
         REQUIRED
         HINTS $ENV{HOME}/.local
     )
@@ -19,11 +20,11 @@ endif()
 
 FetchContent_Declare(
     fmt
-    GIT_TAG 11.2.0
+    GIT_TAG 12.0.0
     GIT_REPOSITORY https://github.com/fmtlib/fmt.git
     EXCLUDE_FROM_ALL
     SYSTEM
-    FIND_PACKAGE_ARGS 11.2.0 NAMES fmt HINTS $ENV{HOME}/.local
+    FIND_PACKAGE_ARGS 12.0.0 NAMES fmt HINTS $ENV{HOME}/.local
 )
 
 FetchContent_MakeAvailable(fmt)
@@ -34,7 +35,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     if(APPLE)
         execute_process(
             OUTPUT_VARIABLE LLVM_PREFIX
-            COMMAND brew --prefix llvm@20
+            COMMAND brew --prefix llvm
             COMMAND_ECHO STDOUT
         )
         string(STRIP ${LLVM_PREFIX} LLVM_PREFIX)

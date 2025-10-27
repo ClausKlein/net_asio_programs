@@ -1,5 +1,11 @@
+---
 BasedOnStyle: Google
-Standard: Auto
+IndentWidth: 2
+UseTab: Never
+---
+Language: Cpp
+Standard: c++17
+# Standard: Auto
 AlignAfterOpenBracket: false
 AlignEscapedNewlinesLeft: true
 AlwaysBreakAfterDefinitionReturnType: None

@@ -64,7 +64,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
     check_deadline();
 
     boost::asio::async_connect(socket_, endpoints,
-        [self = shared_from_this()](const boost::system::error_code& ec, const tcp::endpoint&)
+        [self = shared_from_this()](const boost::system::error_code& ec, const tcp::endpoint&) -> void
         {
           if (!ec)
           {
@@ -105,7 +105,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
     auto command = rrcp::create_command_msg(message, msg_id_str, msg_id_);
 
     boost::asio::post(io_context_,
-        [this, command]()
+        [this, command]() -> void
         {
           bool const write_in_progress{!write_msgs_.empty()};
           write_msgs_.push_back(command);
@@ -127,7 +127,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
     do
     {
       boost::asio::post(io_context_,
-          [this, &response]()
+          [this, &response]() -> void
           {
             if (!read_msgs_.empty())
             {
@@ -165,7 +165,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
   void do_read()
   {
     boost::asio::async_read_until(socket_, boost::asio::dynamic_buffer(input_buffer_), STOP,
-        [self = shared_from_this()](const boost::system::error_code& ec, std::size_t length)
+        [self = shared_from_this()](const boost::system::error_code& ec, std::size_t length) -> void
         {
           if (!ec)
           {
@@ -204,7 +204,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
   void do_write()
   {
     boost::asio::async_write(socket_, boost::asio::buffer(write_msgs_.front()),
-        [self = shared_from_this()](boost::system::error_code ec, std::size_t /*length*/)
+        [self = shared_from_this()](boost::system::error_code ec, std::size_t /*length*/) -> void
         {
           if (!ec)
           {
@@ -236,12 +236,13 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
 
     fmt::print(stderr, "Send heartbeat: {}\n", heartbeat_message);  // TRACE
     boost::asio::async_write(socket_, boost::asio::buffer(heartbeat_message),
-        [self = shared_from_this()](const boost::system::error_code& ec, std::size_t)
+        [self = shared_from_this()](const boost::system::error_code& ec, std::size_t) -> void
         {
           if (!ec)
           {
             self->heartbeat_timer_.expires_after(HEARTBEAT_INTERVAL);
-            self->heartbeat_timer_.async_wait([self](const boost::system::error_code&) { self->send_heartbeat(); });
+            self->heartbeat_timer_.async_wait(
+                [self](const boost::system::error_code&) -> void { self->send_heartbeat(); });
           }
           else
           {
@@ -265,7 +266,8 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
       return;
     }
 
-    deadline_.async_wait([self = shared_from_this()](const boost::system::error_code&) { self->check_deadline(); });
+    deadline_.async_wait(
+        [self = shared_from_this()](const boost::system::error_code&) -> void { self->check_deadline(); });
   }
 
   boost::asio::io_context& io_context_;

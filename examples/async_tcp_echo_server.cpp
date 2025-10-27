@@ -42,7 +42,7 @@ class session : public std::enable_shared_from_this< session >
   {
     auto self(shared_from_this());
     socket_.async_read_some(boost::asio::buffer(data_.data(), MAX_LENGTH),
-        [this, self](boost::system::error_code ec, std::size_t length)
+        [this, self](boost::system::error_code ec, std::size_t length) -> void
         {
           if (!ec)
           {
@@ -59,7 +59,7 @@ class session : public std::enable_shared_from_this< session >
   {
     auto self(shared_from_this());
     boost::asio::async_write(socket_, boost::asio::buffer(data_.data(), length),
-        [this, self](boost::system::error_code ec, std::size_t /*length*/)
+        [this, self](boost::system::error_code ec, std::size_t /*length*/) -> void
         {
           if (!ec)
           {
@@ -88,7 +88,7 @@ class server
     signals_.add(SIGINT);
     signals_.add(SIGTERM);
 
-#if defined(SIGQUIT)
+#ifdef SIGQUIT
     signals_.add(SIGQUIT);
 #endif  // defined(SIGQUIT)
 
@@ -101,7 +101,7 @@ class server
   void do_accept()
   {
     acceptor_.async_accept(socket_,
-        [this](boost::system::error_code ec)
+        [this](boost::system::error_code ec) -> void
         {
           if (!ec)
           {
@@ -120,7 +120,7 @@ class server
   void do_await_stop()
   {
     signals_.async_wait(
-        [this](std::error_code ec, int signo)
+        [this](std::error_code ec, int signo) -> void
         {
           std::cerr << "Signal handler called for " << signo << "\n";
           if (!ec)
@@ -162,7 +162,7 @@ auto main(int argc, char* argv[]) -> int
 
     boost::asio::io_context io_context;
 
-    server const serv(io_context, std::strtol(argv[1], nullptr, 10));
+    server const serv(io_context, static_cast< short >(std::strtol(argv[1], nullptr, 10)));
 
     io_context.run();
     std::cout << "io_service.run complete, shutdown successful\n";

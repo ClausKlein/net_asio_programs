@@ -40,7 +40,7 @@ class base64
   // Function to remove all whitespace characters from a std::string_view (C++20)
   static auto remove_whitespace(std::string_view input) -> std::string
   {
-    auto filtered = input | std::views::filter([](unsigned char c) { return !std::isspace(c); });
+    auto filtered = input | std::views::filter([](unsigned char c) -> bool { return !std::isspace(c); });
     return {filtered.begin(), filtered.end()};
   }
 #endif
