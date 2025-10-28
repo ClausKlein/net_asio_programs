@@ -143,7 +143,7 @@ auto rrcp::find_response_msg(std::string& response, const std::string& msg_id) -
 
 auto rrcp::create_command_msg(const std::string& message, std::string& msg_id_str, int msg_id) -> std::string
 {
-  if(msg_id >= INVALID_ID)
+  if (msg_id >= INVALID_ID)
   {
     msg_id = 1;
   }

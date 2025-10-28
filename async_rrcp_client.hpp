@@ -14,6 +14,7 @@
 
 #include <fmt/format.h>
 
+#include <atomic>
 #include <boost/algorithm/string/predicate.hpp>  // for starts_with
 #include <boost/algorithm/string/trim.hpp>  // for trim_left, trim_right
 #include <boost/asio/buffer.hpp>
@@ -27,7 +28,6 @@
 #include <boost/asio/write.hpp>
 #include <boost/signals2/signal.hpp>
 #include <boost/system/error_code.hpp>
-#include <atomic>
 #include <chrono>
 #include <deque>
 #include <functional>
@@ -154,14 +154,18 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
 
   void stop()
   {
-    fmt::print(stderr, "Stopped, disconnecting ...\n");
-    stopped_ = true;
-    connected_ = false;
-    // boost::system::error_code ec;
-    // socket_.close(ec);
-    boost::asio::post(io_context_, [this]() -> void { socket_.close(); });
-    heartbeat_timer_.cancel();
-    deadline_.cancel();
+    boost::asio::post(io_context_,
+        [this, self = shared_from_this()]() -> void
+        {
+          fmt::print(stderr, "Stopped, disconnecting ...\n");
+          stopped_ = true;
+          connected_ = false;
+
+          boost::system::error_code ec;
+          socket_.close(ec);
+          heartbeat_timer_.cancel();
+          deadline_.cancel();
+        });
   }
 
  private:
@@ -280,9 +284,9 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
   std::string input_buffer_;
   message_queue read_msgs_;
   message_queue write_msgs_;
-  std::atomic<int> msg_id_{10000};
-  std::atomic<bool> connected_{false};
-  std::atomic<bool> stopped_{false};
+  std::atomic< int > msg_id_{10000};
+  std::atomic< bool > connected_{false};
+  std::atomic< bool > stopped_{false};
   signal_string_type trap_handler_;
 };
 

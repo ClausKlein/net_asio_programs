@@ -42,7 +42,7 @@ distclean: # XXX clean
 	rm -rf $(BUILD_DIR) build coverage/* *~ ctags
 
 $(BUILD_DIR): CMakeLists.txt
-	-test -d build/appleclang-debug && ln -s build/appleclang-debug $(BUILD_DIR)
+	-test -d build/appleclang-debug && ln -f -s $(CURDIR)/build/appleclang-debug $(CURDIR)/$(BUILD_DIR)
 	cmake -S . -B $@ -G Ninja -D CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) --log-level=VERBOSE  # --fresh
 
 check: all

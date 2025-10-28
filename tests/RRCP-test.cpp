@@ -16,8 +16,8 @@ ut::suite errors = [] -> void
   using namespace ut;
   using namespace std::literals;
 
-  "find_response_msg"_test = []
-  -> void {
+  "find_response_msg"_test = [] -> void
+  {
     constexpr std::string_view EXPECTED{"gGoState"sv};
     const std::string message{"123456 gGoState"};
     std::string result{message};
@@ -29,8 +29,8 @@ ut::suite errors = [] -> void
 #endif
   };
 
-  "doNotfind_error_response_msg"_test = []
-  -> void {
+  "doNotfind_error_response_msg"_test = [] -> void
+  {
     constexpr std::string_view EXPECTED{"E:1"sv};
     const std::string message{"E:1"};
     std::string result{message};
@@ -42,8 +42,8 @@ ut::suite errors = [] -> void
 #endif
   };
 
-  "find_error_response_msg"_test = []
-  -> void {
+  "find_error_response_msg"_test = [] -> void
+  {
     constexpr std::string_view EXPECTED{"E:10"sv};
     const std::string message{"E:10 123456"};
     std::string result{message};
@@ -55,8 +55,8 @@ ut::suite errors = [] -> void
 #endif
   };
 
-  "doNotfind_response_msg"_test = []
-  -> void {
+  "doNotfind_response_msg"_test = [] -> void
+  {
     constexpr std::string_view EXPECTED{"d NoGo"sv};
     const std::string message{EXPECTED};
     std::string result{message};
@@ -70,8 +70,8 @@ ut::suite errors = [] -> void
 
   // ============================================================
 
-  "insertAfterFirstWord"_test = []
-  -> void {
+  "insertAfterFirstWord"_test = [] -> void
+  {
     constexpr std::string_view EXPECTED{"M:test 123456 GGoState"sv};
     const std::string command{"M:test GGoState"};
     auto result = rrcp::insertAfterFirstWord(command, "123456");
@@ -81,8 +81,8 @@ ut::suite errors = [] -> void
 #endif
   };
 
-  "doNotInsertAnEmptyString"_test = []
-  -> void {
+  "doNotInsertAnEmptyString"_test = [] -> void
+  {
     constexpr std::string_view EXPECTED{"M:test GGoState"sv};
     const std::string command{EXPECTED};
     auto result = rrcp::insertAfterFirstWord(command, "");
@@ -92,8 +92,8 @@ ut::suite errors = [] -> void
 #endif
   };
 
-  "doNotInsertBeforeTrapCmd"_test = []
-  -> void {
+  "doNotInsertBeforeTrapCmd"_test = [] -> void
+  {
     constexpr std::string_view EXPECTED{"M:test TGoState1"sv};
     const std::string command{EXPECTED};
     auto result = rrcp::insertAfterFirstWord(command, "");
@@ -103,8 +103,8 @@ ut::suite errors = [] -> void
 #endif
   };
 
-  "doNotInsertAfterSingleWord"_test = []
-  -> void {
+  "doNotInsertAfterSingleWord"_test = [] -> void
+  {
     constexpr std::string_view EXPECTED{"E:10"sv};
     const std::string message{EXPECTED};
     auto result = rrcp::insertAfterFirstWord(message, "123456");
@@ -116,8 +116,8 @@ ut::suite errors = [] -> void
 
   // ============================================================
 
-  "create_command_msg"_test = []
-  -> void {
+  "create_command_msg"_test = [] -> void
+  {
     constexpr std::string_view EXPECTED{"\nM:RxTx 1 SPowerLevel\"Off\"\r"sv};
     const std::string command{R"(M:RxTx SPowerLevel"Off")"};
     std::string msg_id_str;
@@ -135,21 +135,21 @@ ut::suite errors = [] -> void
 
   // ============================================================
 
-  "wrong_quoted"_test = []
-  -> void {
+  "wrong_quoted"_test = [] -> void
+  {
     expect(throws(
-        []
-        -> void {
+        [] -> void
+        {
           constexpr std::string_view WRONG_QUOTED{"\n\x1b\004\r"sv};
           auto result = rrcp::esc2char(WRONG_QUOTED);
         }));
   };
 
-  "empty_str"_test = []
-  -> void {
+  "empty_str"_test = [] -> void
+  {
     expect(nothrow(
-        []
-        -> void {
+        [] -> void
+        {
           auto result = rrcp::esc2char("");
           expect(result.empty());
         }));
@@ -161,8 +161,8 @@ ut::suite errors = [] -> void
 
   "to_short_msg"_test = [] -> void { expect(throws([] -> void { auto result = rrcp::esc2char("\x1b\0"s); })); };
 
-  "basic_quoteing"_test = []
-  -> void {
+  "basic_quoteing"_test = [] -> void
+  {
     constexpr std::string_view BINARY{"\nAB_(\0\001\002\003\004\005\006\a\b\n\r\t\v\x1b\20\'\"\?)-CD\r"sv};
     auto quoted = rrcp::char2esc(BINARY);
 
@@ -185,8 +185,8 @@ ut::suite errors = [] -> void
 
   // ============================================================
 
-  "rrcp_message"_test = []
-  -> void {
+  "rrcp_message"_test = [] -> void
+  {
     rrcp_message msg;
     msg.body_length(MAX_MU_LENGTH);
     expect(msg.length() == MAX_MU_LENGTH + 4);
@@ -205,8 +205,8 @@ ut::suite errors = [] -> void
     expect(msg.get_data().length() == 4);
   };
 
-  "rrcp_message_empty"_test = []
-  -> void {
+  "rrcp_message_empty"_test = [] -> void
+  {
     rrcp_message msg;
     msg.body_length(0);
     expect(msg.length() == 4);
@@ -218,16 +218,16 @@ ut::suite errors = [] -> void
     // FIXME: expect(nothrow([&] {msg.decode_header();} ));
   };
 
-  "rrcp_message_to_long"_test = []
-  -> void {
+  "rrcp_message_to_long"_test = [] -> void
+  {
     const std::string invalid(MAX_MU_LENGTH, '\n');
     rrcp_message msg(invalid);
     expect(!msg.is_valid());
     expect(!msg.set_msg(invalid));
   };
 
-  "rrcp_message_text"_test = []
-  -> void {
+  "rrcp_message_text"_test = [] -> void
+  {
     constexpr std::string_view COMMAND{"Hallo Server"};
     rrcp_message msg;
     expect(msg.set_msg(COMMAND));
@@ -238,8 +238,8 @@ ut::suite errors = [] -> void
     expect(COMMAND == result);
   };
 
-  "rrcp_message_binary"_test = []
-  -> void {
+  "rrcp_message_binary"_test = [] -> void
+  {
     constexpr std::string_view BINARY{"\nAB_(\0\001\002\003\004\005\006\a\b\n\r\t\v\x1b\20\'\"\?)-CD\r"sv};
     rrcp_message msg(BINARY);
     expect(msg.is_valid());
