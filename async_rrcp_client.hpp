@@ -27,6 +27,7 @@
 #include <boost/asio/write.hpp>
 #include <boost/signals2/signal.hpp>
 #include <boost/system/error_code.hpp>
+#include <atomic>
 #include <chrono>
 #include <deque>
 #include <functional>
@@ -102,6 +103,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
     }
 
     std::string msg_id_str;
+    msg_id_ = ++msg_id_ % INVALID_ID;
     auto command = rrcp::create_command_msg(message, msg_id_str, msg_id_);
 
     boost::asio::post(io_context_,
@@ -155,8 +157,9 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
     fmt::print(stderr, "Stopped, disconnecting ...\n");
     stopped_ = true;
     connected_ = false;
-    boost::system::error_code ec;
-    socket_.close(ec);
+    // boost::system::error_code ec;
+    // socket_.close(ec);
+    boost::asio::post(io_context_, [this]() -> void { socket_.close(); });
     heartbeat_timer_.cancel();
     deadline_.cancel();
   }
@@ -277,9 +280,9 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
   std::string input_buffer_;
   message_queue read_msgs_;
   message_queue write_msgs_;
-  int msg_id_{10000};
-  bool connected_{false};
-  bool stopped_{false};
+  std::atomic<int> msg_id_{10000};
+  std::atomic<bool> connected_{false};
+  std::atomic<bool> stopped_{false};
   signal_string_type trap_handler_;
 };
 

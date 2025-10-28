@@ -39,7 +39,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
             COMMAND_ECHO STDOUT
         )
         string(STRIP ${LLVM_PREFIX} LLVM_PREFIX)
-        set(CMAKE_CXX_STANDARD 20)
+        set(CMAKE_CXX_STANDARD 23)
     elseif(LINUX)
         set(LLVM_PREFIX $ENV{LLVM_ROOT})
     endif()

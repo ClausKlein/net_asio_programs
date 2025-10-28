@@ -5,28 +5,51 @@
 MAKEFLAGS+= --no-builtin-rules
 MAKEFLAGS+= --warn-undefined-variables
 
-CPPFILES:= $(shell git ls-files ::*.cpp)
+export hostSystemName=$(shell uname)
+export GCOV="llvm-cov gcov"
+
+ifeq (${hostSystemName},Darwin)
+  export LLVM_PREFIX:=$(shell brew --prefix llvm)
+  export LLVM_DIR?=$(shell realpath ${LLVM_PREFIX})
+  export PATH:=${LLVM_DIR}/bin:${PATH}
+  export CXX:=clang++
+
+  # to test g++-15:
+  #XXX export CXX:=g++-15
+  #XXX export CXXFLAGS:=-stdlib=libstdc++
+else ifeq (${hostSystemName},Linux)
+  export LLVM_DIR?=/usr/lib/llvm-20
+  export PATH:=${LLVM_DIR}/bin:${PATH}
+  export CXX:=clang++-20
+endif
+
+
+CPPFILES:= $(shell git ls-files ::*.cpp | grep -vw tests)
+
+CMAKE_BUILD_TYPE?=Debug
+BUILD_DIR:=build/$(CMAKE_BUILD_TYPE)
 
 .PHONY: all format test check distclean
 
-all: build
-	ninja -C build
+all: $(BUILD_DIR)
+	ninja -C $(BUILD_DIR)
 
-clean: build
+clean: $(BUILD_DIR)
 	-ninja -C $< $@
 	-find $< -name '*.gcda' -delete
 
 distclean: # XXX clean
-	rm -rf build coverage/* *~ ctags
+	rm -rf $(BUILD_DIR) build coverage/* *~ ctags
 
-build: CMakeLists.txt
-	cmake -S . -B $@ -G Ninja -D CMAKE_BUILD_TYPE=Debug # --fresh
+$(BUILD_DIR): CMakeLists.txt
+	-test -d build/appleclang-debug && ln -s build/appleclang-debug $(BUILD_DIR)
+	cmake -S . -B $@ -G Ninja -D CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) --log-level=VERBOSE  # --fresh
 
 check: all
-	run-clang-tidy -p build *.cpp examples/*.cpp  # $(CPPFILES)
+	run-clang-tidy -p $(BUILD_DIR) $(CPPFILES)
 
 fix: all
-	run-clang-tidy -p build -fix -checks='-*,\
+	run-clang-tidy -p $(BUILD_DIR) -fix -checks='-*,\
 hicpp-explicit-conversions,\
 hicpp-member-init,\
 hicpp-named-parameter,\
@@ -53,23 +76,23 @@ readability-static-accessed-through-instance,\
 readability-use-concise-preprocessor-directives,\
 readability-use-std-min-max,\
 ' \
-	 *.cpp examples/*.cpp  # $(CPPFILES)
+	 $(CPPFILES)
 
-test: all
+test: $(BUILD_DIR) # XXX all
 	-killall async_tcp_echo_server
-	-echo | build/async_tcp_echo_client localhost 8000
-	build/async_tcp_echo_server 8000 &
-	-(cat rrcp.txt | build/async_tcp_echo_client localhost 8000) &
+	-echo | $(BUILD_DIR)/async_tcp_echo_client localhost 8000
+	$(BUILD_DIR)/async_tcp_echo_server 8000 &
+	-(cat rrcp.txt | $(BUILD_DIR)/async_tcp_echo_client localhost 8000) &
 	sleep 1
 	-killall async_tcp_echo_server
-	-(echo | build/async_tcp_echo_server 8000) &
-	cat rrcp.txt | build/rrcp_client localhost 8000
-	cat rrcp.txt | build/rrcp_async_tcp_client localhost 8000
-	cat rrcp.txt | build/async_tcp_echo_client localhost 8000
-	-build/async_tcp_echo_client localhost
-	-echo | build/async_tcp_echo_client localhost 8001
-	cat rrcp.txt | build/blocking_tcp_echo_client localhost 8000
-	ctest --test-dir build
+	-(echo | $(BUILD_DIR)/async_tcp_echo_server 8000) &
+	cat rrcp.txt | $(BUILD_DIR)/rrcp_client localhost 8000
+	cat rrcp.txt | $(BUILD_DIR)/rrcp_async_tcp_client localhost 8000
+	cat rrcp.txt | $(BUILD_DIR)/async_tcp_echo_client localhost 8000
+	-$(BUILD_DIR)/async_tcp_echo_client localhost
+	-echo | $(BUILD_DIR)/async_tcp_echo_client localhost 8001
+	cat rrcp.txt | $(BUILD_DIR)/blocking_tcp_echo_client localhost 8000
+	ctest --test-dir $(BUILD_DIR)
 	-killall async_tcp_echo_server
 	gcovr
 
@@ -89,5 +112,5 @@ GNUmakefile :: ;
 
 # Anything we don't know how to build will use this rule.  The command is
 # a do-nothing command.
-% :: build
+% :: $(BUILD_DIR)
 	ninja -C $< $@
