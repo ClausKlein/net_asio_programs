@@ -10,7 +10,7 @@ RUN echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https:
 RUN sudo apt-get update && sudo apt-get install -y cmake libboost-dev
 
 # Install pre-commit
-RUN sudo apt-get install -y python3-pip && pip3 install pre-commit
+RUN sudo apt-get install -y python3-pip && pip3 install pre-commit gcovr ninja cmake
 
 # Avoid ASAN Stalling
 # Alternative is to update to clang-18 and gcc-13.2

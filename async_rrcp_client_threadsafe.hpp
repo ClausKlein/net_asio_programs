@@ -83,7 +83,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
               {
                 if (!ec)
                 {
-                  fmt::print(stderr, "Connected to server.\n");
+                  fmt::print(stderr, "Connected to server.\n");  // TRACE
                   self->connected_.store(true);
                   self->notify_connection_waiters();
                   self->do_read();
@@ -133,7 +133,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
     try
     {
       const auto response = future.get();
-      fmt::print(stderr, "Returning {}\n", response);
+      fmt::print(stderr, "Returning {}\n", response);  // TRACE
       return response;
     }
     catch (const std::exception&)
@@ -147,7 +147,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
     boost::asio::post(strand_,
         [this, self = shared_from_this()]() -> void
         {
-          fmt::print(stderr, "Stopped, disconnecting ...\n");
+          fmt::print(stderr, "Stopped, disconnecting ...\n");  // TRACE
           stopped_.store(true);
           connected_.store(false);
 
@@ -323,13 +323,13 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
             if (boost::algorithm::starts_with(parsed_line, "d"))  // Trap data message
             {
               // Handle trap data messages
-              fmt::print(stderr, "trap data: {}\n", parsed_line);
+              fmt::print(stderr, "trap data: {}\n", parsed_line);  // TRACE
               self->trap_handler_(parsed_line);
             }
             else if (!boost::algorithm::starts_with(parsed_line, "gPing"))
             {
               // Handle response messages (but ignore heartbeat responses)
-              fmt::print(stderr, "{}\n", parsed_line);
+              fmt::print(stderr, "{}\n", parsed_line);  // TRACE
               self->handle_response(parsed_line);
             }
             // Note: gPing messages are silently ignored (heartbeat responses)

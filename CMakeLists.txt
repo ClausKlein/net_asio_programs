@@ -4,19 +4,27 @@ project(RRCP-client VERSION 0.1.1 LANGUAGES CXX)
 
 # ---- add dependencies ----
 
-include(FetchContent)
+include(cmake/CPM.cmake)
 
 find_package(Threads)
+find_package(Boost 1.87 COMPONENTS headers signals2 HINTS $ENV{HOME}/.local)
+
 if(NOT TARGET Boost::headers)
-    find_package(
-        Boost
-        1.71
-        COMPONENTS
-            headers # XXX signals2
-        REQUIRED
-        HINTS $ENV{HOME}/.local
+    #
+    # install Boost headers only interfaces lib as Boost::boost
+    #
+    set(BOOST_INCLUDE_LIBRARIES algorithm asio beast signals2)
+    cpmaddpackage(
+      NAME boost-cmake
+      VERSION 1.87.0.5
+      GIT_TAG v1.87.0-rc6
+      GITHUB_REPOSITORY ClausKlein/boost-cmake
+      EXCLUDE_FROM_ALL YES
+      SYSTEM YES
     )
 endif()
+
+include(FetchContent)
 
 FetchContent_Declare(
     fmt
@@ -88,7 +96,7 @@ endfunction()
 add_executable(async_tcp_echo_server examples/async_tcp_echo_server.cpp)
 target_link_libraries(
     async_tcp_echo_server
-    PUBLIC Threads::Threads Boost::headers
+    PUBLIC Threads::Threads Boost::boost
 )
 do_test(async_tcp_echo_server "" port)
 
@@ -102,7 +110,7 @@ target_sources(
 )
 target_link_libraries(
     rrcp_helper
-    PUBLIC Threads::Threads Boost::headers fmt::fmt-header-only
+    PUBLIC Threads::Threads Boost::boost fmt::fmt-header-only
 )
 
 add_executable(async_tcp_echo_client examples/async_tcp_echo_client.cpp)
@@ -122,7 +130,7 @@ if(APPLE AND BUILD_EXAMPLES)
     add_executable(timer timer.cpp)
     target_link_libraries(
         timer
-        PUBLIC Threads::Threads Boost::headers fmt::fmt-header-only
+        PUBLIC Threads::Threads Boost::boost fmt::fmt-header-only
     )
     add_test(NAME timer COMMAND timer)
 endif()

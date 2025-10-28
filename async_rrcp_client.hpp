@@ -281,12 +281,18 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
   tcp::socket socket_;
   boost::asio::steady_timer deadline_;
   boost::asio::steady_timer heartbeat_timer_;
+
+  // I/O buffers (protected by io_context)
   std::string input_buffer_;
   message_queue read_msgs_;
   message_queue write_msgs_;
-  std::atomic< int > msg_id_{10000};
+
+  // Thread-safe state
   std::atomic< bool > connected_{false};
   std::atomic< bool > stopped_{false};
+  std::atomic< int > msg_id_{10000};
+
+  // Signal handling
   signal_string_type trap_handler_;
 };
 

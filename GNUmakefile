@@ -7,6 +7,7 @@ MAKEFLAGS+= --warn-undefined-variables
 
 export hostSystemName=$(shell uname)
 export GCOV="llvm-cov gcov"
+export CPM_USE_LOCAL_PACKAGES=YES
 
 ifeq (${hostSystemName},Darwin)
   export LLVM_PREFIX:=$(shell brew --prefix llvm)
