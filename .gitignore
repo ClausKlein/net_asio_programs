@@ -1,5 +1,6 @@
 build/
 coverage/*
+CODEOWNERS
 tags
 .*swp
 *.log
