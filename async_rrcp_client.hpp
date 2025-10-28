@@ -98,6 +98,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
       {
         return {};
       }
+
       fmt::print(stderr, "Client is not connected yet.\n");  // TRACE
       std::this_thread::sleep_for(TIMEOUT_DURATION);
     }
@@ -111,6 +112,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
         {
           bool const write_in_progress{!write_msgs_.empty()};
           write_msgs_.push_back(command);
+
           if (!write_in_progress)
           {
             deadline_.expires_after(TIMEOUT_DURATION);
@@ -154,6 +156,11 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
 
   void stop()
   {
+    if (stopped_)
+    {
+      return;
+    }
+
     boost::asio::post(io_context_,
         [this, self = shared_from_this()]() -> void
         {
@@ -183,6 +190,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
 
             // TODO(CK): maby refactored to helper class?
             //========================== RRCP ============================
+            // Process different message types
             if (boost::algorithm::starts_with(line, "d"))  // Trap data message
             {
               // Handle trap data messages

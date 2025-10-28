@@ -144,6 +144,11 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
 
   void stop()
   {
+    if (stopped_.load())
+    {
+      return;
+    }
+
     boost::asio::post(strand_,
         [this, self = shared_from_this()]() -> void
         {

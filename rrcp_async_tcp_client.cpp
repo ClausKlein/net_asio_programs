@@ -21,7 +21,12 @@
 #include <string>
 #include <thread>
 
+#define USE_SIMPLE_RRCP_CLINT
+#ifdef USE_SIMPLE_RRCP_CLINT
 #include "async_rrcp_client.hpp"
+#else
+#include "async_rrcp_client_threadsafe.hpp"
+#endif
 
 namespace
 {
