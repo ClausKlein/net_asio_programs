@@ -22,4 +22,3 @@ hexdump -C base64.dat
 cat base64.txt
 
     IUAjJCVeJiooKV9+PD4K
-

@@ -54,4 +54,3 @@ CheckOptions:
   - { key: readability-identifier-length.MinimumParameterNameLength,  value: 1 }
   - { key: hicpp-signed-bitwise.IgnorePositiveIntegerLiterals, value: true }
 ...
-
