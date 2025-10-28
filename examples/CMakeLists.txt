@@ -6,7 +6,7 @@ find_package(Poco 1.14 COMPONENTS Foundation REQUIRED)
 find_package(Threads)
 
 if(NOT TARGET Boost::headers)
-    find_package(Boost 1.71 COMPONENTS headers REQUIRED HINTS $ENV{HOME}/.local)
+    find_package(Boost 1.87 COMPONENTS headers REQUIRED HINTS $ENV{HOME}/.local)
 endif()
 if(NOT TARGET fmt::fmt-header-only)
     find_package(fmt 12 REQUIRED HINTS $ENV{HOME}/.local)
