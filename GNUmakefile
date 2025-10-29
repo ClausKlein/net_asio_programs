@@ -19,21 +19,21 @@ ifeq (${hostSystemName},Darwin)
   #XXX export CXX:=g++-15
   #XXX export CXXFLAGS:=-stdlib=libstdc++
 else ifeq (${hostSystemName},Linux)
-  export LLVM_DIR?=/usr/lib/llvm-20
+  export LLVM_DIR?=/usr/lib/llvm-19
   export PATH:=${LLVM_DIR}/bin:${PATH}
-  export CXX:=clang++-20
+  export CXX:=clang++-19
 endif
-
 
 CPPFILES:= $(shell git ls-files ::*.cpp | grep -vw tests)
 
-CMAKE_BUILD_TYPE?=Debug
-BUILD_DIR:=build/$(CMAKE_BUILD_TYPE)
+PRESET_NAME?=debug
+BUILD_DIR:=build/$(PRESET_NAME)
 
 .PHONY: all format test check distclean
 
 all: $(BUILD_DIR)
-	ninja -C $(BUILD_DIR)
+	cmake --workflow --preset $(PRESET_NAME)
+	# XXX ninja -C $(BUILD_DIR)
 
 clean: $(BUILD_DIR)
 	-ninja -C $< $@
@@ -43,8 +43,10 @@ distclean: # XXX clean
 	rm -rf $(BUILD_DIR) build coverage/* *~ ctags
 
 $(BUILD_DIR): CMakeLists.txt
-	-test -d build/appleclang-debug && ln -f -s $(CURDIR)/build/appleclang-debug $(CURDIR)/$(BUILD_DIR)
-	cmake -S . -B $@ -G Ninja -D CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) --log-level=VERBOSE  # --fresh
+	-test -f CMakeUserPresets.json || ln -f -s cmake/CMakeUserPresets.json .
+	cmake --preset $(PRESET_NAME) --log-level=VERBOSE  # --fresh
+	# -test -d build/Debug && ln -f -s $(CURDIR)/build/Debug $(CURDIR)/$(BUILD_DIR)
+	# XXX cmake -S . -B $@ -G Ninja -D CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE)
 
 check: all
 	run-clang-tidy -p $(BUILD_DIR) $(CPPFILES)
