@@ -109,6 +109,13 @@ do_test(async_tcp_echo_server "" port)
 
 # ---- rrcp class sources and helpers as a library ----
 
+find_program(
+    PYTHON_EXECUTABLE
+    NAMES python3 python
+    REQUIRED
+    HINTS $ENV{VIRTUAL_ENV}/bin
+)
+
 add_library(rrcp_helper STATIC)
 target_sources(
     rrcp_helper
@@ -123,6 +130,14 @@ target_link_libraries(
 add_executable(async_tcp_echo_client examples/async_tcp_echo_client.cpp)
 target_link_libraries(async_tcp_echo_client PRIVATE rrcp_helper)
 do_test(async_tcp_echo_client --help Usage)
+add_test(
+    NAME async_tcp_echo_client_test
+    COMMAND
+        ${PYTHON_EXECUTABLE} #
+        ${CMAKE_CURRENT_SOURCE_DIR}/run_test.py #
+        --client $<TARGET_FILE:async_tcp_echo_client> --server
+        $<TARGET_FILE:async_tcp_echo_server>
+)
 
 if(BUILD_EXAMPLES AND NOT ENABLE_TEST_COVERAGE)
     add_executable(

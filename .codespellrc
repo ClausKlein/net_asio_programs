@@ -1,6 +1,6 @@
 [codespell]
 builtin = clear,rare,en-GB_to_en-US,names,informal,code
 check-hidden =
-skip = ./.git,./.direnv,./build/*,./prefix/*,./coverage/*,./stagedir/*,*.html,*.xsd,*.xsl,*.pdf,*.log,.*.swp,*~,*.bak,./.cache/*
+skip = ./.git,./.direnv,./build/*,./prefix/*,./coverage/*,./stagedir/*,*.html,*.xsd,*.xsl,*.pdf,*.log,.*.swp,*~,*.bak,./tags
 quiet-level = 2
 ignore-words = .codespellignore

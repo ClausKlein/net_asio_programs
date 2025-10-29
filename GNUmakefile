@@ -83,20 +83,14 @@ readability-use-std-min-max,\
 
 test: $(BUILD_DIR) # XXX all
 	-killall async_tcp_echo_server
-	# -echo | $(BUILD_DIR)/async_tcp_echo_client localhost 8000
 	$(BUILD_DIR)/async_tcp_echo_server 8000 &
-	# -(cat rrcp.txt | $(BUILD_DIR)/async_tcp_echo_client localhost 8000) &
-	sleep 1
-	-killall async_tcp_echo_server
-	-(echo | $(BUILD_DIR)/async_tcp_echo_server 8000) &
-	# cat rrcp.txt | $(BUILD_DIR)/rrcp_client localhost 8000
+	-(echo | $(BUILD_DIR)/rrcp_async_tcp_client localhost 8000) &
 	cat rrcp.txt | $(BUILD_DIR)/rrcp_async_tcp_client localhost 8000
 	# cat rrcp.txt | $(BUILD_DIR)/async_tcp_echo_client localhost 8000
 	# -$(BUILD_DIR)/async_tcp_echo_client localhost
 	# -echo | $(BUILD_DIR)/async_tcp_echo_client localhost 8001
-	# cat rrcp.txt | $(BUILD_DIR)/blocking_tcp_echo_client localhost 8000
-	ctest --test-dir $(BUILD_DIR)
 	-killall async_tcp_echo_server
+	ctest --test-dir $(BUILD_DIR) --rerun-failed --output-on-failure
 	gcovr
 
 format: .clang-format
