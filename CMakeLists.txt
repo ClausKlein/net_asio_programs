@@ -5,23 +5,33 @@ project(RRCP-client VERSION 0.1.1 LANGUAGES CXX)
 # ---- add dependencies ----
 
 find_package(Threads)
-#XXX find_package(Boost 1.87 COMPONENTS headers signals2 HINTS $ENV{HOME}/.local)
 
-include(cmake/CPM.cmake)
+set(BOOST_INCLUDE_LIBRARIES algorithm asio beast signals2)
 
-if(NOT TARGET Boost::headers)
-    #
-    # install Boost headers only interfaces lib as Boost::boost
-    #
-    set(BOOST_INCLUDE_LIBRARIES algorithm asio beast signals2)
-    cpmaddpackage(
-      NAME boost-cmake
-      VERSION 1.87.0.6
-      GIT_TAG v1.87.0-rc6
-      GITHUB_REPOSITORY ClausKlein/boost-cmake
-      EXCLUDE_FROM_ALL YES
-      SYSTEM YES
-    )
+# see too: https://cmake.org/cmake/help/latest/module/FindBoost.html
+set(Boost_DEBUG ON)
+find_package(Boost 1.87) # XXX COMPONENTS ${BOOST_INCLUDE_LIBRARIES} HINTS $ENV{HOME}/.local)
+if(Boost_FOUND)
+    set(BOOST_LIBRARIES Boost::headers)
+else()
+    include(cmake/CPM.cmake)
+
+    set(BOOST_LIBRARIES ${BOOST_INCLUDE_LIBRARIES})
+    list(TRANSFORM BOOST_LIBRARIES PREPEND Boost::)
+
+    if(NOT TARGET Boost::headers)
+        #
+        # build only the requested Boost components
+        #
+        cpmaddpackage(
+          NAME boost-cmake
+          VERSION 1.87.0.6
+          GIT_TAG v1.87.0-rc6
+          GITHUB_REPOSITORY ClausKlein/boost-cmake
+          EXCLUDE_FROM_ALL NO
+          SYSTEM YES
+        )
+    endif()
 endif()
 
 include(FetchContent)
@@ -70,7 +80,7 @@ option(
     "Compile with test-coverage flags"
     ${PROJECT_IS_TOP_LEVEL}
 )
-if(ENABLE_TEST_COVERAGE AND CMAKE_BUILD_TYPE STREQUAL Debug)
+if(UNIX AND ENABLE_TEST_COVERAGE AND CMAKE_BUILD_TYPE STREQUAL Debug)
     message(WARNING "ENABLE_TEST_COVERAGE is set!")
     add_compile_options(-O0 -g -fprofile-arcs -ftest-coverage)
     add_link_options(-fprofile-arcs -ftest-coverage)
@@ -96,7 +106,7 @@ endfunction()
 add_executable(async_tcp_echo_server examples/async_tcp_echo_server.cpp)
 target_link_libraries(
     async_tcp_echo_server
-    PUBLIC Threads::Threads Boost::headers
+    PUBLIC Threads::Threads ${BOOST_LIBRARIES}
 )
 do_test(async_tcp_echo_server "" port)
 
@@ -110,27 +120,30 @@ target_sources(
 )
 target_link_libraries(
     rrcp_helper
-    PUBLIC Threads::Threads Boost::headers fmt::fmt-header-only
+    PUBLIC Threads::Threads ${BOOST_LIBRARIES} fmt::fmt-header-only
 )
 
 add_executable(async_tcp_echo_client examples/async_tcp_echo_client.cpp)
 target_link_libraries(async_tcp_echo_client PRIVATE rrcp_helper)
 do_test(async_tcp_echo_client --help Usage)
 
-add_executable(blocking_tcp_echo_client examples/blocking_tcp_echo_client.cpp)
-target_link_libraries(blocking_tcp_echo_client PRIVATE rrcp_helper)
-do_test(blocking_tcp_echo_client --help Usage)
+if(BUILD_EXAMPLES AND NOT ENABLE_TEST_COVERAGE)
+    add_executable(
+        blocking_tcp_echo_client
+        examples/blocking_tcp_echo_client.cpp
+    )
+    target_link_libraries(blocking_tcp_echo_client PRIVATE rrcp_helper)
+    do_test(blocking_tcp_echo_client --help Usage)
 
-add_executable(rrcp_client rrcp_client.cpp rrcp_message.hpp)
-target_link_libraries(rrcp_client PRIVATE rrcp_helper)
-do_test(rrcp_client --help Usage)
+    add_executable(rrcp_client rrcp_client.cpp rrcp_message.hpp)
+    target_link_libraries(rrcp_client PRIVATE rrcp_helper)
+    do_test(rrcp_client --help Usage)
 
-if(APPLE AND BUILD_EXAMPLES)
     # TODO(CK): mv to examples too!
     add_executable(timer timer.cpp)
     target_link_libraries(
         timer
-        PUBLIC Threads::Threads Boost::headers fmt::fmt-header-only
+        PUBLIC Threads::Threads ${BOOST_LIBRARIES} fmt::fmt-header-only
     )
     add_test(NAME timer COMMAND timer)
 endif()
