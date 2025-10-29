@@ -11,6 +11,10 @@ on:
   schedule:
     - cron: '30 15 * * *'
 
+env:
+  LANG: en_US.UTF-8
+  LC_ALL: en_US.UTF-8
+
 jobs:
   beman-submodule-check:
     uses: bemanproject/infra-workflows/.github/workflows/reusable-beman-submodule-check.yml@1.1.0
