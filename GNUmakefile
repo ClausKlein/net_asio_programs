@@ -33,7 +33,6 @@ BUILD_DIR:=build/$(PRESET_NAME)
 
 all: $(BUILD_DIR)
 	cmake --workflow --preset $(PRESET_NAME)
-	# XXX ninja -C $(BUILD_DIR)
 
 clean: $(BUILD_DIR)
 	-ninja -C $< $@
@@ -46,7 +45,6 @@ $(BUILD_DIR): CMakeLists.txt
 	-test -f CMakeUserPresets.json || ln -f -s cmake/CMakeUserPresets.json .
 	cmake --preset $(PRESET_NAME) --log-level=VERBOSE  # --fresh
 	# -test -d build/Debug && ln -f -s $(CURDIR)/build/Debug $(CURDIR)/$(BUILD_DIR)
-	# XXX cmake -S . -B $@ -G Ninja -D CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE)
 
 check: all
 	run-clang-tidy -p $(BUILD_DIR) $(CPPFILES)
@@ -81,11 +79,13 @@ readability-use-std-min-max,\
 ' \
 	 $(CPPFILES)
 
-test: $(BUILD_DIR) # XXX all
+test: all
 	-killall async_tcp_echo_server
 	$(BUILD_DIR)/async_tcp_echo_server 8000 &
 	-(echo | $(BUILD_DIR)/rrcp_async_tcp_client localhost 8000) &
+	cat rrcp.txt | $(BUILD_DIR)/rrcp_async_tcp_client_threadsafe localhost 8000
 	cat rrcp.txt | $(BUILD_DIR)/rrcp_async_tcp_client localhost 8000
+	# NOTE: simple example only!
 	# cat rrcp.txt | $(BUILD_DIR)/async_tcp_echo_client localhost 8000
 	# -$(BUILD_DIR)/async_tcp_echo_client localhost
 	# -echo | $(BUILD_DIR)/async_tcp_echo_client localhost 8001

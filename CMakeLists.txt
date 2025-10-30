@@ -81,7 +81,7 @@ if(UNIX AND ENABLE_TEST_COVERAGE AND CMAKE_BUILD_TYPE STREQUAL Debug)
     message(WARNING "ENABLE_TEST_COVERAGE is set!")
     add_compile_options(-O0 -g -fprofile-arcs -ftest-coverage)
     add_link_options(-fprofile-arcs -ftest-coverage)
-    # FIXME: add_compile_definitions(TARGET_CODE_COVERAGE)
+    # FIXME! add_compile_definitions(TARGET_CODE_COVERAGE)
 endif()
 
 # ---- ctest ----
@@ -98,7 +98,7 @@ function(do_test target arg result)
     endif()
 endfunction()
 
-# ---- server needed for tests ----
+# ---- echo server needed for tests ----
 
 add_executable(async_tcp_echo_server examples/async_tcp_echo_server.cpp)
 target_link_libraries(
@@ -120,26 +120,34 @@ add_library(rrcp_helper STATIC)
 target_sources(
     rrcp_helper
     PRIVATE rrcp_helper.cpp
-    PUBLIC FILE_SET HEADERS FILES async_rrcp_client.hpp rrcp_helper.hpp
+    PUBLIC
+        FILE_SET
+            HEADERS #
+            FILES
+                async_rrcp_client.hpp
+                async_rrcp_client_threadsafe.hpp
+                rrcp_helper.hpp
 )
 target_link_libraries(
     rrcp_helper
     PUBLIC Threads::Threads ${BOOST_LIBRARIES} fmt::fmt-header-only
 )
 
-add_executable(async_tcp_echo_client examples/async_tcp_echo_client.cpp)
-target_link_libraries(async_tcp_echo_client PRIVATE rrcp_helper)
-do_test(async_tcp_echo_client --help Usage)
-add_test(
-    NAME async_tcp_echo_client_test
-    COMMAND
-        ${PYTHON_EXECUTABLE} #
-        ${CMAKE_CURRENT_SOURCE_DIR}/run_test.py #
-        --client $<TARGET_FILE:async_tcp_echo_client> --server
-        $<TARGET_FILE:async_tcp_echo_server>
-)
+# ---- simple rrcp client class usage examples ----
 
 if(BUILD_EXAMPLES AND NOT ENABLE_TEST_COVERAGE)
+    add_executable(async_tcp_echo_client examples/async_tcp_echo_client.cpp)
+    target_link_libraries(async_tcp_echo_client PRIVATE rrcp_helper)
+    do_test(async_tcp_echo_client --help Usage)
+    add_test(
+        NAME async_tcp_echo_client_test
+        COMMAND
+            ${PYTHON_EXECUTABLE} #
+            ${CMAKE_CURRENT_SOURCE_DIR}/run_test.py #
+            --client $<TARGET_FILE:async_tcp_echo_client> #
+            --server $<TARGET_FILE:async_tcp_echo_server>
+    )
+
     add_executable(
         blocking_tcp_echo_client
         examples/blocking_tcp_echo_client.cpp
@@ -160,11 +168,32 @@ if(BUILD_EXAMPLES AND NOT ENABLE_TEST_COVERAGE)
     add_test(NAME timer COMMAND timer)
 endif()
 
-# ---- rrcp client class usage examples main  ----
+# ---- theadsafe rrcp client class usage examples main  ----
+
+add_executable(rrcp_async_tcp_client_threadsafe rrcp_async_tcp_client.cpp)
+target_link_libraries(rrcp_async_tcp_client_threadsafe PRIVATE rrcp_helper)
+do_test(rrcp_async_tcp_client_threadsafe --help Usage)
+add_test(
+    NAME async_tcp_echo_client_threadsafe_test
+    COMMAND
+        ${PYTHON_EXECUTABLE} #
+        ${CMAKE_CURRENT_SOURCE_DIR}/run_test.py #
+        --client $<TARGET_FILE:rrcp_async_tcp_client_threadsafe> #
+        --server $<TARGET_FILE:async_tcp_echo_server>
+)
 
 add_executable(rrcp_async_tcp_client rrcp_async_tcp_client.cpp)
 target_link_libraries(rrcp_async_tcp_client PRIVATE rrcp_helper)
+target_compile_definitions(rrcp_async_tcp_client PRIVATE USE_SIMPLE_RRCP_CLIENT)
 do_test(rrcp_async_tcp_client --help Usage)
+add_test(
+    NAME async_tcp_echo_client_test
+    COMMAND
+        ${PYTHON_EXECUTABLE} #
+        ${CMAKE_CURRENT_SOURCE_DIR}/run_test.py #
+        --client $<TARGET_FILE:rrcp_async_tcp_client> #
+        --server $<TARGET_FILE:async_tcp_echo_server>
+)
 
 if(BUILD_TESTING)
     add_subdirectory(tests)

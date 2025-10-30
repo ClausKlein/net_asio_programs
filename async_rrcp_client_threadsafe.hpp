@@ -127,6 +127,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
     // Wait for response with timeout
     if (future.wait_for(TIMEOUT_DURATION) == std::future_status::timeout)
     {
+      fmt::print(stderr, "Error: Timeout {}!\n", __func__);
       return {};  // Timeout - return empty string
     }
 
@@ -138,6 +139,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
     }
     catch (const std::exception&)
     {
+      fmt::print(stderr, "Exception: {}!\n", __func__);
       return {};  // Error - return empty string
     }
   }
@@ -249,6 +251,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
         catch (const std::exception&)
         {
           // Promise already fulfilled - ignore
+          fmt::print(stderr, "Exception: {}!\n", __func__);
         }
       }
     }
@@ -268,6 +271,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
       catch (const std::exception&)
       {
         // Promise already fulfilled - ignore
+        fmt::print(stderr, "Exception: {}!\n", __func__);
       }
     }
     pending_responses_.clear();
@@ -282,6 +286,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
       catch (const std::exception&)
       {
         // Promise already fulfilled - ignore
+        fmt::print(stderr, "Exception: {}!\n", __func__);
       }
     }
     pending_writes_.clear();
@@ -371,6 +376,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
         catch (const std::exception&)
         {
           // Promise already fulfilled - ignore
+          fmt::print(stderr, "Exception: {}!\n", __func__);
         }
         return;
       }

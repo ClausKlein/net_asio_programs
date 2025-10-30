@@ -1,20 +1,20 @@
 M:Utility GInitialInfo"v0.8.15","async client",10
 
 // with optional Message Number
-M:Radio 10002 SString"\rHallo\tWorld\n"
+M:Utility 10002 SString"\rHallo\tWorld\n"
 // NOTE: w/o MibName! E:2 10002   // MU error
 
 // NOTE: M:WF.FF.Main 123456 T Octet 1
 // NOTE: M:WF.FF.Main 123456 t
 // NOTE: M:OBit L:1 123456 GGoState     // with optional Logical Address
 
-M:Audio GAudioVolume    // without optionl parts
+// M:Audio GAudioVolume    // without optionl parts
 // NOTE: M:Log SStruct 1,-1,3.14 // multiple parameters
 
 // NOTE: M:RADIO T FREQUENCY 1  // register trap
 // NOTE: M:RADIO t              // trap response OK
 // NOTE: M:RADIO d FREQUENCY 123456789   // trap data message
-// NOTE: M:Utility S Binary #36:AAECAwQFBgcICQoLDA0OD8KAwoHDvsO/Cg==   // bas64 encoded binary data
+M:Utility S Binary #36:AAECAwQFBgcICQoLDA0OD8KAwoHDvsO/Cg==   // bas64 encoded binary data
 
 //
 // The more real samples:
