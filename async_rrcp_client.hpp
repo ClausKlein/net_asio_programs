@@ -44,7 +44,7 @@ using boost::asio::ip::tcp;
 using namespace std::chrono_literals;
 
 constexpr size_t MAX_LENGTH = 65432;
-constexpr auto TIMEOUT_DURATION = 3s;
+constexpr auto TIMEOUT_DURATION = 1s;
 constexpr auto HEARTBEAT_INTERVAL = 10s;
 
 class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client >

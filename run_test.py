@@ -83,35 +83,11 @@ def main(args: List[str]):
         "--timeout",
         "-t",
         type=int,
-        default=13,
+        default=29,
         help="Number of seconds to run; defaults to %(default)s",
     )
     args = parser.parse_args(args)
     port = "8000"
-
-    # client = subprocess.Popen([args.client, "localhost", port, args.input])
-    # try:
-    #     subprocess.run(
-    #         [args.server, port],
-    #         timeout=args.timeout,
-    #         check=True,
-    #     )
-    # except subprocess.TimeoutExpired:
-    #     print("Test expectedly timed out; sending SIGINT")
-    #     client.send_signal(signal.SIGINT)
-    #     time.sleep(1)
-    #     try:
-    #         client.wait(timeout=1)
-    #     except subprocess.TimeoutExpired:
-    #         print("client does not respond to SIGINT in time, sending SIGKILL")
-    #         client.kill()
-    #         client.wait()
-    # except Exception as ex:
-    #     print("ERROR:", ex)
-    #     client.kill()
-    #     client.wait()
-    #     raise
-
     server = None
     client = None
 
@@ -148,20 +124,33 @@ def main(args: List[str]):
                 force_kill(server)
             return 4
 
-        # Wait for server to finish or timeout
+        # Wait for client to finish or timeout
         try:
-            print(f"Waiting up to {args.timeout} seconds for server to finish...")
-            server.wait(timeout=args.timeout)
-            print(f"Server exited (code {server.returncode}).")
+            print(f"Waiting up to {args.timeout} seconds for client to finish...")
+            client.wait(timeout=args.timeout)
+            print(f"Client exited (code {client.returncode}).")
         except subprocess.TimeoutExpired:
-            print("Timeout expired. Attempting graceful server shutdown (SIGINT).")
+            print("Timeout expired. Attempting graceful client shutdown (SIGINT).")
             # Try graceful shutdown via SIGINT
-            graceful = send_and_wait(server, signal.SIGINT, wait=3.0)
+            graceful = send_and_wait(client, signal.SIGINT, wait=3.0)
             if not graceful:
-                print("Server did not exit after SIGINT; killing it.")
+                print("Client did not exit after SIGINT; killing it.")
+                force_kill(client)
+            else:
+                print("Client exited gracefully after SIGINT.")
+
+        # Now ask server to exit gracefully
+        if server and server.poll() is None:
+            print("Requesting server to exit (SIGINT).")
+            client_graceful = send_and_wait(server, signal.SIGINT, wait=1.0)
+            if not client_graceful:
+                print("Server did not exit after SIGINT; killing server.")
                 force_kill(server)
             else:
-                print("Server exited gracefully after SIGINT.")
+                print("Server exited gracefully.")
+        else:
+            if server:
+                print(f"Server already exited (code {server.returncode}).")
 
         # Ensure server is not running
         if server.poll() is None:
@@ -169,21 +158,8 @@ def main(args: List[str]):
             print("Server still alive after attempts; killing.")
             force_kill(server)
 
-        # Now ask client to exit gracefully
-        if client and client.poll() is None:
-            print("Requesting client to exit (SIGINT).")
-            client_graceful = send_and_wait(client, signal.SIGINT, wait=1.0)
-            if not client_graceful:
-                print("Client did not exit after SIGINT; killing client.")
-                force_kill(client)
-            else:
-                print("Client exited gracefully.")
-        else:
-            if client:
-                print(f"Client already exited (code {client.returncode}).")
-
         # Return server exit code if non-zero, else client's exit code (or 0)
-        # XXX if server.returncode not in (None, 0): return server.returncode
+        # NO! if server.returncode not in (None, 0): return server.returncode
         if client:
             return client.returncode if client.returncode is not None else 0
         return 0

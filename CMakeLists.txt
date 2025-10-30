@@ -81,7 +81,7 @@ if(UNIX AND ENABLE_TEST_COVERAGE AND CMAKE_BUILD_TYPE STREQUAL Debug)
     message(WARNING "ENABLE_TEST_COVERAGE is set!")
     add_compile_options(-O0 -g -fprofile-arcs -ftest-coverage)
     add_link_options(-fprofile-arcs -ftest-coverage)
-    # FIXME! add_compile_definitions(TARGET_CODE_COVERAGE)
+    # FIXME: add_compile_definitions(TARGET_CODE_COVERAGE)
 endif()
 
 # ---- ctest ----
