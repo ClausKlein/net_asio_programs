@@ -7,12 +7,15 @@ Behavior:
 Start the server first. If the server cannot be started (or exits immediately),
 terminate and exit non-zero.
 Then start the client.
-Let the server run for --timeout seconds.
-If the server times out: try to shut it down gracefully (SIGINT),
+Let the client run for --timeout seconds.
+If the client times out: try to shut it down gracefully (SIGINT),
 wait a short grace period, then SIGKILL if necessary.
-After the server has stopped, ask the client to exit (SIGINT) and wait a little.
-If the client does not exit, kill it hard.
+After the client has stopped, ask the server to exit (SIGINT) and wait a little.
+If the server does not exit, kill it hard.
 On any failure to start a subprocess, make sure the other process is terminated.
+return the exit result of client only (that is our SW to test)!
+
+Created from Claus Klein and ChatGPT as reviewer
 """
 
 import argparse
@@ -44,6 +47,7 @@ def send_and_wait(proc: subprocess.Popen, sig: int, wait: float) -> bool:
             return True
         except subprocess.TimeoutExpired:
             return False
+    return True
 
 
 def force_kill(proc: subprocess.Popen) -> None:
@@ -59,6 +63,39 @@ def force_kill(proc: subprocess.Popen) -> None:
     except Exception:
         # give up
         pass
+
+
+def start_process(
+    cmd: list[str], role: str, check_delay: float = 0.1
+) -> subprocess.Popen:
+    """
+    Start a subprocess (client or server) and ensure it doesn't fail immediately.
+
+    Args:
+        cmd: Command line list to run (e.g. ['python3', 'server.py', '8000']).
+        role: A label used for logging ('server', 'client', etc.).
+        check_delay: Seconds to wait before checking if the process has exited.
+
+    Returns:
+        subprocess.Popen instance of the started process.
+
+    Raises:
+        RuntimeError if the process cannot start or exits immediately.
+    """
+    print(f"Starting {role}:", " ".join(cmd))
+    try:
+        proc = subprocess.Popen(cmd)
+    except Exception as e:
+        raise RuntimeError(f"Failed to start {role}: {e}") from e
+
+    # Allow short delay to detect immediate failure (e.g., missing binary)
+    time.sleep(check_delay)
+    if proc.poll() is not None:
+        raise RuntimeError(
+            f"{role.capitalize()} exited immediately with code {proc.returncode}"
+        )
+
+    return proc
 
 
 HERE = Path(__file__).resolve().parent
@@ -93,34 +130,21 @@ def main(args: List[str]):
 
     try:
         # Start server
-        server_cmd = [args.server, port]
-        print("Starting server:", " ".join(server_cmd))
         try:
-            server = subprocess.Popen(server_cmd)
+            server = start_process([args.server, port], role="server")
         except Exception as e:
-            print("Failed to start server:", e, file=sys.stderr)
+            print(e, file=sys.stderr)
             return 2
 
-        # Give the server a short moment to fail fast (binary not found or immediate error)
-        time.sleep(0.1)
-        if server.poll() is not None:
-            print(
-                f"Server exited immediately with code {server.returncode}",
-                file=sys.stderr,
-            )
-            return 3
-
         # Start client
-        client_cmd = [args.client, "localhost", port]
-        if args.input:
-            client_cmd.append(args.input)
-        print("Starting client:", " ".join(client_cmd))
         try:
-            client = subprocess.Popen(client_cmd)
+            client_cmd = [args.client, "localhost", port]
+            if args.input:
+                client_cmd.append(args.input)
+            client = start_process(client_cmd, role="client")
         except Exception as e:
-            print("Failed to start client:", e, file=sys.stderr)
-            # Make sure server is torn down
-            if server.poll() is None:
+            print(e, file=sys.stderr)
+            if server and server.poll() is None:
                 force_kill(server)
             return 4
 
@@ -152,13 +176,7 @@ def main(args: List[str]):
             if server:
                 print(f"Server already exited (code {server.returncode}).")
 
-        # Ensure server is not running
-        if server.poll() is None:
-            # As a last resort
-            print("Server still alive after attempts; killing.")
-            force_kill(server)
-
-        # Return server exit code if non-zero, else client's exit code (or 0)
+        # NOTE: We ignore server exit code; We return only  client's exit code (or 0)
         # NO! if server.returncode not in (None, 0): return server.returncode
         if client:
             return client.returncode if client.returncode is not None else 0
