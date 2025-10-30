@@ -170,6 +170,8 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
   }
 
  private:
+#define USE_PEDANTIC_CHECKES
+#ifdef USE_PEDANTIC_CHECKES
   // Helper method to safely parse RRCP message with bounds checking
   static auto parse_rrcp_message(const std::string& buffer, std::size_t length, std::string& parsed_line) -> bool
   {
@@ -211,6 +213,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
 
     return false;
   }
+#endif
 
   void execute_write_request(const std::string& message, std::shared_ptr< response_promise_type > promise)
   {
@@ -301,9 +304,9 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
         {
           if (!ec)
           {
-            //========================== RRCP ============================
+        //========================== RRCP ============================
+#ifdef USE_PEDANTIC_CHECKES
             std::string parsed_line;
-
             // Use safe parsing helper with comprehensive bounds checking
             if (!rrcp::async_rrcp_client::parse_rrcp_message(self->input_buffer_, length, parsed_line))
             {
@@ -313,12 +316,14 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
               self->do_read();
               return;
             }
-
+#else
+            std::string parsed_line = esc2char(self->input_buffer_.substr(1, length - 1));  // TODO(CK): check START, STOP?
+#endif
             // Successfully parsed, remove processed data from buffer
             self->input_buffer_.erase(0, length);
-            //========================== END ============================
+        //========================== END ============================
 
-            // TODO(CK): maby refactored to helper class?
+#ifdef USE_PEDANTIC_CHECKES
             // Validate parsed content is not empty
             if (parsed_line.empty())
             {
@@ -327,7 +332,9 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
               self->do_read();
               return;
             }
+#endif
 
+            // TODO(CK): maby refactored to helper class?
             //========================== RRCP ============================
             // Process different message types
             if (boost::algorithm::starts_with(parsed_line, "d"))  // Trap data message
@@ -350,7 +357,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
           }
           else
           {
-            fmt::print(stderr, "Error reading message: {}\n", ec.message());
+            fmt::print(stderr, "Error: reading message: {}\n", ec.message());
             self->stop();
           }
         });
@@ -399,7 +406,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
           else
           {
             // There are no more endpoints to try. Shut down the client.
-            fmt::print(stderr, "Error writing message: {}\n", ec.message());
+            fmt::print(stderr, "Error: writing message: {}\n", ec.message());
             self->stop();
           }
         });
@@ -428,7 +435,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
           }
           else
           {
-            fmt::print(stderr, "Error sending heartbeat: {}\n", ec.message());
+            fmt::print(stderr, "Error: sending heartbeat: {}\n", ec.message());
             self->stop();
           }
         });

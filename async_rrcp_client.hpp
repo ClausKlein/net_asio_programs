@@ -44,7 +44,7 @@ using boost::asio::ip::tcp;
 using namespace std::chrono_literals;
 
 constexpr size_t MAX_LENGTH = 65432;
-constexpr auto TIMEOUT_DURATION = 1s;
+constexpr auto TIMEOUT_DURATION = 3s;
 constexpr auto HEARTBEAT_INTERVAL = 10s;
 
 class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client >
@@ -127,6 +127,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
   auto read(const std::string& msg_id) -> std::string
   {
     std::string response;
+    auto count = TIMEOUT_DURATION / 125ms;
 
     do
     {
@@ -149,7 +150,11 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
         }
       }
       std::this_thread::sleep_for(125ms);
-    } while (!stopped_);
+    } while (!stopped_ && --count);
+    if (!count)
+    {
+      fmt::print(stderr, "Error: Timeout read!\n");
+    }
 
     return response;
   }
@@ -210,7 +215,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
           }
           else
           {
-            fmt::print(stderr, "Error reading message: {}\n", ec.message());
+            fmt::print(stderr, "Error: reading message: {}\n", ec.message());
             self->stop();
           }
         });
@@ -232,7 +237,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
           else
           {
             // There are no more endpoints to try. Shut down the client.
-            fmt::print(stderr, "Error writing message: {}\n", ec.message());
+            fmt::print(stderr, "Error: writing message: {}\n", ec.message());
             self->stop();
           }
         });
@@ -261,7 +266,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
           }
           else
           {
-            fmt::print(stderr, "Error sending heartbeat: {}\n", ec.message());
+            fmt::print(stderr, "Error: sending heartbeat: {}\n", ec.message());
             self->stop();
           }
         });

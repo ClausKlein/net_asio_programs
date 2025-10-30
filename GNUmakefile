@@ -81,9 +81,12 @@ readability-use-std-min-max,\
 
 test: all
 	-killall async_tcp_echo_server
+	-(echo Ping | $(BUILD_DIR)/rrcp_async_tcp_client_threadsafe localhost 8000) &
+	-(echo Ping | $(BUILD_DIR)/rrcp_async_tcp_client localhost 8000) &
 	$(BUILD_DIR)/async_tcp_echo_server 8000 &
-	-(echo | $(BUILD_DIR)/rrcp_async_tcp_client localhost 8000) &
+	-(echo | $(BUILD_DIR)/rrcp_async_tcp_client_threadsafe localhost 8000) &
 	cat rrcp.txt | $(BUILD_DIR)/rrcp_async_tcp_client_threadsafe localhost 8000
+	-(echo | $(BUILD_DIR)/rrcp_async_tcp_client localhost 8000) &
 	cat rrcp.txt | $(BUILD_DIR)/rrcp_async_tcp_client localhost 8000
 	# NOTE: simple example only!
 	# cat rrcp.txt | $(BUILD_DIR)/async_tcp_echo_client localhost 8000
