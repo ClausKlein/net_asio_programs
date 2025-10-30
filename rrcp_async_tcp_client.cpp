@@ -16,12 +16,13 @@
 #include <chrono>
 #include <cstdlib>
 #include <exception>
+#include <fstream>
 #include <iostream>
 #include <stdexcept>
 #include <string>
 #include <thread>
 
-// #define USE_SIMPLE_RRCP_CLIENT
+// optional #define USE_SIMPLE_RRCP_CLIENT
 #ifdef USE_SIMPLE_RRCP_CLIENT
 #include "async_rrcp_client.hpp"
 #else
@@ -38,10 +39,24 @@ void print(std::string msg) { fmt::print("{}\n", msg); }
 // NOLINTNEXTLINE(bugprone-exception-escape)
 auto main(int argc, char* argv[]) -> int
 {
-  if (argc != 3)
+  if (argc < 3)
   {
-    fmt::print(stderr, "Usage: {} <host> <port>\n", argv[0]);  // NOLINT
+    fmt::print(stderr, "Usage: {} <host> <port> [input_file]\n", argv[0]);  // NOLINT
     return EXIT_FAILURE;
+  }
+
+  std::ifstream file;  // persistent file object (if used)
+  std::istream* input_str = &std::cin;  // pointer to chosen input stream
+
+  if (argc == 4)
+  {
+    file.open(argv[3]);  // NOLINT
+    if (!file)
+    {
+      fmt::print(stderr, "cannot open input file: {}\n", argv[3]);  // NOLINT
+      return 2;
+    }
+    input_str = &file;
   }
 
   try
@@ -58,7 +73,7 @@ auto main(int argc, char* argv[]) -> int
     std::thread io_thread([&io_context]() -> void { io_context.run(); });
 
     std::this_thread::sleep_for(TIMEOUT_DURATION);  // NOTE: only for gcov results! CK
-    for (std::string line; client->connected() && std::getline(std::cin, line); fmt::print(stderr, "Enter command: "))
+    for (std::string line; client->connected() && std::getline(*input_str, line); fmt::print(stderr, "Enter command: "))
     {
       const std::string::size_type sz = line.find("//");
       if ((sz != std::string::npos))

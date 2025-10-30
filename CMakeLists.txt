@@ -176,10 +176,10 @@ do_test(rrcp_async_tcp_client_threadsafe --help Usage)
 add_test(
     NAME async_tcp_echo_client_threadsafe_test
     COMMAND
-        ${PYTHON_EXECUTABLE} #
-        ${CMAKE_CURRENT_SOURCE_DIR}/run_test.py #
+        ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/run_test.py #
         --client $<TARGET_FILE:rrcp_async_tcp_client_threadsafe> #
-        --server $<TARGET_FILE:async_tcp_echo_server>
+        --server $<TARGET_FILE:async_tcp_echo_server> #
+        --input ${CMAKE_CURRENT_SOURCE_DIR}/rrcp.txt #
 )
 
 add_executable(rrcp_async_tcp_client rrcp_async_tcp_client.cpp)
@@ -189,10 +189,10 @@ do_test(rrcp_async_tcp_client --help Usage)
 add_test(
     NAME async_tcp_echo_client_test
     COMMAND
-        ${PYTHON_EXECUTABLE} #
-        ${CMAKE_CURRENT_SOURCE_DIR}/run_test.py #
+        ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/run_test.py #
         --client $<TARGET_FILE:rrcp_async_tcp_client> #
-        --server $<TARGET_FILE:async_tcp_echo_server>
+        --server $<TARGET_FILE:async_tcp_echo_server> #
+        --input ${CMAKE_CURRENT_SOURCE_DIR}/rrcp.txt #
 )
 
 if(BUILD_TESTING)
