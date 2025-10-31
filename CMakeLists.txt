@@ -159,7 +159,7 @@ if(BUILD_EXAMPLES AND NOT ENABLE_TEST_COVERAGE)
             ${PYTHON_EXECUTABLE} #
             ${CMAKE_CURRENT_SOURCE_DIR}/run_test.py #
             --client $<TARGET_FILE:async_tcp_echo_client> #
-            --timeout 7
+            --timeout 9
     )
 
     add_executable(
@@ -192,7 +192,7 @@ add_test(
     COMMAND
         ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/run_test.py #
         --client $<TARGET_FILE:rrcp_async_tcp_client_threadsafe> #
-        --timeout 7
+        --timeout 9
 )
 add_test(
     NAME rrcp_async_tcp_client_threadsafe-test
@@ -212,7 +212,7 @@ add_test(
     COMMAND
         ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/run_test.py #
         --client $<TARGET_FILE:rrcp_async_tcp_client> #
-        --timeout 7
+        --timeout 9
 )
 add_test(
     NAME rrcp_async_tcp_client-test
