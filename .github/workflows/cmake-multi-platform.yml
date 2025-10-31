@@ -57,6 +57,13 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
+      # # see https://github.com/marketplace/actions/enable-developer-command-prompt
+      - uses: ilammy/msvc-dev-cmd@v1
+        if: matrix.os == 'windows-latest'
+        with:
+          vsversion: 2022
+          arch: x64
+
       - name: Configure and build using CMake preset
         env:
           CC: ${{ matrix.c_compiler }}

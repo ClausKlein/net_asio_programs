@@ -49,20 +49,26 @@ FetchContent_MakeAvailable(fmt)
 
 # ---- default settings ----
 
-if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    if(APPLE)
-        execute_process(
-            OUTPUT_VARIABLE LLVM_PREFIX
-            COMMAND brew --prefix llvm
-            COMMAND_ECHO STDOUT
-        )
-        string(STRIP ${LLVM_PREFIX} LLVM_PREFIX)
-    elseif(LINUX)
-        set(LLVM_PREFIX $ENV{LLVM_ROOT})
-    endif()
+if(DEFINED ENV{CI})
+    message(STATUS "Running inside a CI environment")
+else()
+    message(STATUS "Running locally")
 
-    add_compile_options(-fexperimental-library)
-    add_link_options(-L${LLVM_PREFIX}/lib/c++ -lc++experimental)
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        if(APPLE)
+            execute_process(
+                OUTPUT_VARIABLE LLVM_PREFIX
+                COMMAND brew --prefix llvm
+                COMMAND_ECHO STDOUT
+            )
+            string(STRIP ${LLVM_PREFIX} LLVM_PREFIX)
+        elseif(LINUX)
+            set(LLVM_PREFIX $ENV{LLVM_ROOT})
+        endif()
+
+        add_compile_options(-fexperimental-library)
+        add_link_options(-L${LLVM_PREFIX}/lib/c++ -lc++experimental)
+    endif()
 endif()
 
 set(CMAKE_CXX_EXTENSIONS OFF)
