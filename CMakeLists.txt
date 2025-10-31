@@ -146,12 +146,20 @@ if(BUILD_EXAMPLES AND NOT ENABLE_TEST_COVERAGE)
     target_link_libraries(async_tcp_echo_client PRIVATE rrcp_helper)
     do_test(async_tcp_echo_client --help Usage)
     add_test(
-        NAME async_tcp_echo_client_test
+        NAME async_tcp_echo_client-test
         COMMAND
             ${PYTHON_EXECUTABLE} #
             ${CMAKE_CURRENT_SOURCE_DIR}/run_test.py #
             --client $<TARGET_FILE:async_tcp_echo_client> #
             --server $<TARGET_FILE:async_tcp_echo_server>
+    )
+    add_test(
+        NAME async_tcp_echo_client-test-no_server
+        COMMAND
+            ${PYTHON_EXECUTABLE} #
+            ${CMAKE_CURRENT_SOURCE_DIR}/run_test.py #
+            --client $<TARGET_FILE:async_tcp_echo_client> #
+            --timeout 7
     )
 
     add_executable(
@@ -180,7 +188,14 @@ add_executable(rrcp_async_tcp_client_threadsafe rrcp_async_tcp_client.cpp)
 target_link_libraries(rrcp_async_tcp_client_threadsafe PRIVATE rrcp_helper)
 do_test(rrcp_async_tcp_client_threadsafe --help Usage)
 add_test(
-    NAME async_tcp_echo_client_threadsafe_test
+    NAME rrcp_async_tcp_client_threadsafe-test-no_server
+    COMMAND
+        ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/run_test.py #
+        --client $<TARGET_FILE:rrcp_async_tcp_client_threadsafe> #
+        --timeout 7
+)
+add_test(
+    NAME rrcp_async_tcp_client_threadsafe-test
     COMMAND
         ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/run_test.py #
         --client $<TARGET_FILE:rrcp_async_tcp_client_threadsafe> #
@@ -193,7 +208,14 @@ target_link_libraries(rrcp_async_tcp_client PRIVATE rrcp_helper)
 target_compile_definitions(rrcp_async_tcp_client PRIVATE USE_SIMPLE_RRCP_CLIENT)
 do_test(rrcp_async_tcp_client --help Usage)
 add_test(
-    NAME async_tcp_echo_client_test
+    NAME rrcp_async_tcp_client-test-no_server
+    COMMAND
+        ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/run_test.py #
+        --client $<TARGET_FILE:rrcp_async_tcp_client> #
+        --timeout 7
+)
+add_test(
+    NAME rrcp_async_tcp_client-test
     COMMAND
         ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/run_test.py #
         --client $<TARGET_FILE:rrcp_async_tcp_client> #

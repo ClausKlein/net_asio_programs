@@ -4,12 +4,14 @@ Simple test harness that runs a server and a client.
 
 Behavior:
 
-Start the server first. If the server cannot be started (or exits immediately),
+Start the server first if given. If the server cannot be started (or exits immediately),
 terminate and exit non-zero.
+
 Then start the client.
 Let the client run for --timeout seconds.
 If the client times out: try to shut it down gracefully (SIGINT),
 wait a short grace period, then SIGKILL if necessary.
+
 After the client has stopped, ask the server to exit (SIGINT) and wait a little.
 If the server does not exit, kill it hard.
 On any failure to start a subprocess, make sure the other process is terminated.
@@ -24,8 +26,12 @@ import subprocess
 import sys
 import time
 
-from pathlib import Path
 from typing import List
+
+# from pathlib import Path
+#
+# HERE = Path(__file__).resolve().parent
+# PROJECT_DIR = HERE.parent.parent.parent
 
 
 def send_and_wait(proc: subprocess.Popen, sig: int, wait: float) -> bool:
@@ -88,7 +94,7 @@ def start_process(
     except Exception as e:
         raise RuntimeError(f"Failed to start {role}: {e}") from e
 
-    # Allow short delay to detect immediate failure (e.g., missing binary)
+    # Allow short delay to detect immediate failure (resource missing or blocked: e.g. can't open port)
     time.sleep(check_delay)
     if proc.poll() is not None:
         raise RuntimeError(
@@ -96,10 +102,6 @@ def start_process(
         )
 
     return proc
-
-
-HERE = Path(__file__).resolve().parent
-PROJECT_DIR = HERE.parent.parent.parent
 
 
 def main(args: List[str]):
@@ -124,17 +126,23 @@ def main(args: List[str]):
         help="Number of seconds to run; defaults to %(default)s",
     )
     args = parser.parse_args(args)
+
+    if not args.client:
+        print("Missing path to client!")
+        return 1
+
     port = "8000"
     server = None
     client = None
 
     try:
         # Start server
-        try:
-            server = start_process([args.server, port], role="server")
-        except Exception as e:
-            print(e, file=sys.stderr)
-            return 2
+        if args.server:
+            try:
+                server = start_process([args.server, port], role="server")
+            except Exception as e:
+                print(e, file=sys.stderr)
+                return 2
 
         # Start client
         try:
@@ -146,7 +154,7 @@ def main(args: List[str]):
             print(e, file=sys.stderr)
             if server and server.poll() is None:
                 force_kill(server)
-            return 4
+            return 3
 
         # Wait for client to finish or timeout
         try:

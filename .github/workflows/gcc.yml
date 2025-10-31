@@ -1,4 +1,4 @@
-name: GCC
+name: GCC on Ubuntu
 
 on:
   push:

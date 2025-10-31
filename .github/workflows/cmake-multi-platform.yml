@@ -2,9 +2,12 @@ name: CMake on multiple platforms
 
 on:
   push:
-    branches: [ "develop" ]
+    branches: [ main, develop ]
   pull_request:
-    branches: [ "develop" ]
+    branches: [ develop ]
+  workflow_dispatch:
+  schedule:
+    - cron: '30 15 * * 6'
 
 jobs:
   build:
@@ -14,32 +17,32 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        build_type: [Release]
+        build_type: [debug, release]
         c_compiler: [gcc, clang, cl]
         include:
           # Windows - MSVC
           - os: windows-latest
             c_compiler: cl
             cpp_compiler: cl
-            preset: msvc-release
+            preset: msvc
 
           # Ubuntu - GCC
           - os: ubuntu-latest
             c_compiler: gcc
             cpp_compiler: g++
-            preset: gcc-release
+            preset: gcc
 
           # Ubuntu - Clang
           - os: ubuntu-latest
             c_compiler: clang
             cpp_compiler: clang++
-            preset: llvm-release
+            preset: llvm
 
           # macOS - Clang (default compiler)
           - os: macos-latest
             c_compiler: clang
             cpp_compiler: clang++
-            preset: appleclang-release
+            preset: appleclang
 
         exclude:
           - os: windows-latest
@@ -64,9 +67,9 @@ jobs:
           vsversion: 2022
           arch: x64
 
-      - name: Configure and build using CMake preset
+      - name: Workflow preset ${{ matrix.preset }}-${{ matrix.build_type }}
         env:
           CC: ${{ matrix.c_compiler }}
           CXX: ${{ matrix.cpp_compiler }}
         run: |
-          cmake --workflow --preset ${{ matrix.preset }}
+          cmake --workflow --preset ${{ matrix.preset }}-${{ matrix.build_type }}
