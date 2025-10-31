@@ -1,0 +1,21 @@
+---
+BasedOnStyle: Google
+IndentWidth: 2
+UseTab: Never
+---
+Language: Cpp
+Standard: c++17
+# Standard: Auto
+AlignAfterOpenBracket: false
+AlignEscapedNewlinesLeft: true
+AlwaysBreakAfterDefinitionReturnType: None
+BreakBeforeBraces: Allman
+BreakConstructorInitializersBeforeComma: false
+ColumnLimit: 123
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+ConstructorInitializerIndentWidth: 0
+IndentCaseLabels: false
+SortIncludes: true
+AlignTrailingComments: false
+
+SpacesInAngles: true

@@ -1,0 +1,48 @@
+name: Clang on Ubuntu
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ develop ]
+  workflow_dispatch:
+  schedule:
+    - cron: '30 15 * * 6'
+
+jobs:
+  clang:
+    strategy:
+      fail-fast: false
+      matrix:
+        version: [20, 21]
+
+    runs-on: ubuntu-latest
+
+    container:
+      image: ghcr.io/mattkretz/cplusplus-ci/clang${{ matrix.version }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.13" }
+
+      - name: Install Boost
+        run: apt-get update -qq && apt-get install -y -qq libboost-all-dev
+
+      - name: Setup Cpp
+        uses: aminya/setup-cpp@v1
+        with:
+          # compiler: llvm-${{ matrix.version }}
+          cmake: 4.1.2
+          ninja: 1.13.0
+          gcovr: true
+
+      - name: Run test suite
+        env:
+          CXX: clang++-${{ matrix.version }}
+        run: |
+          export PATH=$HOME/.local/bin:$PATH
+          cmake --workflow --preset llvm-release
+          gcovr
+          # PRESET_NAME=llvm-release make all

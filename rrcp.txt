@@ -1,0 +1,83 @@
+M:Utility GInitialInfo"v0.8.15","async client",10
+
+// with optional Message Number
+M:Utility 10002 SString"\rHallo\tWorld\n"
+// NOTE: w/o MibName! E:2 10002   // MU error
+
+// NOTE: M:WF.FF.Main 123456 T Octet 1
+// NOTE: M:WF.FF.Main 123456 t
+// NOTE: M:OBit L:1 123456 GGoState     // with optional Logical Address
+
+// M:Audio GAudioVolume    // without optionl parts
+// NOTE: M:Log SStruct 1,-1,3.14 // multiple parameters
+
+// NOTE: M:RADIO T FREQUENCY 1  // register trap
+// NOTE: M:RADIO t              // trap response OK
+// NOTE: M:RADIO d FREQUENCY 123456789   // trap data message
+M:Utility S Binary #36:AAECAwQFBgcICQoLDA0OD8KAwoHDvsO/Cg==   // bas64 encoded binary data
+
+//
+// The more real samples:
+//
+M:Access GHasControl
+M:Access THasControl1
+M:Access GOwnSession
+M:Access TOwnSession1
+M:Access SReqSession"Monitoring"
+M:Audio GAudioVolume
+M:Audio TAudioVolume1
+M:Audio SAudioVolume"Level 0"
+M:Audio TAudioVolume0
+M:Control GPresetID
+M:Control GCurrWF
+M:Control TPresetID1
+M:Control TCurrWF1
+M:Control GCurrMission
+M:Control TCurrMission1
+// change preset
+M:Control SCurrMission"testString"
+M:Control SActPreset0
+M:Control TCurrMission0
+M:Control TCurrWF0
+M:Control TPresetID0
+M:Control GTxInhibit
+M:Control TTxInhibit1
+M:Control STxInhibit"Disabled"
+M:Control TTxInhibit0
+M:Inventory GInvCountCus
+M:Inventory GInventoryCus0
+M:Inventory GInvCount
+M:Inventory GInventory0
+M:IP GOwnAdrvIV"Control"
+M:IP SOwnAdrvIV"Control","testString","testString"
+M:Mission GGlobalAddr
+M:Mission SGlobalAddr"testString"
+M:Mission GMissions
+M:Mission GPresets0,1
+M:OBIT GGOState
+M:OBIT TGOState1
+M:OBIT GTestErrors
+M:OBIT GTestIDs
+M:OBIT TErrorEvent1
+M:OBIT TGOState0
+M:OBIT TErrorEvent0
+M:RxTx GPowerLevel
+M:RxTx TPowerLevel1
+M:RxTx SPowerLevel"Off"
+M:RxTx TPowerLevel0
+M:RxTx GVswr
+M:RxTx TVswr1
+M:RxTx GVswrThres
+M:RxTx TVswr0
+M:RxTx TVswrThres1
+M:RxTx GVswrThresLev
+M:RxTx SVswrThresLev10
+M:RxTx TVswrThres0
+M:Utility TBattStatus1
+M:Utility GBattStatus
+M:Utility TBattStatus0
+M:Utility GErrorText0,"English"
+M:Utility GInitialInfo"VersionStr","IdString",0
+M:Utility GPing"message"
+M:Maintenance SRestart
+M:Maintenance SShutdown
