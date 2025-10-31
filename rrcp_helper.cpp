@@ -20,14 +20,14 @@ auto rrcp::esc2char(std::string_view data) -> std::string
   auto len = data.size();
   for (size_t i = 0; i < len; ++i)
   {
-    char c = data[i];
+    char ch = data[i];
 
-    if (c == STOP)
+    if (ch == STOP)
     {
       return message;
     }
 
-    if (c == ESC)
+    if (ch == ESC)
     {
       if (i == len - 1)
       {
@@ -38,20 +38,20 @@ auto rrcp::esc2char(std::string_view data) -> std::string
       switch (next)
       {
       case REPLACE_LF:
-        c = '\n';
+        ch = '\n';
         break;
       case REPLACE_CR:
-        c = '\r';
+        ch = '\r';
         break;
       case REPLACE_ESC:
-        c = ESC;
+        ch = ESC;
         break;
       default:
         throw std::runtime_error("esc2char: Error - unexpected ESC character!");
       }
     }
 
-    message.push_back(c);
+    message.push_back(ch);
   }
   return message;
 }
@@ -59,9 +59,9 @@ auto rrcp::esc2char(std::string_view data) -> std::string
 auto rrcp::char2esc(std::string_view data) -> std::string
 {
   std::string message;
-  for (char const c : data)
+  for (char const ch : data)
   {
-    switch (c)
+    switch (ch)
     {
     case '\n':
       message.push_back(ESC);
@@ -76,7 +76,7 @@ auto rrcp::char2esc(std::string_view data) -> std::string
       message.push_back(REPLACE_ESC);
       break;
     default:
-      message.push_back(c);
+      message.push_back(ch);
       break;
     }
   }
@@ -141,15 +141,22 @@ auto rrcp::find_response_msg(std::string& response, const std::string& msg_id) -
   return false;
 }
 
-extern auto rrcp::create_command_msg(const std::string& message, std::string& msg_id_str, int& msg_id) -> std::string
+auto rrcp::create_command_msg(const std::string& message, std::string& msg_id_str, int msg_id) -> std::string
 {
+  if (msg_id >= INVALID_ID)
+  {
+    msg_id = 1;
+  }
   // Insert the next message number for Set/Get request.
   // But prevent to insert the msg_id for Trap commands!
   auto trap_cmd = message.find(" T");
   if (trap_cmd == std::string::npos)
   {
-    msg_id = ++msg_id % INVALID_ID;
     msg_id_str = fmt::format("{}", (msg_id));
+  }
+  else
+  {
+    msg_id_str.clear();
   }
   std::string msg = insertAfterFirstWord(message, msg_id_str);
 

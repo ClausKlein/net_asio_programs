@@ -37,8 +37,8 @@ namespace
 // see https://datatracker.ietf.org/doc/html/rfc4648#section-10
 struct testpattern_t
 {
-  const char *bin_;
-  const char *encoded_;
+  const char* bin_;
+  const char* encoded_;
 } testpattern[] = {  //
     {"", ""},  //
     {"f", "Zg=="},  //
@@ -286,7 +286,7 @@ TEST(Base64Test, RandomBinaryData)
 }
 #endif
 
-auto main(int argc, char **argv) -> int
+auto main(int argc, char** argv) -> int
 {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

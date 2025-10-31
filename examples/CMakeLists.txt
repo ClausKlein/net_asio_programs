@@ -1,15 +1,17 @@
-cmake_minimum_required(VERSION 3.25...4.0)
+cmake_minimum_required(VERSION 3.25...4.2)
 
-project(Base64-examples VERSION 0.1.0 LANGUAGES CXX)
+project(Base64-examples VERSION 0.1.1 LANGUAGES CXX)
 
-find_package(Poco 1.14 COMPONENTS Foundation REQUIRED)
 find_package(Threads)
 
+find_package(Poco 1.14 COMPONENTS Foundation REQUIRED)
+
 if(NOT TARGET Boost::headers)
-    find_package(Boost 1.71 COMPONENTS headers REQUIRED HINTS $ENV{HOME}/.local)
+    find_package(Boost)
 endif()
+
 if(NOT TARGET fmt::fmt-header-only)
-    find_package(fmt 11 REQUIRED HINTS $ENV{HOME}/.local)
+    find_package(fmt 12 REQUIRED HINTS $ENV{HOME}/.local)
 endif()
 
 enable_testing()
@@ -51,6 +53,9 @@ if(APPLE AND NOT ENABLE_TEST_COVERAGE)
     do_test(async_tcp_client --help Usage)
 
     add_executable(blocking_tcp_echo_server blocking_tcp_echo_server.cpp)
-    target_link_libraries(blocking_tcp_echo_server PUBLIC Boost::headers)
-    # FIXME: do_test(blocking_tcp_echo_server port Usage)
+    target_link_libraries(
+        blocking_tcp_echo_server
+        PUBLIC Threads::Threads Boost::headers
+    )
+    # TODO(CK): do_test(blocking_tcp_echo_server port Usage)
 endif()

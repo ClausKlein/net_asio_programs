@@ -1,29 +1,37 @@
 ---
 Checks: "-*,\
 bugprone-*,\
--bugprone-reserved-identifier,\
+bugprone-reserved-identifier,\
+-bugprone-exception-escape,\
+-bugprone-unused-return-value,\
 boost-*,\
+-boost-use-ranges,\
 cert-*,\
+-cert-err33-c,\
+-cert-err58-cpp,\
 clang-analyzer-*,\
 -clang-analyzer-unix.BlockInCriticalSection,\
 cppcoreguidelines-*,\
 -cppcoreguidelines-avoid-*,\
 -cppcoreguidelines-init-variables,\
 -cppcoreguidelines-macro-*,\
+-cppcoreguidelines-narrowing-conversions,\
 -cppcoreguidelines-owning-memory,\
 -cppcoreguidelines-prefer-member-initializer,\
 -cppcoreguidelines-pro-bounds-pointer-arithmetic,\
+-cppcoreguidelines-pro-type-reinterpret-cast,\
 hicpp-*,\
 misc-*,\
 -misc-const-correctness,\
 -misc-include-cleaner,\
 -misc-no-recursion,\
 modernize-*,\
--modernize-avoid-bind,\
 -modernize-macro-to-enum,\
+-modernize-use-designated-initializers,\
 performance-*,\
 -performance-enum-size,\
 portability-*,\
+-portability-avoid-pragma-once,\
 readability-*,\
 readability-identifier-length,\
 readability-identifier-naming,\
@@ -46,4 +54,3 @@ CheckOptions:
   - { key: readability-identifier-length.MinimumParameterNameLength,  value: 1 }
   - { key: hicpp-signed-bitwise.IgnorePositiveIntegerLiterals, value: true }
 ...
-

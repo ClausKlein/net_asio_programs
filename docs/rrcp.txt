@@ -1,0 +1,27 @@
+// GET-request TU SET-request TU GET-request TU:
+M:Test GFRQ;MOD SFRQ10000000;MOD13;BW80000 GFRQ;MOD
+
+// GET-response TU SET-response TU GET-response TU:
+gFRQ18000000;MOD12 sBW gFRQ18000000;MOD12
+// NOTE:
+// There is an error within the BW command, the complete SET-request TU is cancelled.
+// The GET-request TU is replied by the corresponding GET-response TU.
+
+M:WF.FF.Main 123456 T Octet 1   // TRAP command with optional message number, but without Logical Address:
+123456 t                        // TRAP acknowlage
+M:Bit L:1 123456 G Octet
+M:Audio SOctet    // SET without optionl parts
+M:Radio SString"\rHallo\t\"World\"\n"   // quoted string with escape chars
+M:Log SStruct1,-1,3.14   // multiple parameters
+
+M:MultilCmd S Octet 1;Long-1;String"Hallo World\r\n";Struct 1,+1,+3.14   // multiple commands's
+
+M:Test 123456 S FREQ123456;MOD12;BW80000 G FREQ;MOD;STATUS    // multiple TU with GET and SET!
+123456 gFREQ180000;MOD12 s5BW gFREQ180000;MOD12;STATUS"Running"   // TU partly failed!
+
+M:RADIO S FREQUENCY 123456789
+E:12  // MU error
+M:RADIO 112368 T FREQUENCY 1
+112368 t
+112368 d FREQUENCY 123456789 // trap data
+M:Utility S Binary #36:AAECAwQFBgcICQoLDA0OD8KAwoHDvsO/Cg==   // bas64 encoded binary data
