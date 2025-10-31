@@ -28,7 +28,7 @@ jobs:
         with: { python-version: "3.13" }
 
       - name: Install Boost
-        run: apt-get update && apt-get install -y libboost-all-dev || echo ignored
+        run: apt-get update -qq && apt-get install -y -qq libboost-all-dev
 
       - name: Setup Cpp
         uses: aminya/setup-cpp@v1
@@ -43,4 +43,6 @@ jobs:
           CXX: g++-${{ matrix.version }}
         run: |
           export PATH=$HOME/.local/bin:$PATH
-          PRESET_NAME=gcc-release make all
+          cmake --workflow --preset gcc-release
+          gcovr
+          # PRESET_NAME=gcc-release make all
