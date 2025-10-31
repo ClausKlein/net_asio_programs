@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.25...4.2)
 
-project(RRCP-client VERSION 0.1.1 LANGUAGES CXX)
+project(RRCP-client VERSION 0.2.0.2 LANGUAGES CXX)
 
 # ---- add dependencies ----
 
