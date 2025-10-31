@@ -10,7 +10,7 @@ set(BOOST_INCLUDE_LIBRARIES algorithm asio beast signals2)
 
 # see too: https://cmake.org/cmake/help/latest/module/FindBoost.html
 set(Boost_DEBUG ON)
-find_package(Boost 1.87) # XXX COMPONENTS ${BOOST_INCLUDE_LIBRARIES} HINTS $ENV{HOME}/.local)
+find_package(Boost CONFIG) # XXX COMPONENTS ${BOOST_INCLUDE_LIBRARIES} HINTS $ENV{HOME}/.local)
 if(Boost_FOUND)
     set(BOOST_LIBRARIES Boost::headers)
 else()
