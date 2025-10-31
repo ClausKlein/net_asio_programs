@@ -1,29 +1,48 @@
-cmake_minimum_required(VERSION 3.25...4.0)
+cmake_minimum_required(VERSION 3.25...4.2)
 
 project(RRCP-client VERSION 0.1.1 LANGUAGES CXX)
 
 # ---- add dependencies ----
 
-include(FetchContent)
-
 find_package(Threads)
-if(NOT TARGET Boost::headers)
-    find_package(
-        Boost
-        1.71
-        COMPONENTS headers signals2
-        REQUIRED
-        HINTS $ENV{HOME}/.local
-    )
+
+set(BOOST_INCLUDE_LIBRARIES algorithm asio beast signals2)
+
+# see too: https://cmake.org/cmake/help/latest/module/FindBoost.html
+set(Boost_DEBUG ON)
+find_package(Boost 1.87) # XXX COMPONENTS ${BOOST_INCLUDE_LIBRARIES} HINTS $ENV{HOME}/.local)
+if(Boost_FOUND)
+    set(BOOST_LIBRARIES Boost::headers)
+else()
+    include(cmake/CPM.cmake)
+
+    set(BOOST_LIBRARIES ${BOOST_INCLUDE_LIBRARIES})
+    list(TRANSFORM BOOST_LIBRARIES PREPEND Boost::)
+
+    if(NOT TARGET Boost::headers)
+        #
+        # build only the requested Boost components
+        #
+        cpmaddpackage(
+          NAME boost-cmake
+          VERSION 1.87.0.6
+          GIT_TAG v1.87.0-rc6
+          GITHUB_REPOSITORY ClausKlein/boost-cmake
+          EXCLUDE_FROM_ALL NO
+          SYSTEM YES
+        )
+    endif()
 endif()
+
+include(FetchContent)
 
 FetchContent_Declare(
     fmt
-    GIT_TAG 11.2.0
+    GIT_TAG 12.0.0
     GIT_REPOSITORY https://github.com/fmtlib/fmt.git
     EXCLUDE_FROM_ALL
     SYSTEM
-    FIND_PACKAGE_ARGS 11.2.0 NAMES fmt HINTS $ENV{HOME}/.local
+    FIND_PACKAGE_ARGS 12.0.0 NAMES fmt HINTS $ENV{HOME}/.local
 )
 
 FetchContent_MakeAvailable(fmt)
@@ -34,19 +53,16 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     if(APPLE)
         execute_process(
             OUTPUT_VARIABLE LLVM_PREFIX
-            COMMAND brew --prefix llvm@20
+            COMMAND brew --prefix llvm
             COMMAND_ECHO STDOUT
         )
         string(STRIP ${LLVM_PREFIX} LLVM_PREFIX)
-        set(CMAKE_CXX_STANDARD 20)
     elseif(LINUX)
         set(LLVM_PREFIX $ENV{LLVM_ROOT})
     endif()
 
     add_compile_options(-fexperimental-library)
     add_link_options(-L${LLVM_PREFIX}/lib/c++ -lc++experimental)
-else()
-    set(CMAKE_CXX_STANDARD 17)
 endif()
 
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -61,7 +77,7 @@ option(
     "Compile with test-coverage flags"
     ${PROJECT_IS_TOP_LEVEL}
 )
-if(ENABLE_TEST_COVERAGE AND CMAKE_BUILD_TYPE STREQUAL Debug)
+if(UNIX AND ENABLE_TEST_COVERAGE AND CMAKE_BUILD_TYPE STREQUAL Debug)
     message(WARNING "ENABLE_TEST_COVERAGE is set!")
     add_compile_options(-O0 -g -fprofile-arcs -ftest-coverage)
     add_link_options(-fprofile-arcs -ftest-coverage)
@@ -82,55 +98,102 @@ function(do_test target arg result)
     endif()
 endfunction()
 
-# ---- server needed for tests ----
+# ---- echo server needed for tests ----
 
 add_executable(async_tcp_echo_server examples/async_tcp_echo_server.cpp)
 target_link_libraries(
     async_tcp_echo_server
-    PUBLIC Threads::Threads Boost::headers
+    PUBLIC Threads::Threads ${BOOST_LIBRARIES}
 )
 do_test(async_tcp_echo_server "" port)
 
 # ---- rrcp class sources and helpers as a library ----
 
+find_program(
+    PYTHON_EXECUTABLE
+    NAMES python3 python
+    REQUIRED
+    HINTS $ENV{VIRTUAL_ENV}/bin
+)
+
 add_library(rrcp_helper STATIC)
 target_sources(
     rrcp_helper
     PRIVATE rrcp_helper.cpp
-    PUBLIC FILE_SET HEADERS FILES async_rrcp_client.hpp rrcp_helper.hpp
+    PUBLIC
+        FILE_SET
+            HEADERS #
+            FILES
+                async_rrcp_client.hpp
+                async_rrcp_client_threadsafe.hpp
+                rrcp_helper.hpp
 )
 target_link_libraries(
     rrcp_helper
-    PUBLIC Threads::Threads Boost::headers fmt::fmt-header-only
+    PUBLIC Threads::Threads ${BOOST_LIBRARIES} fmt::fmt-header-only
 )
 
-add_executable(async_tcp_echo_client examples/async_tcp_echo_client.cpp)
-target_link_libraries(async_tcp_echo_client PRIVATE rrcp_helper)
-do_test(async_tcp_echo_client --help Usage)
+# ---- simple rrcp client class usage examples ----
 
-add_executable(blocking_tcp_echo_client examples/blocking_tcp_echo_client.cpp)
-target_link_libraries(blocking_tcp_echo_client PRIVATE rrcp_helper)
-do_test(blocking_tcp_echo_client --help Usage)
+if(BUILD_EXAMPLES AND NOT ENABLE_TEST_COVERAGE)
+    add_executable(async_tcp_echo_client examples/async_tcp_echo_client.cpp)
+    target_link_libraries(async_tcp_echo_client PRIVATE rrcp_helper)
+    do_test(async_tcp_echo_client --help Usage)
+    add_test(
+        NAME async_tcp_echo_client_test
+        COMMAND
+            ${PYTHON_EXECUTABLE} #
+            ${CMAKE_CURRENT_SOURCE_DIR}/run_test.py #
+            --client $<TARGET_FILE:async_tcp_echo_client> #
+            --server $<TARGET_FILE:async_tcp_echo_server>
+    )
 
-add_executable(rrcp_client rrcp_client.cpp rrcp_message.hpp)
-target_link_libraries(rrcp_client PRIVATE rrcp_helper)
-do_test(rrcp_client --help Usage)
+    add_executable(
+        blocking_tcp_echo_client
+        examples/blocking_tcp_echo_client.cpp
+    )
+    target_link_libraries(blocking_tcp_echo_client PRIVATE rrcp_helper)
+    do_test(blocking_tcp_echo_client --help Usage)
 
-if(APPLE AND BUILD_EXAMPLES)
+    add_executable(rrcp_client rrcp_client.cpp rrcp_message.hpp)
+    target_link_libraries(rrcp_client PRIVATE rrcp_helper)
+    do_test(rrcp_client --help Usage)
+
     # TODO(CK): mv to examples too!
     add_executable(timer timer.cpp)
     target_link_libraries(
         timer
-        PUBLIC Threads::Threads Boost::headers fmt::fmt-header-only
+        PUBLIC Threads::Threads ${BOOST_LIBRARIES} fmt::fmt-header-only
     )
     add_test(NAME timer COMMAND timer)
 endif()
 
-# ---- rrcp client class usage examples main  ----
+# ---- theadsafe rrcp client class usage examples main  ----
+
+add_executable(rrcp_async_tcp_client_threadsafe rrcp_async_tcp_client.cpp)
+target_link_libraries(rrcp_async_tcp_client_threadsafe PRIVATE rrcp_helper)
+do_test(rrcp_async_tcp_client_threadsafe --help Usage)
+add_test(
+    NAME async_tcp_echo_client_threadsafe_test
+    COMMAND
+        ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/run_test.py #
+        --client $<TARGET_FILE:rrcp_async_tcp_client_threadsafe> #
+        --server $<TARGET_FILE:async_tcp_echo_server> #
+        --input ${CMAKE_CURRENT_SOURCE_DIR}/rrcp.txt #
+)
 
 add_executable(rrcp_async_tcp_client rrcp_async_tcp_client.cpp)
 target_link_libraries(rrcp_async_tcp_client PRIVATE rrcp_helper)
+target_compile_definitions(rrcp_async_tcp_client PRIVATE USE_SIMPLE_RRCP_CLIENT)
 do_test(rrcp_async_tcp_client --help Usage)
+add_test(
+    NAME async_tcp_echo_client_test
+    COMMAND
+        ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/run_test.py #
+        --client $<TARGET_FILE:rrcp_async_tcp_client> #
+        --server $<TARGET_FILE:async_tcp_echo_server> #
+        --input ${CMAKE_CURRENT_SOURCE_DIR}/rrcp.txt #
+)
 
 if(BUILD_TESTING)
     add_subdirectory(tests)

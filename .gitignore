@@ -1,5 +1,7 @@
+*.log
+.*swp
+/CMakeUserPresets.json
+CODEOWNERS
 build/
 coverage/*
 tags
-.*swp
-*.log

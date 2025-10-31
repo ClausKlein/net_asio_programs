@@ -14,6 +14,7 @@
 
 #include <fmt/format.h>
 
+#include <atomic>
 #include <boost/algorithm/string/predicate.hpp>  // for starts_with
 #include <boost/algorithm/string/trim.hpp>  // for trim_left, trim_right
 #include <boost/asio/buffer.hpp>
@@ -64,7 +65,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
     check_deadline();
 
     boost::asio::async_connect(socket_, endpoints,
-        [self = shared_from_this()](const boost::system::error_code& ec, const tcp::endpoint&)
+        [self = shared_from_this()](const boost::system::error_code& ec, const tcp::endpoint&) -> void
         {
           if (!ec)
           {
@@ -97,18 +98,21 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
       {
         return {};
       }
+
       fmt::print(stderr, "Client is not connected yet.\n");  // TRACE
       std::this_thread::sleep_for(TIMEOUT_DURATION);
     }
 
     std::string msg_id_str;
+    msg_id_ = ++msg_id_ % INVALID_ID;
     auto command = rrcp::create_command_msg(message, msg_id_str, msg_id_);
 
     boost::asio::post(io_context_,
-        [this, command]()
+        [this, command]() -> void
         {
           bool const write_in_progress{!write_msgs_.empty()};
           write_msgs_.push_back(command);
+
           if (!write_in_progress)
           {
             deadline_.expires_after(TIMEOUT_DURATION);
@@ -123,11 +127,12 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
   auto read(const std::string& msg_id) -> std::string
   {
     std::string response;
+    auto count = TIMEOUT_DURATION / 125ms;
 
     do
     {
       boost::asio::post(io_context_,
-          [this, &response]()
+          [this, &response]() -> void
           {
             if (!read_msgs_.empty())
             {
@@ -145,27 +150,41 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
         }
       }
       std::this_thread::sleep_for(125ms);
-    } while (!stopped_);
+    } while (!stopped_ && --count);
+    if (!count)
+    {
+      fmt::print(stderr, "Error: Timeout read!\n");
+    }
 
     return response;
   }
 
   void stop()
   {
-    fmt::print(stderr, "Stopped, disconnecting ...\n");
-    stopped_ = true;
-    connected_ = false;
-    boost::system::error_code ec;
-    socket_.close(ec);
-    heartbeat_timer_.cancel();
-    deadline_.cancel();
+    if (stopped_)
+    {
+      return;
+    }
+
+    boost::asio::post(io_context_,
+        [this, self = shared_from_this()]() -> void
+        {
+          fmt::print(stderr, "Stopped, disconnecting ...\n");
+          stopped_ = true;
+          connected_ = false;
+
+          boost::system::error_code ec;
+          socket_.close(ec);
+          heartbeat_timer_.cancel();
+          deadline_.cancel();
+        });
   }
 
  private:
   void do_read()
   {
     boost::asio::async_read_until(socket_, boost::asio::dynamic_buffer(input_buffer_), STOP,
-        [self = shared_from_this()](const boost::system::error_code& ec, std::size_t length)
+        [self = shared_from_this()](const boost::system::error_code& ec, std::size_t length) -> void
         {
           if (!ec)
           {
@@ -176,6 +195,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
 
             // TODO(CK): maby refactored to helper class?
             //========================== RRCP ============================
+            // Process different message types
             if (boost::algorithm::starts_with(line, "d"))  // Trap data message
             {
               // Handle trap data messages
@@ -195,7 +215,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
           }
           else
           {
-            fmt::print(stderr, "Error reading message: {}\n", ec.message());
+            fmt::print(stderr, "Error: reading message: {}\n", ec.message());
             self->stop();
           }
         });
@@ -204,7 +224,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
   void do_write()
   {
     boost::asio::async_write(socket_, boost::asio::buffer(write_msgs_.front()),
-        [self = shared_from_this()](boost::system::error_code ec, std::size_t /*length*/)
+        [self = shared_from_this()](boost::system::error_code ec, std::size_t /*length*/) -> void
         {
           if (!ec)
           {
@@ -217,7 +237,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
           else
           {
             // There are no more endpoints to try. Shut down the client.
-            fmt::print(stderr, "Error writing message: {}\n", ec.message());
+            fmt::print(stderr, "Error: writing message: {}\n", ec.message());
             self->stop();
           }
         });
@@ -236,16 +256,17 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
 
     fmt::print(stderr, "Send heartbeat: {}\n", heartbeat_message);  // TRACE
     boost::asio::async_write(socket_, boost::asio::buffer(heartbeat_message),
-        [self = shared_from_this()](const boost::system::error_code& ec, std::size_t)
+        [self = shared_from_this()](const boost::system::error_code& ec, std::size_t) -> void
         {
           if (!ec)
           {
             self->heartbeat_timer_.expires_after(HEARTBEAT_INTERVAL);
-            self->heartbeat_timer_.async_wait([self](const boost::system::error_code&) { self->send_heartbeat(); });
+            self->heartbeat_timer_.async_wait(
+                [self](const boost::system::error_code&) -> void { self->send_heartbeat(); });
           }
           else
           {
-            fmt::print(stderr, "Error sending heartbeat: {}\n", ec.message());
+            fmt::print(stderr, "Error: sending heartbeat: {}\n", ec.message());
             self->stop();
           }
         });
@@ -265,19 +286,26 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
       return;
     }
 
-    deadline_.async_wait([self = shared_from_this()](const boost::system::error_code&) { self->check_deadline(); });
+    deadline_.async_wait(
+        [self = shared_from_this()](const boost::system::error_code&) -> void { self->check_deadline(); });
   }
 
   boost::asio::io_context& io_context_;
   tcp::socket socket_;
   boost::asio::steady_timer deadline_;
   boost::asio::steady_timer heartbeat_timer_;
+
+  // I/O buffers (protected by io_context)
   std::string input_buffer_;
   message_queue read_msgs_;
   message_queue write_msgs_;
-  int msg_id_{10000};
-  bool connected_{false};
-  bool stopped_{false};
+
+  // Thread-safe state
+  std::atomic< bool > connected_{false};
+  std::atomic< bool > stopped_{false};
+  std::atomic< int > msg_id_{10000};
+
+  // Signal handling
   signal_string_type trap_handler_;
 };
 

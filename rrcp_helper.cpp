@@ -141,15 +141,22 @@ auto rrcp::find_response_msg(std::string& response, const std::string& msg_id) -
   return false;
 }
 
-extern auto rrcp::create_command_msg(const std::string& message, std::string& msg_id_str, int& msg_id) -> std::string
+auto rrcp::create_command_msg(const std::string& message, std::string& msg_id_str, int msg_id) -> std::string
 {
+  if (msg_id >= INVALID_ID)
+  {
+    msg_id = 1;
+  }
   // Insert the next message number for Set/Get request.
   // But prevent to insert the msg_id for Trap commands!
   auto trap_cmd = message.find(" T");
   if (trap_cmd == std::string::npos)
   {
-    msg_id = ++msg_id % INVALID_ID;
     msg_id_str = fmt::format("{}", (msg_id));
+  }
+  else
+  {
+    msg_id_str.clear();
   }
   std::string msg = insertAfterFirstWord(message, msg_id_str);
 

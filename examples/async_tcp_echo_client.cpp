@@ -44,12 +44,12 @@ class asynchronous_tcp_client : public std::enable_shared_from_this< asynchronou
   : io_context_(io_context), resolver_(io_context), socket_(io_context), timer_(io_context)
   {
     resolver_.async_resolve(host, port,
-        [this](boost::system::error_code ec, const tcp::resolver::results_type& results)
+        [this](boost::system::error_code ec, const tcp::resolver::results_type& results) -> void
         {
           if (!ec)
           {
             boost::asio::async_connect(socket_, results,
-                [this](boost::system::error_code ec, const tcp::endpoint&)
+                [this](boost::system::error_code ec, const tcp::endpoint&) -> void
                 {
                   if (!ec)
                   {
@@ -81,7 +81,7 @@ class asynchronous_tcp_client : public std::enable_shared_from_this< asynchronou
     }
 
     boost::asio::post(io_context_,
-        [this, message]()
+        [this, message]() -> void
         {
           bool const write_in_progress{!write_msgs_.empty()};
           write_msgs_.push_back(message);
@@ -109,7 +109,7 @@ class asynchronous_tcp_client : public std::enable_shared_from_this< asynchronou
   {
     auto self(shared_from_this());
     boost::asio::async_write(socket_, boost::asio::buffer(write_msgs_.front()),
-        [this, self](boost::system::error_code ec, std::size_t /*length*/)
+        [this, self](boost::system::error_code ec, std::size_t /*length*/) -> void
         {
           if (!ec)
           {
@@ -141,7 +141,7 @@ class asynchronous_tcp_client : public std::enable_shared_from_this< asynchronou
     {
       timer_.expires_after(TIMEOUT_DURATION);
       timer_.async_wait(
-          [this, self](const boost::system::error_code& ec)
+          [this, self](const boost::system::error_code& ec) -> void
           {
             if (!ec)
             {
@@ -152,7 +152,7 @@ class asynchronous_tcp_client : public std::enable_shared_from_this< asynchronou
     }
 
     boost::asio::async_read_until(socket_, boost::asio::dynamic_buffer(data_), STOP,
-        [this, self](boost::system::error_code ec, std::size_t length)
+        [this, self](boost::system::error_code ec, std::size_t length) -> void
         {
           timer_.cancel();
           if (!ec)
@@ -207,7 +207,7 @@ auto main(int argc, char* argv[]) -> int
 
     auto client = std::make_shared< asynchronous_tcp_client >(io_context, argv[1], argv[2]);
 
-    std::thread io_thread([&io_context]() { io_context.run(); });
+    std::thread io_thread([&io_context]() -> void { io_context.run(); });
 
     for (std::string line; std::getline(std::cin, line); fmt::print(stderr, "Enter command: "))
     {
