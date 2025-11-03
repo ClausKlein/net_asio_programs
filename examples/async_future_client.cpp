@@ -10,6 +10,8 @@
  * Moderniced from Claus Klein and ChatGPT
  ***/
 
+#include <fmt/format.h>
+
 #include <atomic>
 #include <boost/asio.hpp>
 #include <cstdlib>
@@ -18,7 +20,6 @@
 #include <limits>
 #include <map>
 #include <mutex>
-#include <print>
 #include <string>
 #include <thread>
 #include <vector>
@@ -53,16 +54,16 @@
 using namespace std::chrono_literals;
 using boost::asio::ip::tcp;
 
-struct Response
+struct response
 {
-  std::string msg_num;
-  std::vector< uint8_t > data;
+  std::string msg_num_;
+  std::vector< uint8_t > data_;
 };
 
-class AsyncFutureClient
+class async_future_client
 {
  public:
-  AsyncFutureClient(boost::asio::io_context& ctx, const std::string& host, const std::string& port)
+  async_future_client(boost::asio::io_context& ctx, const std::string& host, const std::string& port)
   : io_context_(ctx), resolver_(ctx), socket_(ctx)
   {
     resolver_.async_resolve(host, port,
@@ -75,7 +76,7 @@ class AsyncFutureClient
                 {
                   if (!ec)
                   {
-                    std::print(stderr, "Connected to server.\n");
+                    fmt::print(stderr, "Connected to server.\n");
                     connected_ = true;
                     do_read_length();
                   }
@@ -89,10 +90,24 @@ class AsyncFutureClient
         });
   }
 
-  std::future< Response > send_request(const std::vector< uint8_t >& payload)
+  auto send_request(const std::vector< uint8_t >& payload) -> std::future< response >
   {
+#ifdef HAS_ATOMIC_THREAD_FENCE
+    // see https://en.cppreference.com/w/cpp/atomic/atomic_thread_fence.html
     uint16_t num = msg_counter_.fetch_add(1, std::memory_order_relaxed) % std::numeric_limits< uint16_t >::max();
-    std::string msg_num = std::format("{:05}", num);  // 5-digit ASCII message number
+#else
+    uint16_t num{};
+    {
+      //===========================
+      std::scoped_lock lock(map_mutex_);
+      num = msg_counter_ + 1;
+      num = num % std::numeric_limits< uint16_t >::max();
+      msg_counter_ = num;
+      //===========================
+    }
+#endif
+
+    std::string msg_num = fmt::format("{:05}", num);  // 5-digit ASCII message number
 
     // Build message body: msg_num + payload
     std::vector< uint8_t > body;
@@ -100,13 +115,13 @@ class AsyncFutureClient
     body.insert(body.end(), payload.begin(), payload.end());
 
     // Prepend 4-byte ASCII length
-    std::string len_str = std::format("{:04}", body.size());
+    std::string len_str = fmt::format("{:04}", body.size());
     std::vector< uint8_t > full_msg;
     full_msg.insert(full_msg.end(), len_str.begin(), len_str.end());
     full_msg.insert(full_msg.end(), body.begin(), body.end());
 
     //===========================
-    std::promise< Response > prom;
+    std::promise< response > prom;
     auto fut = prom.get_future();
     {
       std::scoped_lock lock(map_mutex_);
@@ -115,17 +130,17 @@ class AsyncFutureClient
     //===========================
 
     size_t counter{4};
-    while (!connected_ && --counter)
+    while (!connected_ && (--counter != 0U))
     {
       if (stopped_)
       {
         return fut;
       }
-      std::print(stderr, "Client is not connected yet.\n");
+      fmt::print(stderr, "Client is not connected yet.\n");
       std::this_thread::sleep_for(250ms);  // NOLINT(misc-include-cleaner)
     }
 
-    std::print("Send msg ({}): {}\n", msg_num, std::string(full_msg.begin(), full_msg.end()));
+    fmt::print("Send msg ({}): {}\n", msg_num, std::string(full_msg.begin(), full_msg.end()));
 
     boost::asio::async_write(socket_, boost::asio::buffer(full_msg),
         [this, msg_num](std::error_code ec, std::size_t /*n*/)
@@ -181,7 +196,7 @@ class AsyncFutureClient
           }
           else
           {
-            std::print(stderr, "Read length error: {} {}\n", __func__, ec.message());
+            fmt::print(stderr, "Read length error: do_read_length() {}\n", ec.message());
             // XXX std::runtime_error(ec.message());
             // There are no more endpoints to try. Silently shut down the client.
             stop();
@@ -193,7 +208,7 @@ class AsyncFutureClient
   {
     body_buf_.resize(msg_len);
     boost::asio::async_read(socket_, boost::asio::buffer(body_buf_),
-        [this](std::error_code ec, std::size_t /*n*/)
+        [this, msg_len](std::error_code ec, std::size_t /*n*/)
         {
           if (!ec && body_buf_.size() >= 5)
           {
@@ -204,7 +219,7 @@ class AsyncFutureClient
           }
           else if (ec)
           {
-            std::print(stderr, "Read body error: {} {}\n", __func__, ec.message());
+            fmt::print(stderr, "Read body error: do_read_body({}) {}\n", msg_len, ec.message());
             std::runtime_error(ec.message());
           }
         });
@@ -217,7 +232,7 @@ class AsyncFutureClient
     auto it = pending_.find(msg_num);
     if (it != pending_.end())
     {
-      it->second.set_value(Response{msg_num, std::move(data)});
+      it->second.set_value(response{msg_num, std::move(data)});
       pending_.erase(it);
     }
     //===========================
@@ -228,21 +243,27 @@ class AsyncFutureClient
   tcp::socket socket_;
   std::array< char, 4 > len_buf_{};
   std::vector< uint8_t > body_buf_;
+
+#ifdef HAS_ATOMIC_THREAD_FENCE
   std::atomic< uint16_t > msg_counter_{0};
+#else
+  uint16_t msg_counter_{0};
+#endif
+
   std::atomic< bool > connected_{false};
   std::atomic< bool > stopped_{false};
 
   //===========================
   std::mutex map_mutex_;
-  std::map< std::string, std::promise< Response > > pending_;
+  std::map< std::string, std::promise< response > > pending_;
   //===========================
 };
 
-int main(int argc, char* argv[])
+auto main(int argc, char* argv[]) -> int
 {
   if (argc != 3)
   {
-    std::print("Usage: {} <host> <port>\n", argv[0]);
+    fmt::print("Usage: {} <host> <port>\n", argv[0]);
     return EXIT_FAILURE;
   }
 
@@ -253,7 +274,7 @@ int main(int argc, char* argv[])
   {
     boost::asio::io_context ctx;
     tcp::resolver resolver(ctx);
-    AsyncFutureClient client(ctx, host, port);
+    async_future_client client(ctx, host, port);
 
     std::jthread io_thread([&ctx] { ctx.run(); });
 
@@ -265,11 +286,11 @@ int main(int argc, char* argv[])
       if (fut.wait_for(std::chrono::seconds(3)) == std::future_status::ready)
       {
         auto resp = fut.get();
-        std::print("Received response ({}): {}\n", resp.msg_num, std::string(resp.data.begin(), resp.data.end()));
+        fmt::print("Received response ({}): {}\n", resp.msg_num_, std::string(resp.data_.begin(), resp.data_.end()));
       }
       else
       {
-        std::print(stderr, "Timeout waiting for response\n");
+        fmt::print(stderr, "Timeout waiting for response\n");
         break;
       }
     } while (true);
@@ -278,7 +299,7 @@ int main(int argc, char* argv[])
   }
   catch (const std::exception& ex)
   {
-    std::print(stderr, "Exception: {}\n", ex.what());
+    fmt::print(stderr, "Exception: {}\n", ex.what());
     return EXIT_FAILURE;
   }
 

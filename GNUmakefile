@@ -46,10 +46,10 @@ $(BUILD_DIR): CMakeLists.txt
 	cmake --preset $(PRESET_NAME) --log-level=VERBOSE  # --fresh
 	# -test -d build/Debug && ln -f -s $(CURDIR)/build/Debug $(CURDIR)/$(BUILD_DIR)
 
-check: all
+check: $(BUILD_DIR) # XXX all
 	run-clang-tidy -p $(BUILD_DIR) $(CPPFILES)
 
-fix: all
+fix: $(BUILD_DIR)  # XXX all
 	run-clang-tidy -p $(BUILD_DIR) -fix -checks='-*,\
 hicpp-explicit-conversions,\
 hicpp-member-init,\
@@ -86,7 +86,8 @@ test: all
 	# -$(BUILD_DIR)/ async_tcp_echo_client localhost
 	# -echo | $(BUILD_DIR)/async_tcp_echo_client localhost 8001
 	# -killall async_tcp_echo_server
-	ctest --test-dir $(BUILD_DIR) --rerun-failed --output-on-failure
+	ctest --test-dir $(BUILD_DIR) --rerun-failed --output-on-failure --repeat-until-fail 9
+	ctest --test-dir $(BUILD_DIR) -R rrcp_async_tcp_client-threadsafe-test --repeat-until-fail 9
 	gcovr
 
 format: .clang-format

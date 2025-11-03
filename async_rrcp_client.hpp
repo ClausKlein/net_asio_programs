@@ -150,8 +150,8 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
         }
       }
       std::this_thread::sleep_for(125ms);
-    } while (!stopped_ && --count);
-    if (!count)
+    } while (!stopped_ && (--count != 0));
+    if (count == 0)
     {
       fmt::print(stderr, "Error: Timeout read!\n");
     }

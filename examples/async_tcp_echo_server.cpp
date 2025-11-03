@@ -101,7 +101,7 @@ class session : public std::enable_shared_from_this< session >
         });
   }
 
-  static std::size_t gen_random(std::size_t input)
+  static auto gen_random(std::size_t input) -> std::size_t
   {
     static std::random_device rd;  // a seed source for the random number engine
     static std::mt19937 gen(rd());  // mersenne_twister_engine seeded with rd()
