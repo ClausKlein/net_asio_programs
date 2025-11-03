@@ -12,6 +12,7 @@
 
 #include <fmt/format.h>
 
+#include <atomic>
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/asio.hpp>
 #include <boost/asio/steady_timer.hpp>
@@ -97,11 +98,19 @@ class asynchronous_tcp_client : public std::enable_shared_from_this< asynchronou
   // response to graceful termination or an unrecoverable error.
   void stop()
   {
-    boost::system::error_code ignored_error;
-    socket_.close(ignored_error);
-    timer_.cancel();
-    connected_ = true;
-    stopped_ = true;
+    if (stopped_)
+    {
+      return;
+    }
+    boost::asio::post(io_context_,
+        [this, self = shared_from_this()]() -> void
+        {
+          stopped_ = true;
+          connected_ = false;
+          boost::system::error_code ignored_error;
+          socket_.close(ignored_error);
+          timer_.cancel();
+        });
   }
 
  private:
@@ -188,8 +197,8 @@ class asynchronous_tcp_client : public std::enable_shared_from_this< asynchronou
   boost::asio::steady_timer timer_;
   std::string data_;
   message_queue write_msgs_;
-  bool connected_{false};
-  bool stopped_{false};
+  std::atomic< bool > connected_{false};
+  std::atomic< bool > stopped_{false};
 };
 
 // NOLINTNEXTLINE(bugprone-exception-escape)
