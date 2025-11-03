@@ -92,8 +92,23 @@ auto main(int argc, char* argv[]) -> int
         continue;
       }
 
+#if defined(USE_SIMPLE_RRCP_CLIENT) && !defined(USE_OLD_WRITE)
+      client->async_write_message(line,
+          [](const boost::system::error_code& ec, const std::string& response)
+          {
+            if (!ec)
+            {
+              fmt::print("Received response: {}\n", response);
+            }
+            else
+            {
+              fmt::print("Error: {}\n", ec.message());
+            }
+          });
+#else
       const auto response = client->write(line);
       fmt::print("{}\n", response);
+#endif
     }
     std::this_thread::sleep_for(HEARTBEAT_INTERVAL);  // NOTE: only for gcov results! CK
 
