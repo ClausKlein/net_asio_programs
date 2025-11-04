@@ -22,6 +22,7 @@
 #include <map>
 #include <mutex>
 #include <string>
+#include <string_view>
 #include <thread>
 #include <vector>
 
@@ -150,19 +151,25 @@ class async_future_client : public std::enable_shared_from_this< async_future_cl
       std::this_thread::sleep_for(125ms * counter);
     }
 
-    fmt::print("Send msg ({}): {}\n", msg_num, std::string(full_msg.begin(), full_msg.end()));
+    fmt::print("Send msg ({})\n", std::string(full_msg.begin(), full_msg.end()));
 
     boost::asio::async_write(socket_, boost::asio::buffer(full_msg),
-        [this, msg_num](std::error_code ec, std::size_t /*n*/)
+        [this, msg_num](std::error_code ec, std::size_t /*n*/) -> void
         {
           if (ec)
           {
+            fmt::print(stderr, "Write Error: send_request({}) {}\n", msg_num, ec.message());
+
             std::scoped_lock lock(map_mutex_);
             auto it = pending_.find(msg_num);
             if (it != pending_.end())
             {
               it->second.set_exception(std::make_exception_ptr(std::runtime_error(ec.message())));
               pending_.erase(it);
+            }
+            else
+            {
+              fmt::print(stderr, "Error: num not found at send_request({}) !\n", msg_num);
             }
           }
         });
@@ -223,7 +230,7 @@ class async_future_client : public std::enable_shared_from_this< async_future_cl
   void do_read_length()
   {
     boost::asio::async_read(socket_, boost::asio::buffer(len_buf_),
-        [this](std::error_code ec, std::size_t /*n*/)
+        [this](std::error_code ec, std::size_t /*n*/) -> void
         {
           if (!ec)
           {
@@ -233,7 +240,7 @@ class async_future_client : public std::enable_shared_from_this< async_future_cl
           }
           else
           {
-            fmt::print(stderr, "Read length error: do_read_length() {}\n", ec.message());
+            fmt::print(stderr, "Read length Error: do_read_length() {}\n", ec.message());
             // XXX std::runtime_error(ec.message());
             // There are no more endpoints to try. Silently shut down the client.
             stop();
@@ -247,9 +254,11 @@ class async_future_client : public std::enable_shared_from_this< async_future_cl
    */
   void do_read_body(std::size_t msg_len)
   {
+    fmt::print(stderr, "do_read_body({})\n", msg_len);
+
     body_buf_.resize(msg_len);
     boost::asio::async_read(socket_, boost::asio::buffer(body_buf_),
-        [this, msg_len](std::error_code ec, std::size_t /*n*/)
+        [this, msg_len](std::error_code ec, std::size_t /*n*/) -> void
         {
           if (!ec && body_buf_.size() >= 5)
           {
@@ -260,7 +269,7 @@ class async_future_client : public std::enable_shared_from_this< async_future_cl
           }
           else if (ec)
           {
-            fmt::print(stderr, "Read body error: do_read_body({}) {}\n", msg_len, ec.message());
+            fmt::print(stderr, "Read body Error: do_read_body({}) {}\n", msg_len, ec.message());
             std::runtime_error(ec.message());
           }
         });
@@ -273,12 +282,18 @@ class async_future_client : public std::enable_shared_from_this< async_future_cl
    */
   void handle_response(const std::string& msg_num, std::vector< uint8_t > data)
   {
+    fmt::print(stderr, "do_read_body({}) {}\n", msg_num, std::string_view((const char*)data.data(), data.size()));
+
     std::scoped_lock lock(map_mutex_);
     auto it = pending_.find(msg_num);
     if (it != pending_.end())
     {
       it->second.set_value(response{msg_num, std::move(data)});
       pending_.erase(it);
+    }
+    else
+    {
+      fmt::print(stderr, "Error: num not found at do_read_body({}) !\n", msg_num);
     }
   }
 
@@ -320,16 +335,17 @@ auto main(int argc, char* argv[]) -> int
     boost::asio::io_context ctx;
     auto client = std::make_shared< async_future_client >(ctx, host, port);
 
-    std::thread io_thread([&ctx] { ctx.run(); });
+    std::thread io_thread([&ctx] -> void { ctx.run(); });
 
     std::this_thread::sleep_for(1s);
 
     std::thread test1(&async_future_client::test, client);
     // TODO(CK) std::thread test2(&async_future_client::test, client);
 
-    ctx.stop();
     test1.join();
     // TODO(CK) test2.join();
+
+    ctx.stop();
     io_thread.join();
   }
   catch (const std::exception& ex)

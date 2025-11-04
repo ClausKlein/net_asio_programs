@@ -94,7 +94,7 @@ auto main(int argc, char* argv[]) -> int
 
 #if defined(USE_SIMPLE_RRCP_CLIENT) && !defined(USE_OLD_WRITE)
       client->async_write_message(line,
-          [](const boost::system::error_code& ec, const std::string& response)
+          [](const boost::system::error_code& ec, const std::string& response) -> void
           {
             if (!ec)
             {

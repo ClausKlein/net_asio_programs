@@ -93,7 +93,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
   {
     if (stopped_)
     {
-      boost::asio::post(io_context_, [handler]() { handler(boost::asio::error::operation_aborted, {}); });
+      boost::asio::post(io_context_, [handler]() -> void { handler(boost::asio::error::operation_aborted, {}); });
       return;
     }
 
@@ -106,7 +106,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
 
     // Post the write to the io_context
     boost::asio::post(io_context_,
-        [self, command, msg_id_str, handler = std::move(handler)]() mutable
+        [self, command, msg_id_str, handler = std::move(handler)]() mutable -> void
         {
           bool write_in_progress = !self->write_msgs_.empty();
           self->write_msgs_.push_back(command);
@@ -133,7 +133,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
     stopped_ = true;
 
     boost::asio::post(io_context_,
-        [self = shared_from_this()]()
+        [self = shared_from_this()]() -> void
         {
           boost::system::error_code ec;
           self->socket_.close(ec);
@@ -287,7 +287,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
                   self->pending_responses_.erase(it);
                   // Call handler asynchronously
                   boost::asio::post(self->io_context_,
-                      [handler = std::move(handler), clean_response]() { handler({}, clean_response); });
+                      [handler = std::move(handler), clean_response]() -> void { handler({}, clean_response); });
                   break;
                 }
               }
