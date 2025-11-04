@@ -167,10 +167,10 @@ ut::suite errors = [] -> void
     auto quoted = rrcp::char2esc(BINARY);
 
     // NOTE: std::quoted works only with std::stringstream
-#if defined(BOOST_UT_HAS_FORMAT) && defined(FIXME)  // FIXME!
+#if defined(BOOST_UT_HAS_FORMAT)
     std::ostringstream binary_bin;
-    binary_bin << std::quoted(binary);
-    ut::log("{} {}\n", binary.length(), binary_bin.str());
+    binary_bin << std::quoted(BINARY);
+    ut::log("{} {}\n", BINARY.length(), binary_bin.str());
 
     std::ostringstream quoted_bin;
     quoted_bin << std::quoted(quoted);

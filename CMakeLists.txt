@@ -170,7 +170,8 @@ add_test(
         ${PYTHON_EXECUTABLE} #
         ${CMAKE_CURRENT_SOURCE_DIR}/run_test.py #
         --client $<TARGET_FILE:async_tcp_echo_client> #
-        --server $<TARGET_FILE:async_tcp_echo_server>
+        --server $<TARGET_FILE:async_tcp_echo_server> #
+        --input ${CMAKE_CURRENT_SOURCE_DIR}/rrcp.txt #
 )
 add_test(
     NAME async_tcp_echo_client-test-no_server
