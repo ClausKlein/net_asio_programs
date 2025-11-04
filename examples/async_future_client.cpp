@@ -147,7 +147,7 @@ class async_future_client : public std::enable_shared_from_this< async_future_cl
       {
         return fut;
       }
-      std::this_thread::sleep_for(250ms);
+      std::this_thread::sleep_for(125ms * counter);
     }
 
     fmt::print("Send msg ({}): {}\n", msg_num, std::string(full_msg.begin(), full_msg.end()));
@@ -177,7 +177,10 @@ class async_future_client : public std::enable_shared_from_this< async_future_cl
    */
   void stop()
   {
-    if (stopped_) return;
+    if (stopped_)
+    {
+      return;
+    }
 
     boost::asio::post(io_context_,
         [this]() -> void
@@ -322,11 +325,11 @@ auto main(int argc, char* argv[]) -> int
     std::this_thread::sleep_for(1s);
 
     std::thread test1(&async_future_client::test, client);
-    std::thread test2(&async_future_client::test, client);
+    // TODO(CK) std::thread test2(&async_future_client::test, client);
 
     ctx.stop();
     test1.join();
-    test2.join();
+    // TODO(CK) test2.join();
     io_thread.join();
   }
   catch (const std::exception& ex)
