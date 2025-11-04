@@ -7,13 +7,14 @@
  * Distributed under the Boost Software License, Version 1.0. (See accompanying
  * file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
  *
- * Moderniced from Claus Klein and ChatGPT
+ * Modernized from Claus Klein and ChatGPT
  ***/
 
 #include <fmt/format.h>
 
 #include <atomic>
 #include <boost/asio.hpp>
+#include <chrono>
 #include <cstdlib>
 #include <format>
 #include <future>
@@ -24,45 +25,45 @@
 #include <thread>
 #include <vector>
 
-/***
-======================================================================
-# Protocol Requirements
-
-1. Each request message starts with ASCII message number, e.g. "00042"
-   (zero-padded to 5 digits or similar - we'll define this).
-2. Before the message body (including that message number),
-   we send a 4-byte ASCII length header, e.g. "0123"means 123 bytes follow.
-3. When a response is received, it has the same structure:
-        [4 ASCII bytes: length][ASCII msg_num][payload...]
-4. The response msg_num must match the request's.
-
-#  Revised Design Overview
-
-* The client:
-    * Builds the ASCII length header + ASCII message number.
-    * Sends the whole message.
-    * Each request number is stored in a map:
-        std::map<std::string, std::promise<std::string>> pending_;
-* The receiver:
-    * First reads the 4-byte ASCII length header.
-    * Then reads exactly that many bytes (the message body).
-    * Extracts the ASCII message number (first N chars of the body).
-    * Matches it in the map and fulfills the promise.
-======================================================================
-***/
-
+/**
+ * @brief Protocol Requirements and Design Overview
+ *
+ * 1. Each request message starts with ASCII message number (zero-padded to 5 digits).
+ * 2. Messages prepend a 4-byte ASCII length header.
+ * 3. Responses follow the same format and must match the request msg_num.
+ * 4. The client stores pending requests in a map: std::map<std::string, std::promise<std::string>> pending_;
+ * 5. The receiver reads the length header, reads the exact message body, extracts msg_num,
+ *    and fulfills the corresponding promise in the map.
+ */
 using namespace std::chrono_literals;
 using boost::asio::ip::tcp;
 
+/**
+ * @brief Structure representing a response from the server
+ */
 struct response
 {
-  std::string msg_num_;
-  std::vector< uint8_t > data_;
+  std::string msg_num_; /**< ASCII message number from server */
+  std::vector< uint8_t > data_; /**< Payload bytes */
 };
 
-class async_future_client
+/**
+ * @brief Asynchronous TCP client supporting future-based requests
+ *
+ * This client:
+ * - Sends requests asynchronously.
+ * - Reads responses and fulfills promises associated with the message number.
+ * - Supports multiple concurrent outstanding requests.
+ */
+class async_future_client : public std::enable_shared_from_this< async_future_client >
 {
  public:
+  /**
+   * @brief Construct a new async_future_client
+   * @param ctx Reference to an existing Boost.Asio io_context
+   * @param host Hostname or IP address of the server
+   * @param port TCP port of the server
+   */
   async_future_client(boost::asio::io_context& ctx, const std::string& host, const std::string& port)
   : io_context_(ctx), resolver_(ctx), socket_(ctx)
   {
@@ -82,7 +83,7 @@ class async_future_client
                   }
                   else
                   {
-                    // There are no more endpoints to try. Shut down the client.
+                    // No more endpoints to try; shut down client
                     stop();
                   }
                 });
@@ -90,54 +91,63 @@ class async_future_client
         });
   }
 
+  /**
+   * @brief Send a request payload asynchronously
+   *
+   * The function returns a std::future<response> which will be set once
+   * the corresponding response arrives from the server.
+   *
+   * @param payload Vector of bytes to send
+   * @return std::future<response> Future to get the response
+   */
   auto send_request(const std::vector< uint8_t >& payload) -> std::future< response >
   {
 #ifdef HAS_ATOMIC_THREAD_FENCE
-    // see https://en.cppreference.com/w/cpp/atomic/atomic_thread_fence.html
     uint16_t num = msg_counter_.fetch_add(1, std::memory_order_relaxed) % std::numeric_limits< uint16_t >::max();
 #else
     uint16_t num{};
     {
-      //===========================
       std::scoped_lock lock(map_mutex_);
       num = msg_counter_ + 1;
       num = num % std::numeric_limits< uint16_t >::max();
       msg_counter_ = num;
-      //===========================
     }
 #endif
 
     std::string msg_num = fmt::format("{:05}", num);  // 5-digit ASCII message number
 
-    // Build message body: msg_num + payload
+    // Build message: [msg_num + payload]
     std::vector< uint8_t > body;
     body.insert(body.end(), msg_num.begin(), msg_num.end());
     body.insert(body.end(), payload.begin(), payload.end());
 
-    // Prepend 4-byte ASCII length
+    // Prepend 4-byte ASCII length header
     std::string len_str = fmt::format("{:04}", body.size());
     std::vector< uint8_t > full_msg;
     full_msg.insert(full_msg.end(), len_str.begin(), len_str.end());
     full_msg.insert(full_msg.end(), body.begin(), body.end());
 
-    //===========================
+    // Prepare promise and future
     std::promise< response > prom;
     auto fut = prom.get_future();
     {
       std::scoped_lock lock(map_mutex_);
       pending_.emplace(msg_num, std::move(prom));
     }
-    //===========================
 
     size_t counter{4};
-    while (!connected_ && (--counter != 0U))
+    while (!connected_)
     {
       if (stopped_)
       {
         return fut;
       }
       fmt::print(stderr, "Client is not connected yet.\n");
-      std::this_thread::sleep_for(250ms);  // NOLINT(misc-include-cleaner)
+      if (--counter == 0U)
+      {
+        return fut;
+      }
+      std::this_thread::sleep_for(250ms);
     }
 
     fmt::print("Send msg ({}): {}\n", msg_num, std::string(full_msg.begin(), full_msg.end()));
@@ -147,7 +157,6 @@ class async_future_client
         {
           if (ec)
           {
-            //===========================
             std::scoped_lock lock(map_mutex_);
             auto it = pending_.find(msg_num);
             if (it != pending_.end())
@@ -155,22 +164,20 @@ class async_future_client
               it->second.set_exception(std::make_exception_ptr(std::runtime_error(ec.message())));
               pending_.erase(it);
             }
-            //===========================
           }
         });
 
     return fut;
   }
 
-  // This function terminates all the actors to shut down the connection. It
-  // may be called by the user of the client class, or by the class itself in
-  // response to graceful termination or an unrecoverable error.
+  /**
+   * @brief Stop the client and close the socket
+   *
+   * This will cancel all ongoing operations and prevent new requests.
+   */
   void stop()
   {
-    if (stopped_)
-    {
-      return;
-    }
+    if (stopped_) return;
 
     boost::asio::post(io_context_,
         [this]() -> void
@@ -182,7 +189,34 @@ class async_future_client
         });
   }
 
+  /**
+   * @brief Example test function that repeatedly sends a payload
+   *
+   * Demonstrates how to use send_request() and wait for the future.
+   */
+  void test()
+  {
+    std::vector< uint8_t > payload{'H', 'e', 'l', 'l', 'o', ' ', 'T', 'e', 's', 't'};
+    do
+    {
+      auto fut = send_request(payload);
+      if (fut.wait_for(1s) == std::future_status::ready)
+      {
+        auto resp = fut.get();
+        fmt::print("Received response ({}): {}\n", resp.msg_num_, std::string(resp.data_.begin(), resp.data_.end()));
+      }
+      else
+      {
+        fmt::print(stderr, "Timeout waiting for response\n");
+        break;
+      }
+    } while (true);
+  }
+
  private:
+  /**
+   * @brief Start reading the 4-byte length header
+   */
   void do_read_length()
   {
     boost::asio::async_read(socket_, boost::asio::buffer(len_buf_),
@@ -204,6 +238,10 @@ class async_future_client
         });
   }
 
+  /**
+   * @brief Read the message body after reading the length header
+   * @param msg_len Length of the message body
+   */
   void do_read_body(std::size_t msg_len)
   {
     body_buf_.resize(msg_len);
@@ -225,9 +263,13 @@ class async_future_client
         });
   }
 
+  /**
+   * @brief Fulfill the promise associated with the received message number
+   * @param msg_num Message number as ASCII string
+   * @param data Payload data received
+   */
   void handle_response(const std::string& msg_num, std::vector< uint8_t > data)
   {
-    //===========================
     std::scoped_lock lock(map_mutex_);
     auto it = pending_.find(msg_num);
     if (it != pending_.end())
@@ -235,30 +277,30 @@ class async_future_client
       it->second.set_value(response{msg_num, std::move(data)});
       pending_.erase(it);
     }
-    //===========================
   }
 
-  boost::asio::io_context& io_context_;
-  tcp::resolver resolver_;
-  tcp::socket socket_;
-  std::array< char, 4 > len_buf_{};
-  std::vector< uint8_t > body_buf_;
+  boost::asio::io_context& io_context_; /**< Reference to Boost.Asio io_context */
+  tcp::resolver resolver_; /**< Resolver for hostname lookup */
+  tcp::socket socket_; /**< TCP socket */
+  std::array< char, 4 > len_buf_{}; /**< Buffer for 4-byte length header */
+  std::vector< uint8_t > body_buf_; /**< Buffer for message body */
 
 #ifdef HAS_ATOMIC_THREAD_FENCE
-  std::atomic< uint16_t > msg_counter_{0};
+  std::atomic< uint16_t > msg_counter_{0}; /**< Message counter (atomic) */
 #else
-  uint16_t msg_counter_{0};
+  uint16_t msg_counter_{0}; /**< Message counter (protected by mutex) */
 #endif
 
-  std::atomic< bool > connected_{false};
-  std::atomic< bool > stopped_{false};
+  std::atomic< bool > connected_{false}; /**< Flag: connection established */
+  std::atomic< bool > stopped_{false}; /**< Flag: client stopped */
 
-  //===========================
-  std::mutex map_mutex_;
-  std::map< std::string, std::promise< response > > pending_;
-  //===========================
+  std::mutex map_mutex_; /**< Protects access to pending_ map */
+  std::map< std::string, std::promise< response > > pending_; /**< Map of pending requests */
 };
 
+/**
+ * @brief Example
+ */
 auto main(int argc, char* argv[]) -> int
 {
   if (argc != 3)
@@ -273,29 +315,19 @@ auto main(int argc, char* argv[]) -> int
   try
   {
     boost::asio::io_context ctx;
-    tcp::resolver resolver(ctx);
-    async_future_client client(ctx, host, port);
+    auto client = std::make_shared< async_future_client >(ctx, host, port);
 
-    std::jthread io_thread([&ctx] { ctx.run(); });
+    std::thread io_thread([&ctx] { ctx.run(); });
 
-    // Example request
-    std::vector< uint8_t > payload{'H', 'e', 'l', 'l', 'o', ' ', 'T', 'e', 's', 't'};
-    do
-    {
-      auto fut = client.send_request(payload);
-      if (fut.wait_for(std::chrono::seconds(3)) == std::future_status::ready)
-      {
-        auto resp = fut.get();
-        fmt::print("Received response ({}): {}\n", resp.msg_num_, std::string(resp.data_.begin(), resp.data_.end()));
-      }
-      else
-      {
-        fmt::print(stderr, "Timeout waiting for response\n");
-        break;
-      }
-    } while (true);
+    std::this_thread::sleep_for(1s);
+
+    std::thread test1(&async_future_client::test, client);
+    std::thread test2(&async_future_client::test, client);
 
     ctx.stop();
+    test1.join();
+    test2.join();
+    io_thread.join();
   }
   catch (const std::exception& ex)
   {
