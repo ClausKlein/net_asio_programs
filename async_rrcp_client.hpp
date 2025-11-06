@@ -31,10 +31,11 @@
 #include <chrono>
 #include <deque>
 #include <functional>
-#include <map>
 #include <memory>
 #include <string>
 #include <thread>
+#include <unordered_map>
+#include <utility>
 
 #include "rrcp_helper.hpp"
 
@@ -108,7 +109,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
     boost::asio::post(io_context_,
         [self, command, msg_id_str, handler = std::move(handler)]() mutable -> void
         {
-          bool write_in_progress = !self->write_msgs_.empty();
+          bool const write_in_progress = !self->write_msgs_.empty();
           self->write_msgs_.push_back(command);
 
           // Start the write loop if not already in progress
@@ -254,10 +255,26 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
         {
           if (!ec)
           {
+            std::string line;
             //========================== RRCP ============================
-            std::string line = esc2char(self->input_buffer_.substr(1, length - 1));  // w/o START, STOP
+            if (self->input_buffer_[0] != START)
+            {
+              fmt::print(stderr, "Warning: Missing START delimiter (found 0x{:02X})\n",
+                  static_cast< unsigned char >(self->input_buffer_[0]));
+            }
+            else
+            {
+              line = esc2char(self->input_buffer_.substr(1, length - 1));
+            }
             self->input_buffer_.erase(0, length);
             //========================== END ============================
+            if (line.empty())
+            {
+              fmt::print(stderr, "Warning: Parsed empty message content - skipping\n");
+              self->deadline_.expires_after(HEARTBEAT_INTERVAL + TIMEOUT_DURATION);
+              self->do_read();
+              return;
+            }
 
             // TODO(CK): maby refactored to helper class?
             //========================== RRCP ============================
@@ -272,29 +289,9 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
             {
               // Other responses than Trap and Ping messages
               fmt::print(stderr, "{}\n", line);  // TRACE
-#ifndef USE_OLD_WRITE
-              // Check if this message matches a pending response
-              // XXX auto msg_id = rrcp::extract_msg_id(line); // implement helper to extract ID
-              // XXX auto it = self->pending_responses_.find(msg_id);
-              // XXX if (it != self->pending_responses_.end())
-
-              std::string clean_response = line;
-              for (auto it = self->pending_responses_.begin(); it != self->pending_responses_.end(); ++it)
-              {
-                if (rrcp::find_response_msg(clean_response, it->first))
-                {
-                  auto handler = std::move(it->second);
-                  self->pending_responses_.erase(it);
-                  // Call handler asynchronously
-                  boost::asio::post(self->io_context_,
-                      [handler = std::move(handler), clean_response]() -> void { handler({}, clean_response); });
-                  break;
-                }
-              }
-#else
-              self->read_msgs_.push_back(line);
-#endif
+              self->handle_response(line);
             }
+            // Note: gPing messages are silently ignored (heartbeat responses)
             //========================== END ============================
 
             self->deadline_.expires_after(HEARTBEAT_INTERVAL + TIMEOUT_DURATION);
@@ -306,6 +303,30 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
             self->stop();
           }
         });
+  }
+
+  void handle_response(std::string& response)
+  {
+#ifndef USE_OLD_WRITE
+    // Check if this message matches a pending response
+    // XXX auto msg_id = rrcp::extract_msg_id(line); // implement helper to extract ID
+    // XXX auto it = pending_responses_.find(msg_id);
+    // XXX if (it != pending_responses_.end())
+
+    for (auto it = pending_responses_.begin(); it != pending_responses_.end(); ++it)
+    {
+      if (rrcp::find_response_msg(response, it->first))
+      {
+        auto handler = std::move(it->second);
+        pending_responses_.erase(it);
+        // Call handler asynchronously
+        boost::asio::post(io_context_, [handler = std::move(handler), response]() -> void { handler({}, response); });
+        break;
+      }
+    }
+#else
+    read_msgs_.push_back(response);
+#endif
   }
 
   void do_write()

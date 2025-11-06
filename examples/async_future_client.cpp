@@ -108,7 +108,7 @@ class async_future_client : public std::enable_shared_from_this< async_future_cl
 #else
     uint16_t num{};
     {
-      std::scoped_lock lock(map_mutex_);
+      std::scoped_lock const lock(map_mutex_);
       num = msg_counter_ + 1;
       num = num % std::numeric_limits< uint16_t >::max();
       msg_counter_ = num;
@@ -132,7 +132,7 @@ class async_future_client : public std::enable_shared_from_this< async_future_cl
     std::promise< response > prom;
     auto fut = prom.get_future();
     {
-      std::scoped_lock lock(map_mutex_);
+      std::scoped_lock const lock(map_mutex_);
       pending_.emplace(msg_num, std::move(prom));
     }
 
@@ -160,7 +160,7 @@ class async_future_client : public std::enable_shared_from_this< async_future_cl
           {
             fmt::print(stderr, "Write Error: send_request({}) {}\n", msg_num, ec.message());
 
-            std::scoped_lock lock(map_mutex_);
+            std::scoped_lock const lock(map_mutex_);
             auto it = pending_.find(msg_num);
             if (it != pending_.end())
             {
@@ -206,7 +206,7 @@ class async_future_client : public std::enable_shared_from_this< async_future_cl
    */
   void test()
   {
-    std::vector< uint8_t > payload{'H', 'e', 'l', 'l', 'o', ' ', 'T', 'e', 's', 't'};
+    std::vector< uint8_t > const payload{'H', 'e', 'l', 'l', 'o', ' ', 'T', 'e', 's', 't'};
     do
     {
       auto fut = send_request(payload);
@@ -234,8 +234,8 @@ class async_future_client : public std::enable_shared_from_this< async_future_cl
         {
           if (!ec)
           {
-            std::string len_str(len_buf_.begin(), len_buf_.end());
-            std::size_t msg_len = std::stoul(len_str, nullptr, 10);
+            std::string const len_str(len_buf_.begin(), len_buf_.end());
+            std::size_t const msg_len = std::stoul(len_str, nullptr, 10);
             do_read_body(msg_len);
           }
           else
@@ -262,7 +262,7 @@ class async_future_client : public std::enable_shared_from_this< async_future_cl
         {
           if (!ec && body_buf_.size() >= 5)
           {
-            std::string msg_num(body_buf_.begin(), body_buf_.begin() + 5);
+            std::string const msg_num(body_buf_.begin(), body_buf_.begin() + 5);
             std::vector< uint8_t > payload(body_buf_.begin() + 5, body_buf_.end());
             handle_response(msg_num, std::move(payload));
             do_read_length();
@@ -282,9 +282,10 @@ class async_future_client : public std::enable_shared_from_this< async_future_cl
    */
   void handle_response(const std::string& msg_num, std::vector< uint8_t > data)
   {
-    fmt::print(stderr, "do_read_body({}) {}\n", msg_num, std::string_view((const char*)data.data(), data.size()));
+    fmt::print(stderr, "do_read_body({}) {}\n", msg_num,
+        std::string_view(reinterpret_cast< const char* >(data.data()), data.size()));
 
-    std::scoped_lock lock(map_mutex_);
+    std::scoped_lock const lock(map_mutex_);
     auto it = pending_.find(msg_num);
     if (it != pending_.end())
     {
@@ -327,8 +328,8 @@ auto main(int argc, char* argv[]) -> int
     return EXIT_FAILURE;
   }
 
-  std::string host = argv[1];
-  std::string port = argv[2];
+  std::string const host = argv[1];
+  std::string const port = argv[2];
 
   try
   {

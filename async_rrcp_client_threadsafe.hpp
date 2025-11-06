@@ -31,10 +31,9 @@
 #include <boost/signals2/signal.hpp>
 #include <boost/system/error_code.hpp>
 #include <chrono>
-#include <condition_variable>
 #include <deque>
 #include <functional>
-#include <future>
+#include <future>  // NOTE: for std::promise too
 #include <memory>
 #include <mutex>
 #include <string>
@@ -170,55 +169,10 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
   }
 
  private:
-#define USE_PEDANTIC_CHECKES
-#ifdef USE_PEDANTIC_CHECKES
-  // Helper method to safely parse RRCP message with bounds checking
-  static auto parse_rrcp_message(const std::string& buffer, std::size_t length, std::string& parsed_line) -> bool
-  {
-    // Minimum RRCP message: START + at least 1 char + STOP = 3 bytes
-    if (length < 3)
-    {
-      fmt::print(stderr, "Warning: Message too short (length={}) - expected minimum 3 bytes\n", length);
-      return false;
-    }
-
-    // Validate buffer size
-    if (buffer.size() < length)
-    {
-      fmt::print(stderr, "Error: Buffer size ({}) smaller than expected length ({})\n", buffer.size(), length);
-      return false;
-    }
-
-    // Check for START delimiter at beginning
-    if (buffer[0] != START)
-    {
-      fmt::print(stderr, "Warning: Missing START delimiter (found 0x{:02X})\n", static_cast< unsigned char >(buffer[0]));
-      return false;
-    }
-
-    // Check for STOP delimiter at expected position
-    if (buffer[length - 1] != STOP)
-    {
-      fmt::print(stderr, "Warning: Missing STOP delimiter at position {} (found 0x{:02X})\n", length - 1,
-          static_cast< unsigned char >(buffer[length - 1]));
-      return false;
-    }
-
-    // Extract message content (without START and STOP)
-    if (length >= 3)
-    {
-      parsed_line = esc2char(buffer.substr(1, length - 2));
-      return true;
-    }
-
-    return false;
-  }
-#endif
-
   void execute_write_request(const std::string& message, std::shared_ptr< response_promise_type > promise)
   {
     std::string msg_id_str;
-    int current_id = next_message_id_.fetch_add(1);
+    int const current_id = next_message_id_.fetch_add(1);
     auto command = rrcp::create_command_msg(message, msg_id_str, current_id);
 
     // Store promise for response correlation
@@ -304,50 +258,46 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
         {
           if (!ec)
           {
-        //========================== RRCP ============================
-#ifdef USE_PEDANTIC_CHECKES
-            std::string parsed_line;
-            // Use safe parsing helper with comprehensive bounds checking
-            if (!rrcp::async_rrcp_client::parse_rrcp_message(self->input_buffer_, length, parsed_line))
+            std::string line;
+            //========================== RRCP ============================
+            // Check for START delimiter at beginning
+            if (self->input_buffer_[0] != START)
             {
-              // Parsing failed - message was malformed, skip it
-              self->input_buffer_.erase(0, length);
-              self->deadline_.expires_after(HEARTBEAT_INTERVAL + TIMEOUT_DURATION);
-              self->do_read();
-              return;
+              fmt::print(stderr, "Warning: Missing START delimiter (found 0x{:02X})\n",
+                  static_cast< unsigned char >(self->input_buffer_[0]));
             }
-#else
-            std::string parsed_line = esc2char(self->input_buffer_.substr(1, length - 1));  // TODO(CK): check START, STOP?
-#endif
+            else
+            {
+              line = esc2char(self->input_buffer_.substr(1, length - 1));
+            }
+
             // Successfully parsed, remove processed data from buffer
             self->input_buffer_.erase(0, length);
-        //========================== END ============================
+            //========================== END ============================
 
-#ifdef USE_PEDANTIC_CHECKES
             // Validate parsed content is not empty
-            if (parsed_line.empty())
+            if (line.empty())
             {
               fmt::print(stderr, "Warning: Parsed empty message content - skipping\n");
               self->deadline_.expires_after(HEARTBEAT_INTERVAL + TIMEOUT_DURATION);
               self->do_read();
               return;
             }
-#endif
 
             // TODO(CK): maby refactored to helper class?
             //========================== RRCP ============================
             // Process different message types
-            if (boost::algorithm::starts_with(parsed_line, "d"))  // Trap data message
+            if (boost::algorithm::starts_with(line, "d"))  // Trap data message
             {
               // Handle trap data messages
-              fmt::print(stderr, "trap data: {}\n", parsed_line);  // TRACE
-              self->trap_handler_(parsed_line);
+              fmt::print(stderr, "trap data: {}\n", line);  // TRACE
+              self->trap_handler_(line);
             }
-            else if (!boost::algorithm::starts_with(parsed_line, "gPing"))
+            else if (!boost::algorithm::starts_with(line, "gPing"))
             {
               // Handle response messages (but ignore heartbeat responses)
-              fmt::print(stderr, "{}\n", parsed_line);  // TRACE
-              self->handle_response(parsed_line);
+              fmt::print(stderr, "{}\n", line);  // TRACE
+              self->handle_response(line);
             }
             // Note: gPing messages are silently ignored (heartbeat responses)
             //========================== END ============================

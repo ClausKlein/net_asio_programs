@@ -54,6 +54,7 @@ fix: $(BUILD_DIR)  # XXX all
 hicpp-explicit-conversions,\
 hicpp-member-init,\
 hicpp-named-parameter,\
+misc-const-correctness,\
 modernize-deprecated-headers,\
 modernize-loop-convert,\
 modernize-return-braced-init-list,\

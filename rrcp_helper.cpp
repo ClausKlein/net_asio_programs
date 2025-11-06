@@ -90,14 +90,14 @@ auto rrcp::insertAfterFirstWord(const std::string& input, const std::string& toI
     return input;  // Nothing to do
   }
 
-  size_t firstSpace = input.find_first_of(" \t");  // Find first whitespace
+  size_t const firstSpace = input.find_first_of(" \t");  // Find first whitespace
   if (firstSpace == std::string::npos)
   {
     return input;  // No spaces found, return original string
   }
 
   // NOTE: Only if Set/Get command request, NOT for Trap commands!
-  size_t nextNonSpace = input.find_first_of("SG", firstSpace);
+  size_t const nextNonSpace = input.find_first_of("SG", firstSpace);
   if (nextNonSpace == std::string::npos)
   {
     // If there's no second valid command, just return the input!
@@ -158,7 +158,7 @@ auto rrcp::create_command_msg(const std::string& message, std::string& msg_id_st
   {
     msg_id_str.clear();
   }
-  std::string msg = insertAfterFirstWord(message, msg_id_str);
+  std::string const msg = insertAfterFirstWord(message, msg_id_str);
 
   // DEBUG: fmt::print("rrcp MU to send({})\n", msg);
 

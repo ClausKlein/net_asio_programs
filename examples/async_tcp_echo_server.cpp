@@ -49,7 +49,7 @@ class session : public std::enable_shared_from_this< session >
         {
           if (!ec)
           {
-            std::string_view msg{data_.data(), length};
+            std::string_view const msg{data_.data(), length};
             if ((msg.contains("M:Utility")) || (msg.contains("000")) || (msg.contains("M:A")) || (msg.contains("M:C")))
             {
               std::cerr << "do_read(len=" << length << "): " << msg << "\n";
@@ -57,7 +57,7 @@ class session : public std::enable_shared_from_this< session >
             }
             else
             {
-              std::size_t new_len = gen_random(length);
+              std::size_t const new_len = gen_random(length);
 
 #define CHANGE_ECHO_MSG
 #ifndef CHANGE_ECHO_MSG
@@ -73,7 +73,7 @@ class session : public std::enable_shared_from_this< session >
               }
 #endif
 
-              std::string_view msg{data_.data(), new_len};
+              std::string_view const msg{data_.data(), new_len};
               std::cerr << "do_write(len=" << length << "): " << msg << "\n";
               do_write(new_len);
             }

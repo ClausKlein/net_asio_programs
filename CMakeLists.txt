@@ -190,7 +190,7 @@ if(BUILD_EXAMPLES AND NOT ENABLE_TEST_COVERAGE)
     target_link_libraries(blocking_tcp_echo_client PRIVATE rrcp_helper)
     do_test(blocking_tcp_echo_client --help Usage)
 
-    add_executable(rrcp_client rrcp_client.cpp rrcp_message.hpp)
+    add_executable(rrcp_client examples/rrcp_client.cpp rrcp_message.hpp)
     target_link_libraries(rrcp_client PRIVATE rrcp_helper)
     do_test(rrcp_client --help Usage)
 
