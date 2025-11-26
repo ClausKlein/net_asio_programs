@@ -37,6 +37,15 @@ endif()
 include(FetchContent)
 
 FetchContent_Declare(
+    cxxopts
+    GIT_REPOSITORY https://github.com/jarro2783/cxxopts
+    GIT_TAG v3.3.1
+    EXCLUDE_FROM_ALL
+    SYSTEM
+    FIND_PACKAGE_ARGS 3.3.1 HINTS $ENV{HOME}/.local
+)
+
+FetchContent_Declare(
     fmt
     GIT_TAG 12.0.0
     GIT_REPOSITORY https://github.com/fmtlib/fmt.git
@@ -45,7 +54,7 @@ FetchContent_Declare(
     FIND_PACKAGE_ARGS 12.0.0 NAMES fmt HINTS $ENV{HOME}/.local
 )
 
-FetchContent_MakeAvailable(fmt)
+FetchContent_MakeAvailable(fmt cxxopts)
 
 # ---- default settings ----
 
@@ -205,7 +214,10 @@ endif()
 # ---- theadsafe rrcp client class usage examples main  ----
 
 add_executable(rrcp_async_tcp_client_threadsafe rrcp_async_tcp_client.cpp)
-target_link_libraries(rrcp_async_tcp_client_threadsafe PRIVATE rrcp_helper)
+target_link_libraries(
+    rrcp_async_tcp_client_threadsafe
+    PRIVATE rrcp_helper cxxopts::cxxopts
+)
 do_test(rrcp_async_tcp_client_threadsafe --help Usage)
 add_test(
     NAME rrcp_async_tcp_client_threadsafe-test-no_server
@@ -224,7 +236,10 @@ add_test(
 )
 
 add_executable(rrcp_async_tcp_client rrcp_async_tcp_client.cpp)
-target_link_libraries(rrcp_async_tcp_client PRIVATE rrcp_helper)
+target_link_libraries(
+    rrcp_async_tcp_client
+    PRIVATE rrcp_helper cxxopts::cxxopts
+)
 target_compile_definitions(rrcp_async_tcp_client PRIVATE USE_SIMPLE_RRCP_CLIENT)
 do_test(rrcp_async_tcp_client --help Usage)
 add_test(
