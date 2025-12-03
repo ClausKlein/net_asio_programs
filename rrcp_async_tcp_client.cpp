@@ -57,7 +57,7 @@ options getcxxopts(int argc, char** argv)
                 ("h,help", "this help")
                 ("t,timeout", "Message timeout", cxxopts::value<uint32_t>()->default_value("3"))
                 ("v,verbose", "trace notification handling", cxxopts::value<bool>()->default_value("true"))
-                ("p,port", "rrcpPort, default 8000", cxxopts::value<int>()->default_value(std::to_string(opt.port)))
+                ("p,port", "rrcpPort, default 8000", cxxopts::value<uint16_t>()->default_value(std::to_string(opt.port)))
                 ("s,server", "Server name to connect", cxxopts::value<std::string>()->default_value(opt.server))
                 ("f,file", "File name to read from", cxxopts::value<std::string>()->default_value(opt.filename));
     // clang-format on
