@@ -37,6 +37,15 @@ endif()
 include(FetchContent)
 
 FetchContent_Declare(
+    cxxopts
+    GIT_REPOSITORY https://github.com/jarro2783/cxxopts
+    GIT_TAG v3.3.1
+    EXCLUDE_FROM_ALL
+    SYSTEM
+    FIND_PACKAGE_ARGS 3.3.1 HINTS $ENV{HOME}/.local
+)
+
+FetchContent_Declare(
     fmt
     GIT_TAG 12.0.0
     GIT_REPOSITORY https://github.com/fmtlib/fmt.git
@@ -45,7 +54,7 @@ FetchContent_Declare(
     FIND_PACKAGE_ARGS 12.0.0 NAMES fmt HINTS $ENV{HOME}/.local
 )
 
-FetchContent_MakeAvailable(fmt)
+FetchContent_MakeAvailable(fmt cxxopts)
 
 # ---- default settings ----
 
@@ -141,27 +150,48 @@ target_link_libraries(
 
 # ---- simple rrcp client class usage examples ----
 
-if(BUILD_EXAMPLES AND NOT ENABLE_TEST_COVERAGE)
-    add_executable(async_tcp_echo_client examples/async_tcp_echo_client.cpp)
-    target_link_libraries(async_tcp_echo_client PRIVATE rrcp_helper)
-    do_test(async_tcp_echo_client --help Usage)
-    add_test(
-        NAME async_tcp_echo_client-test
-        COMMAND
-            ${PYTHON_EXECUTABLE} #
-            ${CMAKE_CURRENT_SOURCE_DIR}/run_test.py #
-            --client $<TARGET_FILE:async_tcp_echo_client> #
-            --server $<TARGET_FILE:async_tcp_echo_server>
-    )
-    add_test(
-        NAME async_tcp_echo_client-test-no_server
-        COMMAND
-            ${PYTHON_EXECUTABLE} #
-            ${CMAKE_CURRENT_SOURCE_DIR}/run_test.py #
-            --client $<TARGET_FILE:async_tcp_echo_client> #
-            --timeout 9
-    )
+add_executable(async_future_client examples/async_future_client.cpp)
+target_link_libraries(async_future_client PRIVATE rrcp_helper)
+do_test(async_future_client --help Usage)
+add_test(
+    NAME async_future_client-test
+    COMMAND
+        ${PYTHON_EXECUTABLE} #
+        ${CMAKE_CURRENT_SOURCE_DIR}/run_test.py #
+        --client $<TARGET_FILE:async_future_client> #
+        --server $<TARGET_FILE:async_tcp_echo_server>
+)
+add_test(
+    NAME async_future_client-test-no_server
+    COMMAND
+        ${PYTHON_EXECUTABLE} #
+        ${CMAKE_CURRENT_SOURCE_DIR}/run_test.py #
+        --client $<TARGET_FILE:async_future_client> #
+        --timeout 9
+)
 
+add_executable(async_tcp_echo_client examples/async_tcp_echo_client.cpp)
+target_link_libraries(async_tcp_echo_client PRIVATE rrcp_helper)
+do_test(async_tcp_echo_client --help Usage)
+add_test(
+    NAME async_tcp_echo_client-test
+    COMMAND
+        ${PYTHON_EXECUTABLE} #
+        ${CMAKE_CURRENT_SOURCE_DIR}/run_test.py #
+        --client $<TARGET_FILE:async_tcp_echo_client> #
+        --server $<TARGET_FILE:async_tcp_echo_server> #
+        --input ${CMAKE_CURRENT_SOURCE_DIR}/rrcp.txt #
+)
+add_test(
+    NAME async_tcp_echo_client-test-no_server
+    COMMAND
+        ${PYTHON_EXECUTABLE} #
+        ${CMAKE_CURRENT_SOURCE_DIR}/run_test.py #
+        --client $<TARGET_FILE:async_tcp_echo_client> #
+        --timeout 9
+)
+
+if(BUILD_EXAMPLES AND NOT ENABLE_TEST_COVERAGE)
     add_executable(
         blocking_tcp_echo_client
         examples/blocking_tcp_echo_client.cpp
@@ -169,12 +199,11 @@ if(BUILD_EXAMPLES AND NOT ENABLE_TEST_COVERAGE)
     target_link_libraries(blocking_tcp_echo_client PRIVATE rrcp_helper)
     do_test(blocking_tcp_echo_client --help Usage)
 
-    add_executable(rrcp_client rrcp_client.cpp rrcp_message.hpp)
+    add_executable(rrcp_client examples/rrcp_client.cpp rrcp_message.hpp)
     target_link_libraries(rrcp_client PRIVATE rrcp_helper)
     do_test(rrcp_client --help Usage)
 
-    # TODO(CK): mv to examples too!
-    add_executable(timer timer.cpp)
+    add_executable(timer examples/timer.cpp)
     target_link_libraries(
         timer
         PUBLIC Threads::Threads ${BOOST_LIBRARIES} fmt::fmt-header-only
@@ -185,7 +214,10 @@ endif()
 # ---- theadsafe rrcp client class usage examples main  ----
 
 add_executable(rrcp_async_tcp_client_threadsafe rrcp_async_tcp_client.cpp)
-target_link_libraries(rrcp_async_tcp_client_threadsafe PRIVATE rrcp_helper)
+target_link_libraries(
+    rrcp_async_tcp_client_threadsafe
+    PRIVATE rrcp_helper cxxopts::cxxopts
+)
 do_test(rrcp_async_tcp_client_threadsafe --help Usage)
 add_test(
     NAME rrcp_async_tcp_client_threadsafe-test-no_server
@@ -204,7 +236,10 @@ add_test(
 )
 
 add_executable(rrcp_async_tcp_client rrcp_async_tcp_client.cpp)
-target_link_libraries(rrcp_async_tcp_client PRIVATE rrcp_helper)
+target_link_libraries(
+    rrcp_async_tcp_client
+    PRIVATE rrcp_helper cxxopts::cxxopts
+)
 target_compile_definitions(rrcp_async_tcp_client PRIVATE USE_SIMPLE_RRCP_CLIENT)
 do_test(rrcp_async_tcp_client --help Usage)
 add_test(

@@ -49,15 +49,15 @@ class session : public std::enable_shared_from_this< session >
         {
           if (!ec)
           {
-            if ((std::string_view(data_.data(), length).contains("M:Utility")) ||
-                (std::string_view(data_.data(), length).contains("M:A")) ||
-                (std::string_view(data_.data(), length).contains("M:C")))
+            std::string_view const msg{data_.data(), length};
+            if ((msg.contains("M:Utility")) || (msg.contains("000")) || (msg.contains("M:A")) || (msg.contains("M:C")))
             {
+              std::cerr << "do_read(len=" << length << "): " << msg << "\n";
               do_write(length);
             }
             else
             {
-              std::size_t new_len = gen_random(length);
+              std::size_t const new_len = gen_random(length);
 
 #define CHANGE_ECHO_MSG
 #ifndef CHANGE_ECHO_MSG
@@ -73,6 +73,8 @@ class session : public std::enable_shared_from_this< session >
               }
 #endif
 
+              std::string_view const msg{data_.data(), new_len};
+              std::cerr << "do_write(len=" << length << "): " << msg << "\n";
               do_write(new_len);
             }
           }
@@ -100,7 +102,7 @@ class session : public std::enable_shared_from_this< session >
         });
   }
 
-  static std::size_t gen_random(std::size_t input)
+  static auto gen_random(std::size_t input) -> std::size_t
   {
     static std::random_device rd;  // a seed source for the random number engine
     static std::mt19937 gen(rd());  // mersenne_twister_engine seeded with rd()

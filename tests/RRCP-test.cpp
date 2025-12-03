@@ -11,6 +11,38 @@
 
 namespace ut = boost::ut;
 
+namespace
+{
+// Helper to dump a string as hex
+std::string to_hex(const std::string& s)
+{
+  std::ostringstream oss;
+  oss << std::hex << std::setfill('0');
+  for (unsigned char c : s)
+  {
+    oss << std::setw(2) << static_cast< int >(c) << ' ';
+  }
+  return oss.str();
+}
+}  // namespace
+
+#if 0
+int main() {
+  using namespace ut;
+
+  "hex dump example"_test = [] {
+   std::string data = "Hello\n";
+   auto hex = to_hex(data);
+
+   // You can print or assert
+   std::cout << "Hex dump: " << hex << std::endl;
+
+   // Example assertion: expected specific hex string
+   expect(hex == "48 65 6c 6c 6f 0a ");
+  };
+}
+#endif
+
 ut::suite errors = [] -> void
 {
   using namespace ut;
@@ -167,20 +199,33 @@ ut::suite errors = [] -> void
     auto quoted = rrcp::char2esc(BINARY);
 
     // NOTE: std::quoted works only with std::stringstream
-#if defined(BOOST_UT_HAS_FORMAT) && defined(FIXME)  // FIXME!
+#if defined(BOOST_UT_HAS_FORMAT)
     std::ostringstream binary_bin;
-    binary_bin << std::quoted(binary);
-    ut::log("{} {}\n", binary.length(), binary_bin.str());
+    binary_bin << std::quoted(BINARY);
+    ut::log("{}: {}\n", BINARY.length(), binary_bin.str());
 
     std::ostringstream quoted_bin;
     quoted_bin << std::quoted(quoted);
-    ut::log("{} {}\n", quoted.length(), quoted_bin.str());
+    ut::log("{}: {}\n", quoted.length(), quoted_bin.str());
 #endif
 
     expect(BINARY == rrcp::esc2char(quoted));
     expect(BINARY.length() < quoted.length());
     expect(BINARY.length() == 28);
     expect(quoted.length() == 33);
+  };
+
+  "special_quoteing"_test = [] -> void
+  {
+    constexpr std::string_view BINARY{"(\n\r\x1b)"sv};
+    auto quoted = rrcp::char2esc(BINARY);
+    expect(BINARY.length() == 5);
+    expect(quoted.length() == 8);
+    expect(BINARY == rrcp::esc2char(quoted));
+#if defined(BOOST_UT_HAS_FORMAT)
+    auto hex = to_hex(quoted);
+    ut::log("{}: {}\n", quoted.length(), hex);
+#endif
   };
 
   // ============================================================

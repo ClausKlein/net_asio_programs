@@ -80,6 +80,11 @@
       ],
       "cacheVariables": {
         "CMAKE_TOOLCHAIN_FILE": "infra/cmake/appleclang-toolchain.cmake"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
       }
     },
     {
@@ -91,6 +96,11 @@
       ],
       "cacheVariables": {
         "CMAKE_TOOLCHAIN_FILE": "infra/cmake/appleclang-toolchain.cmake"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
       }
     },
     {

@@ -12,6 +12,7 @@
 
 #include <fmt/format.h>
 
+#include <atomic>
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/asio.hpp>
 #include <boost/asio/steady_timer.hpp>
@@ -21,6 +22,7 @@
 #include <cstring>
 #include <deque>
 #include <exception>
+#include <fstream>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -97,11 +99,19 @@ class asynchronous_tcp_client : public std::enable_shared_from_this< asynchronou
   // response to graceful termination or an unrecoverable error.
   void stop()
   {
-    boost::system::error_code ignored_error;
-    socket_.close(ignored_error);
-    timer_.cancel();
-    connected_ = true;
-    stopped_ = true;
+    if (stopped_)
+    {
+      return;
+    }
+    boost::asio::post(io_context_,
+        [this, self = shared_from_this()]() -> void
+        {
+          stopped_ = true;
+          connected_ = false;
+          boost::system::error_code ignored_error;
+          socket_.close(ignored_error);
+          timer_.cancel();
+        });
   }
 
  private:
@@ -188,17 +198,31 @@ class asynchronous_tcp_client : public std::enable_shared_from_this< asynchronou
   boost::asio::steady_timer timer_;
   std::string data_;
   message_queue write_msgs_;
-  bool connected_{false};
-  bool stopped_{false};
+  std::atomic< bool > connected_{false};
+  std::atomic< bool > stopped_{false};
 };
 
 // NOLINTNEXTLINE(bugprone-exception-escape)
 auto main(int argc, char* argv[]) -> int
 {
-  if (argc != 3)
+  if (argc < 3)
   {
-    fmt::print(stderr, "Usage: {} <host> <port>\n", argv[0]);
+    fmt::print(stderr, "Usage: {} <host> <port> [input_file]\n", argv[0]);  // NOLINT
     return EXIT_FAILURE;
+  }
+
+  std::ifstream file;  // persistent file object (if used)
+  std::istream* input_str = &std::cin;  // pointer to chosen input stream
+
+  if (argc == 4)
+  {
+    file.open(argv[3]);  // NOLINT
+    if (!file)
+    {
+      fmt::print(stderr, "cannot open input file: {}\n", argv[3]);  // NOLINT
+      return 2;
+    }
+    input_str = &file;
   }
 
   try
@@ -209,7 +233,7 @@ auto main(int argc, char* argv[]) -> int
 
     std::thread io_thread([&io_context]() -> void { io_context.run(); });
 
-    for (std::string line; std::getline(std::cin, line); fmt::print(stderr, "Enter command: "))
+    for (std::string line; std::getline(*input_str, line); fmt::print(stderr, "Enter command: "))
     {
       const std::string::size_type sz = line.find("//");
       if ((sz != std::string::npos))

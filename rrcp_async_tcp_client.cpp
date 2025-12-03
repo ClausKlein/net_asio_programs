@@ -15,6 +15,7 @@
 #include <boost/algorithm/string/trim.hpp>
 #include <chrono>
 #include <cstdlib>
+#include <cxxopts.hpp>
 #include <exception>
 #include <fstream>
 #include <iostream>
@@ -34,26 +35,84 @@ namespace
 
 void print(std::string msg) { fmt::print("{}\n", msg); }
 
+// a little helper to return all args
+struct options
+{
+  uint16_t port{8000};
+  uint32_t timeout{3};
+  bool verbose{true};
+  std::string server{"localhost"};
+  std::string filename{"-"};
+};
+
+options getcxxopts(int argc, char** argv)
+{
+  options opt;
+  try
+  {
+    cxxopts::Options options(*argv, "rrcp");
+
+    // clang-format off
+        options.add_options()
+                ("h,help", "this help")
+                ("t,timeout", "Message timeout", cxxopts::value<uint32_t>()->default_value("3"))
+                ("v,verbose", "trace notification handling", cxxopts::value<bool>()->default_value("true"))
+                ("p,port", "rrcpPort, default 8000", cxxopts::value<uint16_t>()->default_value(std::to_string(opt.port)))
+                ("s,server", "Server name to connect", cxxopts::value<std::string>()->default_value(opt.server))
+                ("f,file", "File name to read from", cxxopts::value<std::string>()->default_value(opt.filename));
+    // clang-format on
+
+    auto result = options.parse(argc, argv);
+    if (result.contains("help"))
+    {
+      std::cout << options.help() << '\n';
+      exit(EXIT_SUCCESS);  // NOLINT(concurrency-mt-unsafe)
+    }
+    if (result.contains("timeout"))
+    {
+      opt.timeout = result["timeout"].as< uint32_t >();
+    }
+    if (result.contains("verbose"))
+    {
+      opt.verbose = result["verbose"].as< bool >();
+    }
+    if (result.contains("port"))
+    {
+      opt.port = result["port"].as< uint16_t >();
+    }
+    if (result.contains("server"))
+    {
+      opt.server = result["server"].as< std::string >();
+    }
+    if (result.contains("file"))
+    {
+      opt.filename = result["file"].as< std::string >();
+    }
+  }
+  catch (const cxxopts::exceptions::exception& e)
+  {
+    fmt::print(stderr, "cxxopt parse exception: {}", e.what());
+    exit(EXIT_FAILURE);  // NOLINT(concurrency-mt-unsafe)
+  }
+  return opt;
+}
+
 }  // namespace
 
 // NOLINTNEXTLINE(bugprone-exception-escape)
 auto main(int argc, char* argv[]) -> int
 {
-  if (argc < 3)
-  {
-    fmt::print(stderr, "Usage: {} <host> <port> [input_file]\n", argv[0]);  // NOLINT
-    return EXIT_FAILURE;
-  }
+  auto opts = getcxxopts(argc, argv);
 
   std::ifstream file;  // persistent file object (if used)
   std::istream* input_str = &std::cin;  // pointer to chosen input stream
 
-  if (argc == 4)
+  if (opts.filename != "-")
   {
-    file.open(argv[3]);  // NOLINT
+    file.open(opts.filename);
     if (!file)
     {
-      fmt::print(stderr, "cannot open input file: {}\n", argv[3]);  // NOLINT
+      fmt::print(stderr, "cannot open input file: {}\n", opts.filename);  // NOLINT
       return 2;
     }
     input_str = &file;
@@ -68,11 +127,11 @@ auto main(int argc, char* argv[]) -> int
 
     auto client = std::make_shared< async_rrcp_client >(io_context);
     client->register_trap_handler(&print);
-    client->start(resolver.resolve(argv[1], argv[2]));
+    client->start(resolver.resolve(opts.server, std::to_string(opts.port)));
 
     std::thread io_thread([&io_context]() -> void { io_context.run(); });
 
-    std::this_thread::sleep_for(TIMEOUT_DURATION);  // NOTE: only for gcov results! CK
+    std::this_thread::sleep_for(opts.timeout * 500ms);  // NOTE: only for gcov results! CK
     for (std::string line; client->connected() && std::getline(*input_str, line); fmt::print(stderr, "Enter command: "))
     {
       const std::string::size_type sz = line.find("//");
@@ -92,10 +151,25 @@ auto main(int argc, char* argv[]) -> int
         continue;
       }
 
+#if defined(USE_SIMPLE_RRCP_CLIENT) && !defined(USE_OLD_WRITE)
+      client->async_write_message(line,
+          [](const boost::system::error_code& ec, const std::string& response) -> void
+          {
+            if (!ec)
+            {
+              fmt::print("Received response: {}\n", response);
+            }
+            else
+            {
+              fmt::print("Error: {}\n", ec.message());
+            }
+          });
+#else
       const auto response = client->write(line);
       fmt::print("{}\n", response);
+#endif
     }
-    std::this_thread::sleep_for(HEARTBEAT_INTERVAL);  // NOTE: only for gcov results! CK
+    std::this_thread::sleep_for(opts.timeout * 500ms);  // NOTE: only for gcov results! CK
 
     client->stop();
     io_thread.join();

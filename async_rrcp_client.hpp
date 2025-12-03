@@ -34,6 +34,8 @@
 #include <memory>
 #include <string>
 #include <thread>
+#include <unordered_map>
+#include <utility>
 
 #include "rrcp_helper.hpp"
 
@@ -85,6 +87,70 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
 
   [[nodiscard]] auto connected() const -> bool { return connected_; }
 
+#ifndef USE_OLD_WRITE
+  // Asynchronously sends a message and calls handler when the response arrives.
+  void async_write_message(
+      const std::string& message, std::function< void(const boost::system::error_code&, const std::string&) > handler)
+  {
+    if (stopped_)
+    {
+      boost::asio::post(io_context_, [handler]() -> void { handler(boost::asio::error::operation_aborted, {}); });
+      return;
+    }
+
+    // Generate a unique message ID
+    std::string msg_id_str;
+    msg_id_ = (msg_id_ + 1) % INVALID_ID;
+    auto command = rrcp::create_command_msg(message, msg_id_str, msg_id_);
+
+    auto self = shared_from_this();
+
+    // Post the write to the io_context
+    boost::asio::post(io_context_,
+        [self, command, msg_id_str, handler = std::move(handler)]() mutable -> void
+        {
+          bool const write_in_progress = !self->write_msgs_.empty();
+          self->write_msgs_.push_back(command);
+
+          // Start the write loop if not already in progress
+          if (!write_in_progress)
+          {
+            self->deadline_.expires_after(TIMEOUT_DURATION);
+            self->do_write();
+          }
+
+          // Set up a response handler for this specific message ID
+          self->pending_responses_[msg_id_str] = handler;
+        });
+  }
+
+  void stop()
+  {
+    if (stopped_)
+    {
+      return;
+    }
+
+    stopped_ = true;
+
+    boost::asio::post(io_context_,
+        [self = shared_from_this()]() -> void
+        {
+          boost::system::error_code ec;
+          self->socket_.close(ec);
+          self->heartbeat_timer_.cancel();
+          self->deadline_.cancel();
+
+          // Notify all pending response handlers about the error
+          for (auto& [id, handler] : self->pending_responses_)
+          {
+            handler(boost::asio::error::operation_aborted, {});
+          }
+          self->pending_responses_.clear();
+        });
+  }
+
+#else
   // This function write the message into the send msg queue and starts the write actor.
   // It wait for the response message and return this.
   //
@@ -150,8 +216,8 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
         }
       }
       std::this_thread::sleep_for(125ms);
-    } while (!stopped_ && --count);
-    if (!count)
+    } while (!stopped_ && (--count != 0));
+    if (count == 0)
     {
       fmt::print(stderr, "Error: Timeout read!\n");
     }
@@ -179,6 +245,7 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
           deadline_.cancel();
         });
   }
+#endif
 
  private:
   void do_read()
@@ -188,10 +255,26 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
         {
           if (!ec)
           {
+            std::string line;
             //========================== RRCP ============================
-            std::string line = esc2char(self->input_buffer_.substr(1, length - 1));  // w/o START, STOP
+            if (self->input_buffer_[0] != START)
+            {
+              fmt::print(stderr, "Warning: Missing START delimiter (found 0x{:02X})\n",
+                  static_cast< unsigned char >(self->input_buffer_[0]));
+            }
+            else
+            {
+              line = esc2char(self->input_buffer_.substr(1, length - 1));
+            }
             self->input_buffer_.erase(0, length);
             //========================== END ============================
+            if (line.empty())
+            {
+              fmt::print(stderr, "Warning: Parsed empty message content - skipping\n");
+              self->deadline_.expires_after(HEARTBEAT_INTERVAL + TIMEOUT_DURATION);
+              self->do_read();
+              return;
+            }
 
             // TODO(CK): maby refactored to helper class?
             //========================== RRCP ============================
@@ -206,8 +289,9 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
             {
               // Other responses than Trap and Ping messages
               fmt::print(stderr, "{}\n", line);  // TRACE
-              self->read_msgs_.push_back(line);
+              self->handle_response(line);
             }
+            // Note: gPing messages are silently ignored (heartbeat responses)
             //========================== END ============================
 
             self->deadline_.expires_after(HEARTBEAT_INTERVAL + TIMEOUT_DURATION);
@@ -219,6 +303,30 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
             self->stop();
           }
         });
+  }
+
+  void handle_response(std::string& response)
+  {
+#ifndef USE_OLD_WRITE
+    // Check if this message matches a pending response
+    // XXX auto msg_id = rrcp::extract_msg_id(line); // implement helper to extract ID
+    // XXX auto it = pending_responses_.find(msg_id);
+    // XXX if (it != pending_responses_.end())
+
+    for (auto it = pending_responses_.begin(); it != pending_responses_.end(); ++it)
+    {
+      if (rrcp::find_response_msg(response, it->first))
+      {
+        auto handler = std::move(it->second);
+        pending_responses_.erase(it);
+        // Call handler asynchronously
+        boost::asio::post(io_context_, [handler = std::move(handler), response]() -> void { handler({}, response); });
+        break;
+      }
+    }
+#else
+    read_msgs_.push_back(response);
+#endif
   }
 
   void do_write()
@@ -297,8 +405,14 @@ class async_rrcp_client : public std::enable_shared_from_this< async_rrcp_client
 
   // I/O buffers (protected by io_context)
   std::string input_buffer_;
-  message_queue read_msgs_;
   message_queue write_msgs_;
+
+#ifndef USE_OLD_WRITE
+  std::unordered_map< std::string, std::function< void(const boost::system::error_code& ec, std::string) > >
+      pending_responses_;
+#else
+  message_queue read_msgs_;
+#endif
 
   // Thread-safe state
   std::atomic< bool > connected_{false};
